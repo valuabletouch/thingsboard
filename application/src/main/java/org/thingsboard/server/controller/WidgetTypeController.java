@@ -58,12 +58,17 @@ public class WidgetTypeController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN')")
     @RequestMapping(value = "/widgetType", method = RequestMethod.POST)
     @ResponseBody
-    public WidgetType saveWidgetType(@RequestBody WidgetType widgetType) throws ThingsboardException {
+    public WidgetType saveWidgetType(@RequestBody WidgetType widgetType,@RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
+
             if (Authority.SYS_ADMIN.equals(getCurrentUser().getAuthority())) {
                 widgetType.setTenantId(TenantId.SYS_TENANT_ID);
             } else {
-                widgetType.setTenantId(getCurrentUser().getTenantId());
+                widgetType.setTenantId(currentTenantId);
             }
 
             checkEntity(widgetType.getId(), widgetType, Resource.WIDGET_TYPE);
@@ -77,12 +82,17 @@ public class WidgetTypeController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN')")
     @RequestMapping(value = "/widgetType/{widgetTypeId}", method = RequestMethod.DELETE)
     @ResponseStatus(value = HttpStatus.OK)
-    public void deleteWidgetType(@PathVariable("widgetTypeId") String strWidgetTypeId) throws ThingsboardException {
+    public void deleteWidgetType(@PathVariable("widgetTypeId") String strWidgetTypeId, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("widgetTypeId", strWidgetTypeId);
         try {
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
+
             WidgetTypeId widgetTypeId = new WidgetTypeId(toUUID(strWidgetTypeId));
             checkWidgetTypeId(widgetTypeId, Operation.DELETE);
-            widgetTypeService.deleteWidgetType(getCurrentUser().getTenantId(), widgetTypeId);
+            widgetTypeService.deleteWidgetType(currentTenantId,widgetTypeId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -93,15 +103,18 @@ public class WidgetTypeController extends BaseController {
     @ResponseBody
     public List<WidgetType> getBundleWidgetTypes(
             @RequestParam boolean isSystem,
-            @RequestParam String bundleAlias) throws ThingsboardException {
+            @RequestParam String bundleAlias,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
-            TenantId tenantId;
-            if (isSystem) {
-                tenantId = TenantId.SYS_TENANT_ID;
-            } else {
-                tenantId = getCurrentUser().getTenantId();
-            }
-            return checkNotNull(widgetTypeService.findWidgetTypesByTenantIdAndBundleAlias(tenantId, bundleAlias));
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
+
+            if (isSystem && getAuthority() == Authority.SYS_ADMIN) {
+                currentTenantId = TenantId.SYS_TENANT_ID;
+            } 
+            return checkNotNull(widgetTypeService.findWidgetTypesByTenantIdAndBundleAlias(currentTenantId, bundleAlias));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -113,15 +126,18 @@ public class WidgetTypeController extends BaseController {
     public WidgetType getWidgetType(
             @RequestParam boolean isSystem,
             @RequestParam String bundleAlias,
-            @RequestParam String alias) throws ThingsboardException {
+            @RequestParam String alias,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
-            TenantId tenantId;
-            if (isSystem) {
-                tenantId = new TenantId(ModelConstants.NULL_UUID);
-            } else {
-                tenantId = getCurrentUser().getTenantId();
-            }
-            WidgetType widgetType = widgetTypeService.findWidgetTypeByTenantIdBundleAliasAndAlias(tenantId, bundleAlias, alias);
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
+
+            if (isSystem && getAuthority() == Authority.SYS_ADMIN) {
+                currentTenantId = new TenantId(ModelConstants.NULL_UUID);
+            } 
+            WidgetType widgetType = widgetTypeService.findWidgetTypeByTenantIdBundleAliasAndAlias(currentTenantId, bundleAlias, alias);
             checkNotNull(widgetType);
             accessControlService.checkPermission(getCurrentUser(), Resource.WIDGET_TYPE, Operation.READ, widgetType.getId(), widgetType);
             return widgetType;
