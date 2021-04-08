@@ -108,9 +108,13 @@ public class EntityViewController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/entityView", method = RequestMethod.POST)
     @ResponseBody
-    public EntityView saveEntityView(@RequestBody EntityView entityView) throws ThingsboardException {
+    public EntityView saveEntityView(@RequestBody EntityView entityView), @RequestParam(name = "tenantId", required = false) TenantId tenantId throws ThingsboardException {
         try {
-            entityView.setTenantId(getCurrentUser().getTenantId());
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
+            entityView.setTenantId(currentTenantId);
 
             List<ListenableFuture<?>> futures = new ArrayList<>();
 
@@ -361,10 +365,14 @@ public class EntityViewController extends BaseController {
     @RequestMapping(value = "/tenant/entityViews", params = {"entityViewName"}, method = RequestMethod.GET)
     @ResponseBody
     public EntityView getTenantEntityView(
-            @RequestParam String entityViewName) throws ThingsboardException {
+            @RequestParam String entityViewName,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
-            TenantId tenantId = getCurrentUser().getTenantId();
-            return checkNotNull(entityViewService.findEntityViewByTenantIdAndName(tenantId, entityViewName));
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
+            return checkNotNull(entityViewService.findEntityViewByTenantIdAndName(currentTenantId, entityViewName));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -433,17 +441,21 @@ public class EntityViewController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("customerId", strCustomerId);
         try {
-            TenantId tenantId = getCurrentUser().getTenantId();
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
             checkCustomerId(customerId, Operation.READ);
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             if (type != null && type.trim().length() > 0) {
-                return checkNotNull(entityViewService.findEntityViewsByTenantIdAndCustomerIdAndType(tenantId, customerId, pageLink, type));
+                return checkNotNull(entityViewService.findEntityViewsByTenantIdAndCustomerIdAndType(currentTenantId, customerId, pageLink, type));
             } else {
-                return checkNotNull(entityViewService.findEntityViewsByTenantIdAndCustomerId(tenantId, customerId, pageLink));
+                return checkNotNull(entityViewService.findEntityViewsByTenantIdAndCustomerId(currentTenantId, customerId, pageLink));
             }
         } catch (Exception e) {
             throw handleException(e);
@@ -460,17 +472,21 @@ public class EntityViewController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("customerId", strCustomerId);
         try {
-            TenantId tenantId = getCurrentUser().getTenantId();
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
             checkCustomerId(customerId, Operation.READ);
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             if (type != null && type.trim().length() > 0) {
-                return checkNotNull(entityViewService.findEntityViewInfosByTenantIdAndCustomerIdAndType(tenantId, customerId, type, pageLink));
+                return checkNotNull(entityViewService.findEntityViewInfosByTenantIdAndCustomerIdAndType(currentTenantId, customerId, type, pageLink));
             } else {
-                return checkNotNull(entityViewService.findEntityViewInfosByTenantIdAndCustomerId(tenantId, customerId, pageLink));
+                return checkNotNull(entityViewService.findEntityViewInfosByTenantIdAndCustomerId(currentTenantId, customerId, pageLink));
             }
         } catch (Exception e) {
             throw handleException(e);
@@ -486,15 +502,19 @@ public class EntityViewController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
-            TenantId tenantId = getCurrentUser().getTenantId();
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
 
             if (type != null && type.trim().length() > 0) {
-                return checkNotNull(entityViewService.findEntityViewByTenantIdAndType(tenantId, pageLink, type));
+                return checkNotNull(entityViewService.findEntityViewByTenantIdAndType(currentTenantId, customerIdpageLink, type));
             } else {
-                return checkNotNull(entityViewService.findEntityViewByTenantId(tenantId, pageLink));
+                return checkNotNull(entityViewService.findEntityViewByTenantId(currentTenantId, pageLink));
             }
         } catch (Exception e) {
             throw handleException(e);
@@ -510,14 +530,18 @@ public class EntityViewController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
-            TenantId tenantId = getCurrentUser().getTenantId();
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             if (type != null && type.trim().length() > 0) {
-                return checkNotNull(entityViewService.findEntityViewInfosByTenantIdAndType(tenantId, type, pageLink));
+                return checkNotNull(entityViewService.findEntityViewInfosByTenantIdAndType(currentTenantId, type, pageLink));
             } else {
-                return checkNotNull(entityViewService.findEntityViewInfosByTenantId(tenantId, pageLink));
+                return checkNotNull(entityViewService.findEntityViewInfosByTenantId(currentTenantId, pageLink));
             }
         } catch (Exception e) {
             throw handleException(e);
@@ -565,13 +589,17 @@ public class EntityViewController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/customer/public/entityView/{entityViewId}", method = RequestMethod.POST)
     @ResponseBody
-    public EntityView assignEntityViewToPublicCustomer(@PathVariable(ENTITY_VIEW_ID) String strEntityViewId) throws ThingsboardException {
+    public EntityView assignEntityViewToPublicCustomer(@PathVariable(ENTITY_VIEW_ID) String strEntityViewId, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter(ENTITY_VIEW_ID, strEntityViewId);
         try {
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
             EntityViewId entityViewId = new EntityViewId(toUUID(strEntityViewId));
             EntityView entityView = checkEntityViewId(entityViewId, Operation.ASSIGN_TO_CUSTOMER);
             Customer publicCustomer = customerService.findOrCreatePublicCustomer(entityView.getTenantId());
-            EntityView savedEntityView = checkNotNull(entityViewService.assignEntityViewToCustomer(getCurrentUser().getTenantId(), entityViewId, publicCustomer.getId()));
+            EntityView savedEntityView = checkNotNull(entityViewService.assignEntityViewToCustomer(currentTenantId, entityViewId, publicCustomer.getId()));
 
             logEntityAction(entityViewId, savedEntityView,
                     savedEntityView.getCustomerId(),

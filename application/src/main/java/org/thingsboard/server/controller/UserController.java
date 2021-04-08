@@ -136,11 +136,17 @@ public class UserController extends BaseController {
     @ResponseBody
     public User saveUser(@RequestBody User user,
                          @RequestParam(required = false, defaultValue = "true") boolean sendActivationMail,
-                         HttpServletRequest request) throws ThingsboardException {
+                         HttpServletRequest request,
+                         @RequestParam(name = "tenantId", required = false) TenantId tenantId)) throws ThingsboardException {
         try {
+            
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
 
             if (Authority.TENANT_ADMIN.equals(getCurrentUser().getAuthority())) {
-                user.setTenantId(getCurrentUser().getTenantId());
+                user.setTenantId(currentTenantId);
             }
 
             checkEntity(user.getId(), user, Resource.USER);
@@ -181,14 +187,19 @@ public class UserController extends BaseController {
     @ResponseStatus(value = HttpStatus.OK)
     public void sendActivationEmail(
             @RequestParam(value = "email") String email,
-            HttpServletRequest request) throws ThingsboardException {
+            HttpServletRequest request,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
             User user = checkNotNull(userService.findUserByEmail(getCurrentUser().getTenantId(), email));
 
             accessControlService.checkPermission(getCurrentUser(), Resource.USER, Operation.READ,
                     user.getId(), user);
 
-            UserCredentials userCredentials = userService.findUserCredentialsByUserId(getCurrentUser().getTenantId(), user.getId());
+            UserCredentials userCredentials = userService.findUserCredentialsByUserId(currentTenantId, user.getId());
             if (!userCredentials.isEnabled()) {
                 String baseUrl = systemSecurityService.getBaseUrl(getTenantId(), getCurrentUser().getCustomerId(), request);
                 String activateUrl = String.format(ACTIVATE_URL_PATTERN, baseUrl,
@@ -230,12 +241,16 @@ public class UserController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN')")
     @RequestMapping(value = "/user/{userId}", method = RequestMethod.DELETE)
     @ResponseStatus(value = HttpStatus.OK)
-    public void deleteUser(@PathVariable(USER_ID) String strUserId) throws ThingsboardException {
+    public void deleteUser(@PathVariable(USER_ID) String strUserId,@RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter(USER_ID, strUserId);
         try {
+            TenantId currentTenantId =
+                getAuthority() == Authority.ROOT && tenantId != null
+                    ? tenantId
+                    : getTenantId();
             UserId userId = new UserId(toUUID(strUserId));
             User user = checkUserId(userId, Operation.DELETE);
-            userService.deleteUser(getCurrentUser().getTenantId(), userId);
+            userService.deleteUser(currentTenantId, userId);
 
             logEntityAction(userId, user,
                     user.getCustomerId(),
@@ -258,14 +273,19 @@ public class UserController extends BaseController {
             @RequestParam int page,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
+                TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             SecurityUser currentUser = getCurrentUser();
             if (Authority.TENANT_ADMIN.equals(currentUser.getAuthority())) {
-                return checkNotNull(userService.findUsersByTenantId(currentUser.getTenantId(), pageLink));
+                return checkNotNull(userService.findUsersByTenantId(currentTenantId, pageLink));
             } else {
-                return checkNotNull(userService.findCustomerUsers(currentUser.getTenantId(), currentUser.getCustomerId(), pageLink));
+                return checkNotNull(userService.findCustomerUsers(currentTenantId, currentUser.getCustomerId(), pageLink));
             }
         } catch (Exception e) {
             throw handleException(e);
@@ -301,14 +321,18 @@ public class UserController extends BaseController {
             @RequestParam int page,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("customerId", strCustomerId);
         try {
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
             checkCustomerId(customerId, Operation.READ);
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            TenantId tenantId = getCurrentUser().getTenantId();
-            return checkNotNull(userService.findCustomerUsers(tenantId, customerId, pageLink));
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
+            return checkNotNull(userService.findCustomerUsers(currentTenantId, customerId, pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -318,13 +342,17 @@ public class UserController extends BaseController {
     @RequestMapping(value = "/user/{userId}/userCredentialsEnabled", method = RequestMethod.POST)
     @ResponseBody
     public void setUserCredentialsEnabled(@PathVariable(USER_ID) String strUserId,
-                                          @RequestParam(required = false, defaultValue = "true") boolean userCredentialsEnabled) throws ThingsboardException {
+                                          @RequestParam(required = false, defaultValue = "true") boolean userCredentialsEnabled,
+                                          @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter(USER_ID, strUserId);
         try {
             UserId userId = new UserId(toUUID(strUserId));
             User user = checkUserId(userId, Operation.WRITE);
-            TenantId tenantId = getCurrentUser().getTenantId();
-            userService.setUserCredentialsEnabled(tenantId, userId, userCredentialsEnabled);
+            TenantId currentTenantId =
+                    getAuthority() == Authority.ROOT && tenantId != null
+                        ? tenantId
+                        : getTenantId();
+            userService.setUserCredentialsEnabled(currentTenantId, userId, userCredentialsEnabled);
         } catch (Exception e) {
             throw handleException(e);
         }
