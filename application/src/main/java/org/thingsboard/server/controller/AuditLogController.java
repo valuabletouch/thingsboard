@@ -56,9 +56,9 @@ public class AuditLogController extends BaseController {
             @RequestParam(required = false) String sortProperty,
             @RequestParam(required = false) String sortOrder,
             @RequestParam(required = false) Long startTime,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
             @RequestParam(required = false) Long endTime,
-            @RequestParam(name = "actionTypes", required = false) String actionTypesStr)
+            @RequestParam(name = "actionTypes", required = false) String actionTypesStr,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId)
              throws ThingsboardException {
         try {
             checkParameter("CustomerId", strCustomerId);
@@ -84,11 +84,11 @@ public class AuditLogController extends BaseController {
             @RequestParam int page,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
             @RequestParam(required = false) String sortOrder,
             @RequestParam(required = false) Long startTime,
             @RequestParam(required = false) Long endTime,
-            @RequestParam(name = "actionTypes", required = false) String actionTypesStr) throws ThingsboardException {
+            @RequestParam(name = "actionTypes", required = false) String actionTypesStr,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
             checkParameter("UserId", strUserId);
             TenantId currentTenantId =
@@ -113,11 +113,11 @@ public class AuditLogController extends BaseController {
             @RequestParam int page,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
             @RequestParam(required = false) String sortOrder,
             @RequestParam(required = false) Long startTime,
             @RequestParam(required = false) Long endTime,
-            @RequestParam(name = "actionTypes", required = false) String actionTypesStr) throws ThingsboardException {
+            @RequestParam(name = "actionTypes", required = false) String actionTypesStr,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
             checkParameter("EntityId", strEntityId);
             checkParameter("EntityType", strEntityType);
@@ -142,10 +142,10 @@ public class AuditLogController extends BaseController {
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
             @RequestParam(required = false) String sortOrder,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
             @RequestParam(required = false) Long startTime,
             @RequestParam(required = false) Long endTime,
-            @RequestParam(name = "actionTypes", required = false) String actionTypesStr) throws ThingsboardException {
+            @RequestParam(name = "actionTypes", required = false) String actionTypesStr,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
             TenantId currentTenantId =
             getAuthority() == Authority.ROOT && tenantId != null

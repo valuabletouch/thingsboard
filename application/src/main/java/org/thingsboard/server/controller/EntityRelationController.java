@@ -89,8 +89,8 @@ public class EntityRelationController extends BaseController {
                                @RequestParam(FROM_TYPE) String strFromType,
                                @RequestParam(RELATION_TYPE) String strRelationType,
                                @RequestParam(value = "relationTypeGroup", required = false) String strRelationTypeGroup,
-                               @RequestParam(name = "tenantId", required = false) TenantId tenantId,
-                               @RequestParam(TO_ID) String strToId, @RequestParam(TO_TYPE) String strToType) throws ThingsboardException {
+                               @RequestParam(TO_ID) String strToId, @RequestParam(TO_TYPE) String strToType,
+                               @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter(FROM_ID, strFromId);
         checkParameter(FROM_TYPE, strFromType);
         checkParameter(RELATION_TYPE, strRelationType);

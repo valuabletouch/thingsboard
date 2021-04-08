@@ -151,8 +151,8 @@ public class AssetController extends BaseController {
     @RequestMapping(value = "/customer/{customerId}/asset/{assetId}", method = RequestMethod.POST)
     @ResponseBody
     public Asset assignAssetToCustomer(@PathVariable("customerId") String strCustomerId,
-                                       @RequestParam(name = "tenantId", required = false) TenantId tenantId,
-                                       @PathVariable(ASSET_ID) String strAssetId) throws ThingsboardException {
+                                       @PathVariable(ASSET_ID) String strAssetId,
+                                       @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("customerId", strCustomerId);
         checkParameter(ASSET_ID, strAssetId);
         try {
@@ -257,8 +257,8 @@ public class AssetController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
             TenantId currentTenantId =
             getAuthority() == Authority.ROOT && tenantId != null
@@ -284,8 +284,8 @@ public class AssetController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
             TenantId currentTenantId =
             getAuthority() == Authority.ROOT && tenantId != null
@@ -328,8 +328,8 @@ public class AssetController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("customerId", strCustomerId);
         try {
             TenantId currentTenantId =
@@ -359,8 +359,8 @@ public class AssetController extends BaseController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String textSearch,
             @RequestParam(required = false) String sortProperty,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
-            @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         checkParameter("customerId", strCustomerId);
         try {
             TenantId currentTenantId =

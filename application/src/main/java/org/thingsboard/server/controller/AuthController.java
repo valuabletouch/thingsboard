@@ -101,12 +101,9 @@ public class AuthController extends BaseController {
     @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = "/auth/logout", method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.OK)
-    public void logout(HttpServletRequest request,@RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
-        TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-        logLogoutAction(request, currentTenantId);
+    public void logout(HttpServletRequest request) throws ThingsboardException {
+       
+        logLogoutAction(request);
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -223,8 +220,8 @@ public class AuthController extends BaseController {
     @ResponseBody
     public JsonNode activateUser(
             @RequestBody JsonNode activateRequest,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
             @RequestParam(required = false, defaultValue = "true") boolean sendActivationMail,
+            @RequestParam(name = "tenantId", required = false) TenantId tenantId,
             HttpServletRequest request) throws ThingsboardException {
         try {
             TenantId currentTenantId =
@@ -312,12 +309,8 @@ public class AuthController extends BaseController {
         }
     }
 
-    private void logLogoutAction(HttpServletRequest request, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    private void logLogoutAction(HttpServletRequest request) throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
             SecurityUser user = getCurrentUser();
             RestAuthenticationDetails details = new RestAuthenticationDetails(request);
             String clientAddress = details.getClientAddress();
@@ -358,7 +351,7 @@ public class AuthController extends BaseController {
                 }
             }
             auditLogService.logEntityAction(
-                    currentTenantId, user.getCustomerId(), user.getId(),
+                    user.getTenantId(), user.getCustomerId(), user.getId(),
                     user.getName(), user.getId(), null, ActionType.LOGOUT, null, clientAddress, browser, os, device);
 
         } catch (Exception e) {
