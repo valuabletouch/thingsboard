@@ -136,8 +136,8 @@ public class UserController extends BaseController {
     @ResponseBody
     public User saveUser(@RequestBody User user,
                          @RequestParam(required = false, defaultValue = "true") boolean sendActivationMail,
-                         HttpServletRequest request,
-                         @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+                         @RequestParam(name = "tenantId", required = false) TenantId tenantId,
+                         HttpServletRequest request) throws ThingsboardException {
         try {
             
             TenantId currentTenantId =

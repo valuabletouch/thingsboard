@@ -47,6 +47,7 @@ import org.thingsboard.server.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.server.common.data.kv.TsKvEntry;
 import org.thingsboard.server.common.data.page.PageData;
 import org.thingsboard.server.common.data.page.PageLink;
+import org.thingsboard.server.common.data.security.Authority;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.ModelConstants;
 import org.thingsboard.server.dao.timeseries.TimeseriesService;
@@ -108,7 +109,7 @@ public class EntityViewController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/entityView", method = RequestMethod.POST)
     @ResponseBody
-    public EntityView saveEntityView(@RequestBody EntityView entityView,@RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public EntityView saveEntityView(@RequestBody EntityView entityView, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
         try {
             TenantId currentTenantId =
                     getAuthority() == Authority.ROOT && tenantId != null
