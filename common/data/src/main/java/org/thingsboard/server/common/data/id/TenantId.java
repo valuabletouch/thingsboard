@@ -34,6 +34,10 @@ public final class TenantId extends UUIDBased implements EntityId {
         super(id);
     }
 
+    public static TenantId fromString(String tenantId) {
+        return new TenantId(UUID.fromString(tenantId));
+    }
+
     @JsonIgnore
     @Override
     public EntityType getEntityType() {

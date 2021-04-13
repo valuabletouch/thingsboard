@@ -24,11 +24,18 @@ import org.thingsboard.server.common.data.EntityType;
 
 public final class CustomerId extends UUIDBased implements EntityId {
 
+    @JsonIgnore
+    public static final CustomerId SYS_CUSTOMER_ID = new CustomerId(EntityId.NULL_UUID);
+
     private static final long serialVersionUID = 1L;
 
     @JsonCreator
     public CustomerId(@JsonProperty("id") UUID id) {
         super(id);
+    }
+
+    public static CustomerId fromString(String customerId) {
+        return new CustomerId(UUID.fromString(customerId));
     }
 
     @JsonIgnore

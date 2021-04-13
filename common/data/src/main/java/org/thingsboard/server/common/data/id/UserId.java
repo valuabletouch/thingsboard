@@ -24,6 +24,11 @@ import org.thingsboard.server.common.data.EntityType;
 
 public class UserId extends UUIDBased implements EntityId {
 
+    @JsonIgnore
+    public static final UserId SYS_USER_ID = new UserId(EntityId.NULL_UUID);
+
+    private static final long serialVersionUID = 1L;
+
     @JsonCreator
     public UserId(@JsonProperty("id") UUID id) {
         super(id);
