@@ -39,9 +39,11 @@ public class DefaultAccessControlService implements AccessControlService {
     private final Map<Authority, Permissions> authorityPermissions = new HashMap<>();
 
     public DefaultAccessControlService(
+            @Qualifier("rootPermissions") Permissions rootPermissions,
             @Qualifier("sysAdminPermissions") Permissions sysAdminPermissions,
             @Qualifier("tenantAdminPermissions") Permissions tenantAdminPermissions,
             @Qualifier("customerUserPermissions") Permissions customerUserPermissions) {
+        authorityPermissions.put(Authority.ROOT, rootPermissions);
         authorityPermissions.put(Authority.SYS_ADMIN, sysAdminPermissions);
         authorityPermissions.put(Authority.TENANT_ADMIN, tenantAdminPermissions);
         authorityPermissions.put(Authority.CUSTOMER_USER, customerUserPermissions);
@@ -56,8 +58,13 @@ public class DefaultAccessControlService implements AccessControlService {
     }
 
     @Override
-    public <I extends EntityId, T extends HasTenantId> void checkPermission(SecurityUser user, Resource resource,
-                                                                                            Operation operation, I entityId, T entity) throws ThingsboardException {
+    public <I extends EntityId, T extends HasTenantId> void checkPermission(
+        SecurityUser user,
+        Resource resource,
+        Operation operation,
+        I entityId,
+        T entity)
+        throws ThingsboardException {
         PermissionChecker permissionChecker = getPermissionChecker(user.getAuthority(), resource);
         if (!permissionChecker.hasPermission(user, operation, entityId, entity)) {
             permissionDenied();
@@ -77,8 +84,7 @@ public class DefaultAccessControlService implements AccessControlService {
     }
 
     private void permissionDenied() throws ThingsboardException {
-        throw new ThingsboardException(YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION,
-                ThingsboardErrorCode.PERMISSION_DENIED);
+        throw new ThingsboardException(YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION, ThingsboardErrorCode.PERMISSION_DENIED);
     }
 
 }
