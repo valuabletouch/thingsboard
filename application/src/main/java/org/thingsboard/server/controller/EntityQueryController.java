@@ -34,7 +34,6 @@ import org.thingsboard.server.common.data.query.EntityCountQuery;
 import org.thingsboard.server.common.data.query.EntityData;
 import org.thingsboard.server.common.data.query.EntityDataPageLink;
 import org.thingsboard.server.common.data.query.EntityDataQuery;
-import org.thingsboard.server.common.data.security.Authority;
 import org.thingsboard.server.queue.util.TbCoreComponent;
 import org.thingsboard.server.service.query.EntityQueryService;
 
@@ -42,6 +41,7 @@ import org.thingsboard.server.service.query.EntityQueryService;
 @TbCoreComponent
 @RequestMapping("/api")
 public class EntityQueryController extends BaseController {
+    public static final String TENANT_ID = "tenantId";
 
     @Autowired
     private EntityQueryService entityQueryService;
@@ -87,23 +87,24 @@ public class EntityQueryController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/entitiesQuery/find/keys", method = RequestMethod.POST)
     @ResponseBody
-    public DeferredResult<ResponseEntity> findEntityTimeseriesAndAttributesKeysByQuery(@RequestBody EntityDataQuery query,
-                                                                                       @RequestParam("timeseries") boolean isTimeseries,
-                                                                                       @RequestParam("attributes") boolean isAttributes,
-                                                                                       @RequestParam(name = "tenantId", required = false) TenantId tenantId)
-                                                                                        throws ThingsboardException {
-                                                                                            
-        TenantId currentTenantId =
-        getAuthority() == Authority.ROOT && tenantId != null
-        ? tenantId
-        : getTenantId();
+    public DeferredResult<ResponseEntity> findEntityTimeseriesAndAttributesKeysByQuery(
+        @RequestParam("timeseries") boolean isTimeseries,
+        @RequestParam("attributes") boolean isAttributes,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId,
+        @RequestBody EntityDataQuery query)
+        throws ThingsboardException {
         checkNotNull(query);
+
         try {
             EntityDataPageLink pageLink = query.getPageLink();
+            
             if (pageLink.getPageSize() > MAX_PAGE_SIZE) {
                 pageLink.setPageSize(MAX_PAGE_SIZE);
             }
-            return entityQueryService.getKeysByQuery(getCurrentUser(), currentTenantId, query, isTimeseries, isAttributes);
+
+            TenantId tenantId = getTenantId(requestTenantId);
+
+            return entityQueryService.getKeysByQuery(getCurrentUser(), tenantId, query, isTimeseries, isAttributes);
         } catch (Exception e) {
             throw handleException(e);
         }

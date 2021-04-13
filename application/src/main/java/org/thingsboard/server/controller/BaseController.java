@@ -19,14 +19,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.StringUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
 import org.thingsboard.server.common.data.*;
 import org.thingsboard.server.common.data.alarm.Alarm;
 import org.thingsboard.server.common.data.alarm.AlarmInfo;
@@ -220,36 +224,17 @@ public abstract class BaseController {
     @Getter
     private boolean logControllerErrorStackTrace;
 
-
     @ExceptionHandler(ThingsboardException.class)
     public void handleThingsboardException(ThingsboardException ex, HttpServletResponse response) {
         errorResponseHandler.handle(ex, response);
     }
 
-    ThingsboardException handleException(Exception exception) {
-        return handleException(exception, true);
+    public static Exception toException(Throwable error) {
+        return error != null ? (Exception.class.isInstance(error) ? (Exception) error : new Exception(error)) : null;
     }
 
-    private ThingsboardException handleException(Exception exception, boolean logException) {
-        if (logException && logControllerErrorStackTrace) {
-            log.error("Error [{}]", exception.getMessage(), exception);
-        }
-
-        String cause = "";
-        if (exception.getCause() != null) {
-            cause = exception.getCause().getClass().getCanonicalName();
-        }
-
-        if (exception instanceof ThingsboardException) {
-            return (ThingsboardException) exception;
-        } else if (exception instanceof IllegalArgumentException || exception instanceof IncorrectParameterException
-                || exception instanceof DataValidationException || cause.contains("IncorrectParameterException")) {
-            return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
-        } else if (exception instanceof MessagingException) {
-            return new ThingsboardException("Unable to send mail: " + exception.getMessage(), ThingsboardErrorCode.GENERAL);
-        } else {
-            return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.GENERAL);
-        }
+    ThingsboardException handleException(Exception exception) {
+        return handleException(exception, true);
     }
 
     <T> T checkNotNull(T reference) throws ThingsboardException {
@@ -304,19 +289,17 @@ public abstract class BaseController {
         }
     }
 
-    TimePageLink createTimePageLink(int pageSize, int page, String textSearch,
-                                    String sortProperty, String sortOrder, Long startTime, Long endTime) throws ThingsboardException {
+    TimePageLink createTimePageLink(
+        int pageSize,
+        int page,
+        String textSearch,
+        String sortProperty,
+        String sortOrder,
+        Long startTime,
+        Long endTime)
+        throws ThingsboardException {
         PageLink pageLink = this.createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
         return new TimePageLink(pageLink, startTime, endTime);
-    }
-
-    protected SecurityUser getCurrentUser() throws ThingsboardException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof SecurityUser) {
-            return (SecurityUser) authentication.getPrincipal();
-        } else {
-            throw new ThingsboardException("You aren't authorized to perform this operation!", ThingsboardErrorCode.AUTHENTICATION);
-        }
     }
 
     Tenant checkTenantId(TenantId tenantId, Operation operation) throws ThingsboardException {
@@ -343,10 +326,10 @@ public abstract class BaseController {
         }
     }
 
-    TenantProfile checkTenantProfileId(TenantProfileId tenantProfileId, Operation operation) throws ThingsboardException {
+    TenantProfile checkTenantProfileId(TenantProfileId tenantProfileId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(tenantProfileId, "Incorrect tenantProfileId " + tenantProfileId);
-            TenantProfile tenantProfile = tenantProfileService.findTenantProfileById(getTenantId(), tenantProfileId);
+            TenantProfile tenantProfile = tenantProfileService.findTenantProfileById(tenantId, tenantProfileId);
             checkNotNull(tenantProfile);
             accessControlService.checkPermission(getCurrentUser(), Resource.TENANT_PROFILE, operation);
             return tenantProfile;
@@ -355,18 +338,10 @@ public abstract class BaseController {
         }
     }
 
-    protected TenantId getTenantId() throws ThingsboardException {
-        return getCurrentUser().getTenantId();
-    }
-
-    protected Authority getAuthority() throws ThingsboardException {
-        return getCurrentUser().getAuthority();
-    }
-
-    Customer checkCustomerId(CustomerId customerId, Operation operation) throws ThingsboardException {
+    Customer checkCustomerId(CustomerId customerId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(customerId, "Incorrect customerId " + customerId);
-            Customer customer = customerService.findCustomerById(getTenantId(), customerId);
+            Customer customer = customerService.findCustomerById(tenantId, customerId);
             checkNotNull(customer);
             accessControlService.checkPermission(getCurrentUser(), Resource.CUSTOMER, operation, customerId, customer);
             return customer;
@@ -375,10 +350,10 @@ public abstract class BaseController {
         }
     }
 
-    User checkUserId(UserId userId, Operation operation) throws ThingsboardException {
+    User checkUserId(UserId userId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(userId, "Incorrect userId " + userId);
-            User user = userService.findUserById(getCurrentUser().getTenantId(), userId);
+            User user = userService.findUserById(tenantId, userId);
             checkNotNull(user);
             accessControlService.checkPermission(getCurrentUser(), Resource.USER, operation, userId, user);
             return user;
@@ -387,74 +362,10 @@ public abstract class BaseController {
         }
     }
 
-    protected <I extends EntityId, T extends HasTenantId> void checkEntity(I entityId, T entity, Resource resource) throws ThingsboardException {
-        if (entityId == null) {
-            accessControlService
-                    .checkPermission(getCurrentUser(), resource, Operation.CREATE, null, entity);
-        } else {
-            checkEntityId(entityId, Operation.WRITE);
-        }
-    }
-
-    protected void checkEntityId(EntityId entityId, Operation operation) throws ThingsboardException {
-        try {
-            checkNotNull(entityId);
-            validateId(entityId.getId(), "Incorrect entityId " + entityId);
-            switch (entityId.getEntityType()) {
-                case ALARM:
-                    checkAlarmId(new AlarmId(entityId.getId()), operation);
-                    return;
-                case DEVICE:
-                    checkDeviceId(new DeviceId(entityId.getId()), operation);
-                    return;
-                case DEVICE_PROFILE:
-                    checkDeviceProfileId(new DeviceProfileId(entityId.getId()), operation);
-                    return;
-                case CUSTOMER:
-                    checkCustomerId(new CustomerId(entityId.getId()), operation);
-                    return;
-                case TENANT:
-                    checkTenantId(new TenantId(entityId.getId()), operation);
-                    return;
-                case TENANT_PROFILE:
-                    checkTenantProfileId(new TenantProfileId(entityId.getId()), operation);
-                    return;
-                case RULE_CHAIN:
-                    checkRuleChain(new RuleChainId(entityId.getId()), operation);
-                    return;
-                case RULE_NODE:
-                    checkRuleNode(new RuleNodeId(entityId.getId()), operation);
-                    return;
-                case ASSET:
-                    checkAssetId(new AssetId(entityId.getId()), operation);
-                    return;
-                case DASHBOARD:
-                    checkDashboardId(new DashboardId(entityId.getId()), operation);
-                    return;
-                case USER:
-                    checkUserId(new UserId(entityId.getId()), operation);
-                    return;
-                case ENTITY_VIEW:
-                    checkEntityViewId(new EntityViewId(entityId.getId()), operation);
-                    return;
-                case WIDGETS_BUNDLE:
-                    checkWidgetsBundleId(new WidgetsBundleId(entityId.getId()), operation);
-                    return;
-                case WIDGET_TYPE:
-                    checkWidgetTypeId(new WidgetTypeId(entityId.getId()), operation);
-                    return;
-                default:
-                    throw new IllegalArgumentException("Unsupported entity type: " + entityId.getEntityType());
-            }
-        } catch (Exception e) {
-            throw handleException(e, false);
-        }
-    }
-
-    Device checkDeviceId(DeviceId deviceId, Operation operation) throws ThingsboardException {
+    Device checkDeviceId(DeviceId deviceId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(deviceId, "Incorrect deviceId " + deviceId);
-            Device device = deviceService.findDeviceById(getCurrentUser().getTenantId(), deviceId);
+            Device device = deviceService.findDeviceById(tenantId, deviceId);
             checkNotNull(device);
             accessControlService.checkPermission(getCurrentUser(), Resource.DEVICE, operation, deviceId, device);
             return device;
@@ -463,10 +374,10 @@ public abstract class BaseController {
         }
     }
 
-    DeviceInfo checkDeviceInfoId(DeviceId deviceId, Operation operation) throws ThingsboardException {
+    DeviceInfo checkDeviceInfoId(DeviceId deviceId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(deviceId, "Incorrect deviceId " + deviceId);
-            DeviceInfo device = deviceService.findDeviceInfoById(getCurrentUser().getTenantId(), deviceId);
+            DeviceInfo device = deviceService.findDeviceInfoById(tenantId, deviceId);
             checkNotNull(device);
             accessControlService.checkPermission(getCurrentUser(), Resource.DEVICE, operation, deviceId, device);
             return device;
@@ -475,10 +386,10 @@ public abstract class BaseController {
         }
     }
 
-    DeviceProfile checkDeviceProfileId(DeviceProfileId deviceProfileId, Operation operation) throws ThingsboardException {
+    DeviceProfile checkDeviceProfileId(DeviceProfileId deviceProfileId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(deviceProfileId, "Incorrect deviceProfileId " + deviceProfileId);
-            DeviceProfile deviceProfile = deviceProfileService.findDeviceProfileById(getCurrentUser().getTenantId(), deviceProfileId);
+            DeviceProfile deviceProfile = deviceProfileService.findDeviceProfileById(tenantId, deviceProfileId);
             checkNotNull(deviceProfile);
             accessControlService.checkPermission(getCurrentUser(), Resource.DEVICE_PROFILE, operation, deviceProfileId, deviceProfile);
             return deviceProfile;
@@ -487,10 +398,10 @@ public abstract class BaseController {
         }
     }
 
-    protected EntityView checkEntityViewId(EntityViewId entityViewId, Operation operation) throws ThingsboardException {
+    EntityViewInfo checkEntityViewInfoId(EntityViewId entityViewId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(entityViewId, "Incorrect entityViewId " + entityViewId);
-            EntityView entityView = entityViewService.findEntityViewById(getCurrentUser().getTenantId(), entityViewId);
+            EntityViewInfo entityView = entityViewService.findEntityViewInfoById(tenantId, entityViewId);
             checkNotNull(entityView);
             accessControlService.checkPermission(getCurrentUser(), Resource.ENTITY_VIEW, operation, entityViewId, entityView);
             return entityView;
@@ -499,22 +410,10 @@ public abstract class BaseController {
         }
     }
 
-    EntityViewInfo checkEntityViewInfoId(EntityViewId entityViewId, Operation operation) throws ThingsboardException {
-        try {
-            validateId(entityViewId, "Incorrect entityViewId " + entityViewId);
-            EntityViewInfo entityView = entityViewService.findEntityViewInfoById(getCurrentUser().getTenantId(), entityViewId);
-            checkNotNull(entityView);
-            accessControlService.checkPermission(getCurrentUser(), Resource.ENTITY_VIEW, operation, entityViewId, entityView);
-            return entityView;
-        } catch (Exception e) {
-            throw handleException(e, false);
-        }
-    }
-
-    Asset checkAssetId(AssetId assetId, Operation operation) throws ThingsboardException {
+    Asset checkAssetId(AssetId assetId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(assetId, "Incorrect assetId " + assetId);
-            Asset asset = assetService.findAssetById(getCurrentUser().getTenantId(), assetId);
+            Asset asset = assetService.findAssetById(tenantId, assetId);
             checkNotNull(asset);
             accessControlService.checkPermission(getCurrentUser(), Resource.ASSET, operation, assetId, asset);
             return asset;
@@ -523,10 +422,10 @@ public abstract class BaseController {
         }
     }
 
-    AssetInfo checkAssetInfoId(AssetId assetId, Operation operation) throws ThingsboardException {
+    AssetInfo checkAssetInfoId(AssetId assetId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(assetId, "Incorrect assetId " + assetId);
-            AssetInfo asset = assetService.findAssetInfoById(getCurrentUser().getTenantId(), assetId);
+            AssetInfo asset = assetService.findAssetInfoById(tenantId, assetId);
             checkNotNull(asset);
             accessControlService.checkPermission(getCurrentUser(), Resource.ASSET, operation, assetId, asset);
             return asset;
@@ -535,10 +434,10 @@ public abstract class BaseController {
         }
     }
 
-    Alarm checkAlarmId(AlarmId alarmId, Operation operation) throws ThingsboardException {
+    Alarm checkAlarmId(AlarmId alarmId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(alarmId, "Incorrect alarmId " + alarmId);
-            Alarm alarm = alarmService.findAlarmByIdAsync(getCurrentUser().getTenantId(), alarmId).get();
+            Alarm alarm = alarmService.findAlarmByIdAsync(tenantId, alarmId).get();
             checkNotNull(alarm);
             accessControlService.checkPermission(getCurrentUser(), Resource.ALARM, operation, alarmId, alarm);
             return alarm;
@@ -547,10 +446,10 @@ public abstract class BaseController {
         }
     }
 
-    AlarmInfo checkAlarmInfoId(AlarmId alarmId, Operation operation) throws ThingsboardException {
+    AlarmInfo checkAlarmInfoId(AlarmId alarmId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(alarmId, "Incorrect alarmId " + alarmId);
-            AlarmInfo alarmInfo = alarmService.findAlarmInfoByIdAsync(getCurrentUser().getTenantId(), alarmId).get();
+            AlarmInfo alarmInfo = alarmService.findAlarmInfoByIdAsync(tenantId, alarmId).get();
             checkNotNull(alarmInfo);
             accessControlService.checkPermission(getCurrentUser(), Resource.ALARM, operation, alarmId, alarmInfo);
             return alarmInfo;
@@ -559,10 +458,10 @@ public abstract class BaseController {
         }
     }
 
-    WidgetsBundle checkWidgetsBundleId(WidgetsBundleId widgetsBundleId, Operation operation) throws ThingsboardException {
+    WidgetsBundle checkWidgetsBundleId(WidgetsBundleId widgetsBundleId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(widgetsBundleId, "Incorrect widgetsBundleId " + widgetsBundleId);
-            WidgetsBundle widgetsBundle = widgetsBundleService.findWidgetsBundleById(getCurrentUser().getTenantId(), widgetsBundleId);
+            WidgetsBundle widgetsBundle = widgetsBundleService.findWidgetsBundleById(tenantId, widgetsBundleId);
             checkNotNull(widgetsBundle);
             accessControlService.checkPermission(getCurrentUser(), Resource.WIDGETS_BUNDLE, operation, widgetsBundleId, widgetsBundle);
             return widgetsBundle;
@@ -571,10 +470,10 @@ public abstract class BaseController {
         }
     }
 
-    WidgetType checkWidgetTypeId(WidgetTypeId widgetTypeId, Operation operation) throws ThingsboardException {
+    WidgetType checkWidgetTypeId(WidgetTypeId widgetTypeId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(widgetTypeId, "Incorrect widgetTypeId " + widgetTypeId);
-            WidgetType widgetType = widgetTypeService.findWidgetTypeById(getCurrentUser().getTenantId(), widgetTypeId);
+            WidgetType widgetType = widgetTypeService.findWidgetTypeById(tenantId, widgetTypeId);
             checkNotNull(widgetType);
             accessControlService.checkPermission(getCurrentUser(), Resource.WIDGET_TYPE, operation, widgetTypeId, widgetType);
             return widgetType;
@@ -583,10 +482,10 @@ public abstract class BaseController {
         }
     }
 
-    Dashboard checkDashboardId(DashboardId dashboardId, Operation operation) throws ThingsboardException {
+    Dashboard checkDashboardId(DashboardId dashboardId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(dashboardId, "Incorrect dashboardId " + dashboardId);
-            Dashboard dashboard = dashboardService.findDashboardById(getCurrentUser().getTenantId(), dashboardId);
+            Dashboard dashboard = dashboardService.findDashboardById(tenantId, dashboardId);
             checkNotNull(dashboard);
             accessControlService.checkPermission(getCurrentUser(), Resource.DASHBOARD, operation, dashboardId, dashboard);
             return dashboard;
@@ -595,10 +494,10 @@ public abstract class BaseController {
         }
     }
 
-    DashboardInfo checkDashboardInfoId(DashboardId dashboardId, Operation operation) throws ThingsboardException {
+    DashboardInfo checkDashboardInfoId(DashboardId dashboardId, Operation operation, TenantId tenantId) throws ThingsboardException {
         try {
             validateId(dashboardId, "Incorrect dashboardId " + dashboardId);
-            DashboardInfo dashboardInfo = dashboardService.findDashboardInfoById(getCurrentUser().getTenantId(), dashboardId);
+            DashboardInfo dashboardInfo = dashboardService.findDashboardInfoById(tenantId, dashboardId);
             checkNotNull(dashboardInfo);
             accessControlService.checkPermission(getCurrentUser(), Resource.DASHBOARD, operation, dashboardId, dashboardInfo);
             return dashboardInfo;
@@ -634,19 +533,123 @@ public abstract class BaseController {
         }
     }
 
-    protected RuleChain checkRuleChain(RuleChainId ruleChainId, Operation operation) throws ThingsboardException {
+    protected SecurityUser getCurrentUser() throws ThingsboardException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof SecurityUser) {
+            return (SecurityUser) authentication.getPrincipal();
+        } else {
+            throw new ThingsboardException("You aren't authorized to perform this operation!", ThingsboardErrorCode.AUTHENTICATION);
+        }
+    }
+
+    protected TenantId getTenantId() throws ThingsboardException {
+        return getCurrentUser().getTenantId();
+    }
+
+    protected TenantId getTenantId(String requestTenantId) throws ThingsboardException {
+        return
+            getAuthority() == Authority.ROOT &&
+            requestTenantId != null &&
+            requestTenantId.length() > 0
+                ? TenantId.fromString(requestTenantId)
+                : getTenantId();
+    }
+
+    protected Authority getAuthority() throws ThingsboardException {
+        return getCurrentUser().getAuthority();
+    }
+
+    protected <I extends EntityId, T extends HasTenantId> void checkEntity(I entityId, T entity, Resource resource, TenantId tenantId) throws ThingsboardException {
+        if (entityId == null) {
+            accessControlService
+                    .checkPermission(getCurrentUser(), resource, Operation.CREATE, null, entity);
+        } else {
+            checkEntityId(entityId, Operation.WRITE, tenantId);
+        }
+    }
+
+    protected void checkEntityId(EntityId entityId, Operation operation, TenantId tenantId) throws ThingsboardException {
+        try {
+            checkNotNull(entityId);
+
+            validateId(entityId.getId(), "Incorrect entityId " + entityId);
+
+            switch (entityId.getEntityType()) {
+                case ALARM:
+                    checkAlarmId(new AlarmId(entityId.getId()), operation, tenantId);
+                    return;
+                case DEVICE:
+                    checkDeviceId(new DeviceId(entityId.getId()), operation, tenantId);
+                    return;
+                case DEVICE_PROFILE:
+                    checkDeviceProfileId(new DeviceProfileId(entityId.getId()), operation, tenantId);
+                    return;
+                case CUSTOMER:
+                    checkCustomerId(new CustomerId(entityId.getId()), operation, tenantId);
+                    return;
+                case TENANT:
+                    checkTenantId(new TenantId(entityId.getId()), operation);
+                    return;
+                case TENANT_PROFILE:
+                    checkTenantProfileId(new TenantProfileId(entityId.getId()), operation, tenantId);
+                    return;
+                case RULE_CHAIN:
+                    checkRuleChain(new RuleChainId(entityId.getId()), operation, tenantId);
+                    return;
+                case RULE_NODE:
+                    checkRuleNode(new RuleNodeId(entityId.getId()), operation, tenantId);
+                    return;
+                case ASSET:
+                    checkAssetId(new AssetId(entityId.getId()), operation, tenantId);
+                    return;
+                case DASHBOARD:
+                    checkDashboardId(new DashboardId(entityId.getId()), operation, tenantId);
+                    return;
+                case USER:
+                    checkUserId(new UserId(entityId.getId()), operation, tenantId);
+                    return;
+                case ENTITY_VIEW:
+                    checkEntityViewId(new EntityViewId(entityId.getId()), operation, tenantId);
+                    return;
+                case WIDGETS_BUNDLE:
+                    checkWidgetsBundleId(new WidgetsBundleId(entityId.getId()), operation, tenantId);
+                    return;
+                case WIDGET_TYPE:
+                    checkWidgetTypeId(new WidgetTypeId(entityId.getId()), operation, tenantId);
+                    return;
+                default:
+                    throw new IllegalArgumentException("Unsupported entity type: " + entityId.getEntityType());
+            }
+        } catch (Exception e) {
+            throw handleException(e, false);
+        }
+    }
+
+    protected EntityView checkEntityViewId(EntityViewId entityViewId, Operation operation, TenantId tenantId) throws ThingsboardException {
+        try {
+            validateId(entityViewId, "Incorrect entityViewId " + entityViewId);
+            EntityView entityView = entityViewService.findEntityViewById(tenantId, entityViewId);
+            checkNotNull(entityView);
+            accessControlService.checkPermission(getCurrentUser(), Resource.ENTITY_VIEW, operation, entityViewId, entityView);
+            return entityView;
+        } catch (Exception e) {
+            throw handleException(e, false);
+        }
+    }
+
+    protected RuleChain checkRuleChain(RuleChainId ruleChainId, Operation operation, TenantId tenantId) throws ThingsboardException {
         validateId(ruleChainId, "Incorrect ruleChainId " + ruleChainId);
-        RuleChain ruleChain = ruleChainService.findRuleChainById(getCurrentUser().getTenantId(), ruleChainId);
+        RuleChain ruleChain = ruleChainService.findRuleChainById(tenantId, ruleChainId);
         checkNotNull(ruleChain);
         accessControlService.checkPermission(getCurrentUser(), Resource.RULE_CHAIN, operation, ruleChainId, ruleChain);
         return ruleChain;
     }
 
-    protected RuleNode checkRuleNode(RuleNodeId ruleNodeId, Operation operation) throws ThingsboardException {
+    protected RuleNode checkRuleNode(RuleNodeId ruleNodeId, Operation operation, TenantId tenantId) throws ThingsboardException {
         validateId(ruleNodeId, "Incorrect ruleNodeId " + ruleNodeId);
-        RuleNode ruleNode = ruleChainService.findRuleNodeById(getTenantId(), ruleNodeId);
+        RuleNode ruleNode = ruleChainService.findRuleNodeById(tenantId, ruleNodeId);
         checkNotNull(ruleNode);
-        checkRuleChain(ruleNode.getRuleChainId(), operation);
+        checkRuleChain(ruleNode.getRuleChainId(), operation, tenantId);
         return ruleNode;
     }
 
@@ -654,13 +657,26 @@ public abstract class BaseController {
         return (I) EntityIdFactory.getByTypeAndUuid(entityType, ModelConstants.NULL_UUID);
     }
 
-    protected <E extends HasName, I extends EntityId> void logEntityAction(I entityId, E entity, CustomerId customerId,
-                                                                           ActionType actionType, Exception e, Object... additionalInfo) throws ThingsboardException {
+    protected <E extends HasName, I extends EntityId> void logEntityAction(
+        I entityId,
+        E entity,
+        CustomerId customerId,
+        ActionType actionType,
+        Exception e,
+        Object... additionalInfo)
+        throws ThingsboardException {
         logEntityAction(getCurrentUser(), entityId, entity, customerId, actionType, e, additionalInfo);
     }
 
-    protected <E extends HasName, I extends EntityId> void logEntityAction(User user, I entityId, E entity, CustomerId customerId,
-                                                                           ActionType actionType, Exception e, Object... additionalInfo) throws ThingsboardException {
+    protected <E extends HasName, I extends EntityId> void logEntityAction(
+        User user,
+        I entityId,
+        E entity,
+        CustomerId customerId,
+        ActionType actionType,
+        Exception e,
+        Object... additionalInfo)
+        throws ThingsboardException {
         if (customerId == null || customerId.isNullUid()) {
             customerId = user.getCustomerId();
         }
@@ -670,13 +686,44 @@ public abstract class BaseController {
         auditLogService.logEntityAction(user.getTenantId(), customerId, user.getId(), user.getName(), entityId, entity, actionType, e, additionalInfo);
     }
 
-
-    public static Exception toException(Throwable error) {
-        return error != null ? (Exception.class.isInstance(error) ? (Exception) error : new Exception(error)) : null;
+    protected <E extends HasName> String entityToStr(E entity) {
+        try {
+            return json.writeValueAsString(json.valueToTree(entity));
+        } catch (JsonProcessingException e) {
+            log.warn("[{}] Failed to convert entity to string!", entity, e);
+        }
+        return null;
     }
 
-    private <E extends HasName, I extends EntityId> void pushEntityActionToRuleEngine(I entityId, E entity, User user, CustomerId customerId,
-                                                                                      ActionType actionType, Object... additionalInfo) {
+    private ThingsboardException handleException(Exception exception, boolean logException) {
+        if (logException && logControllerErrorStackTrace) {
+            log.error("Error [{}]", exception.getMessage(), exception);
+        }
+
+        String cause = "";
+        if (exception.getCause() != null) {
+            cause = exception.getCause().getClass().getCanonicalName();
+        }
+
+        if (exception instanceof ThingsboardException) {
+            return (ThingsboardException) exception;
+        } else if (exception instanceof IllegalArgumentException || exception instanceof IncorrectParameterException
+                || exception instanceof DataValidationException || cause.contains("IncorrectParameterException")) {
+            return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        } else if (exception instanceof MessagingException) {
+            return new ThingsboardException("Unable to send mail: " + exception.getMessage(), ThingsboardErrorCode.GENERAL);
+        } else {
+            return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.GENERAL);
+        }
+    }
+
+    private <E extends HasName, I extends EntityId> void pushEntityActionToRuleEngine(
+        I entityId,
+        E entity,
+        User user,
+        CustomerId customerId,
+        ActionType actionType,
+        Object... additionalInfo) {
         String msgType = null;
         switch (actionType) {
             case ADDED:
@@ -831,15 +878,6 @@ public abstract class BaseController {
             }
         }
         return result;
-    }
-
-    protected <E extends HasName> String entityToStr(E entity) {
-        try {
-            return json.writeValueAsString(json.valueToTree(entity));
-        } catch (JsonProcessingException e) {
-            log.warn("[{}] Failed to convert entity to string!", entity, e);
-        }
-        return null;
     }
 
     private void addTimeseries(ObjectNode entityNode, List<TsKvEntry> timeseries) throws Exception {

@@ -45,6 +45,7 @@ import org.thingsboard.server.service.security.permission.Resource;
 @RequestMapping("/api")
 @Slf4j
 public class TenantController extends BaseController {
+    public static final String TENANT_ID = "tenantId";
 
     @Autowired
     private InstallScripts installScripts;
@@ -58,7 +59,7 @@ public class TenantController extends BaseController {
     public Tenant getTenantById(@PathVariable("tenantId") String strTenantId) throws ThingsboardException {
         checkParameter("tenantId", strTenantId);
         try {
-            TenantId tenantId = new TenantId(toUUID(strTenantId));
+            TenantId tenantId = TenantId.fromString(strTenantId);
             return checkTenantId(tenantId, Operation.READ);
         } catch (Exception e) {
             throw handleException(e);
@@ -71,7 +72,7 @@ public class TenantController extends BaseController {
     public TenantInfo getTenantInfoById(@PathVariable("tenantId") String strTenantId) throws ThingsboardException {
         checkParameter("tenantId", strTenantId);
         try {
-            TenantId tenantId = new TenantId(toUUID(strTenantId));
+            TenantId tenantId = TenantId.fromString(strTenantId);
             return checkTenantInfoId(tenantId, Operation.READ);
         } catch (Exception e) {
             throw handleException(e);
@@ -84,17 +85,14 @@ public class TenantController extends BaseController {
     public Tenant saveTenant(@RequestBody Tenant tenant) throws ThingsboardException {
         try {
             boolean newTenant = tenant.getId() == null;
-
-            checkEntity(tenant.getId(), tenant, Resource.TENANT);
-
+            checkEntity(tenant.getId(), tenant, Resource.TENANT, null);
             tenant = checkNotNull(tenantService.saveTenant(tenant));
             if (newTenant) {
                 installScripts.createDefaultRuleChains(tenant.getId());
             }
             tenantProfileCache.evict(tenant.getId());
             tbClusterService.onTenantChange(tenant, null);
-            tbClusterService.onEntityStateChange(tenant.getId(), tenant.getId(),
-                    newTenant ? ComponentLifecycleEvent.CREATED : ComponentLifecycleEvent.UPDATED);
+            tbClusterService.onEntityStateChange(tenant.getId(), tenant.getId(), newTenant ? ComponentLifecycleEvent.CREATED : ComponentLifecycleEvent.UPDATED);
             return tenant;
         } catch (Exception e) {
             throw handleException(e);
@@ -107,7 +105,7 @@ public class TenantController extends BaseController {
     public void deleteTenant(@PathVariable("tenantId") String strTenantId) throws ThingsboardException {
         checkParameter("tenantId", strTenantId);
         try {
-            TenantId tenantId = new TenantId(toUUID(strTenantId));
+            TenantId tenantId = TenantId.fromString(strTenantId);
             Tenant tenant = checkTenantId(tenantId, Operation.DELETE);
             tenantService.deleteTenant(tenantId);
             tenantProfileCache.evict(tenantId);
@@ -121,11 +119,13 @@ public class TenantController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN')")
     @RequestMapping(value = "/tenants", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<Tenant> getTenants(@RequestParam int pageSize,
-                                       @RequestParam int page,
-                                       @RequestParam(required = false) String textSearch,
-                                       @RequestParam(required = false) String sortProperty,
-                                       @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+    public PageData<Tenant> getTenants(
+        @RequestParam int pageSize,
+        @RequestParam int page,
+        @RequestParam(required = false) String textSearch,
+        @RequestParam(required = false) String sortProperty,
+        @RequestParam(required = false) String sortOrder)
+        throws ThingsboardException {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(tenantService.findTenants(pageLink));
@@ -137,11 +137,13 @@ public class TenantController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN')")
     @RequestMapping(value = "/tenantInfos", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<TenantInfo> getTenantInfos(@RequestParam int pageSize,
-                                               @RequestParam int page,
-                                               @RequestParam(required = false) String textSearch,
-                                               @RequestParam(required = false) String sortProperty,
-                                               @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+    public PageData<TenantInfo> getTenantInfos(
+        @RequestParam int pageSize,
+        @RequestParam int page,
+        @RequestParam(required = false) String textSearch,
+        @RequestParam(required = false) String sortProperty,
+        @RequestParam(required = false) String sortOrder)
+        throws ThingsboardException {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(tenantService.findTenantInfos(pageLink));
@@ -149,5 +151,4 @@ public class TenantController extends BaseController {
             throw handleException(e);
         }
     }
-
 }

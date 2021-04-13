@@ -42,15 +42,20 @@ import java.util.List;
 @TbCoreComponent
 @RequestMapping("/api")
 public class WidgetsBundleController extends BaseController {
+    public static final String TENANT_ID = "tenantId";
 
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/widgetsBundle/{widgetsBundleId}", method = RequestMethod.GET)
     @ResponseBody
-    public WidgetsBundle getWidgetsBundleById(@PathVariable("widgetsBundleId") String strWidgetsBundleId) throws ThingsboardException {
+    public WidgetsBundle getWidgetsBundleById(
+        @PathVariable("widgetsBundleId") String strWidgetsBundleId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter("widgetsBundleId", strWidgetsBundleId);
         try {
+            TenantId tenantId = getTenantId(requestTenantId);
             WidgetsBundleId widgetsBundleId = new WidgetsBundleId(toUUID(strWidgetsBundleId));
-            return checkWidgetsBundleId(widgetsBundleId, Operation.READ);
+            return checkWidgetsBundleId(widgetsBundleId, Operation.READ, tenantId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -59,20 +64,21 @@ public class WidgetsBundleController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN')")
     @RequestMapping(value = "/widgetsBundle", method = RequestMethod.POST)
     @ResponseBody
-    public WidgetsBundle saveWidgetsBundle(@RequestBody WidgetsBundle widgetsBundle,
-                                           @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public WidgetsBundle saveWidgetsBundle(
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId,
+        @RequestBody WidgetsBundle widgetsBundle)
+        throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-                    getAuthority() == Authority.ROOT && tenantId != null
-                        ? tenantId
-                        : getTenantId();
-            if (Authority.SYS_ADMIN.equals(getCurrentUser().getAuthority())) {
+            TenantId tenantId = getTenantId(requestTenantId);
+
+            if (Authority.SYS_ADMIN.equals(getAuthority())) {
                 widgetsBundle.setTenantId(TenantId.SYS_TENANT_ID);
             } else {
-                widgetsBundle.setTenantId(currentTenantId);
+                widgetsBundle.setTenantId(tenantId);
             }
 
-            checkEntity(widgetsBundle.getId(), widgetsBundle, Resource.WIDGETS_BUNDLE);
+            checkEntity(widgetsBundle.getId(), widgetsBundle, Resource.WIDGETS_BUNDLE, tenantId);
+
             return checkNotNull(widgetsBundleService.saveWidgetsBundle(widgetsBundle));
         } catch (Exception e) {
             throw handleException(e);
@@ -82,12 +88,16 @@ public class WidgetsBundleController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN')")
     @RequestMapping(value = "/widgetsBundle/{widgetsBundleId}", method = RequestMethod.DELETE)
     @ResponseStatus(value = HttpStatus.OK)
-    public void deleteWidgetsBundle(@PathVariable("widgetsBundleId") String strWidgetsBundleId) throws ThingsboardException {
+    public void deleteWidgetsBundle(
+        @PathVariable("widgetsBundleId") String strWidgetsBundleId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter("widgetsBundleId", strWidgetsBundleId);
         try {
+            TenantId tenantId = getTenantId(requestTenantId);
             WidgetsBundleId widgetsBundleId = new WidgetsBundleId(toUUID(strWidgetsBundleId));
-            checkWidgetsBundleId(widgetsBundleId, Operation.DELETE);
-            widgetsBundleService.deleteWidgetsBundle(getTenantId(), widgetsBundleId);
+            checkWidgetsBundleId(widgetsBundleId, Operation.DELETE, tenantId);
+            widgetsBundleService.deleteWidgetsBundle(tenantId, widgetsBundleId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -97,22 +107,20 @@ public class WidgetsBundleController extends BaseController {
     @RequestMapping(value = "/widgetsBundles", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<WidgetsBundle> getWidgetsBundles(
-            @RequestParam int pageSize,
-            @RequestParam int page,
-            @RequestParam(required = false) String textSearch,
-            @RequestParam(required = false) String sortProperty,
-            @RequestParam(required = false) String sortOrder,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+        @RequestParam int pageSize,
+        @RequestParam int page,
+        @RequestParam(required = false) String textSearch,
+        @RequestParam(required = false) String sortProperty,
+        @RequestParam(required = false) String sortOrder,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            if (Authority.SYS_ADMIN.equals(getCurrentUser().getAuthority())) {
-                return checkNotNull(widgetsBundleService.findSystemWidgetsBundlesByPageLink(getTenantId(), pageLink));
+            if (Authority.SYS_ADMIN.equals(getAuthority())) {
+                return checkNotNull(widgetsBundleService.findSystemWidgetsBundlesByPageLink(TenantId.SYS_TENANT_ID, pageLink));
             } else {
-                TenantId currentTenantId =
-                    getAuthority() == Authority.ROOT && tenantId != null
-                        ? tenantId
-                        : getTenantId();
-                return checkNotNull(widgetsBundleService.findAllTenantWidgetsBundlesByTenantIdAndPageLink(currentTenantId, pageLink));
+                TenantId tenantId = getTenantId(requestTenantId);
+                return checkNotNull(widgetsBundleService.findAllTenantWidgetsBundlesByTenantIdAndPageLink(tenantId, pageLink));
             }
         } catch (Exception e) {
             throw handleException(e);
@@ -122,20 +130,16 @@ public class WidgetsBundleController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'SYS_ADMIN', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/widgetsBundles", method = RequestMethod.GET)
     @ResponseBody
-    public List<WidgetsBundle> getWidgetsBundles( @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public List<WidgetsBundle> getWidgetsBundles(@RequestParam(name = TENANT_ID, required = false) String requestTenantId) throws ThingsboardException {
         try {
-            if (Authority.SYS_ADMIN.equals(getCurrentUser().getAuthority())) {
-                return checkNotNull(widgetsBundleService.findSystemWidgetsBundles(getTenantId()));
+            if (Authority.SYS_ADMIN.equals(getAuthority())) {
+                return checkNotNull(widgetsBundleService.findSystemWidgetsBundles(TenantId.SYS_TENANT_ID));
             } else {
-                TenantId currentTenantId =
-                    getAuthority() == Authority.ROOT && tenantId != null
-                        ? tenantId
-                        : getTenantId();
-                return checkNotNull(widgetsBundleService.findAllTenantWidgetsBundlesByTenantId(currentTenantId));
+                TenantId tenantId = getTenantId(requestTenantId);
+                return checkNotNull(widgetsBundleService.findAllTenantWidgetsBundlesByTenantId(tenantId));
             }
         } catch (Exception e) {
             throw handleException(e);
         }
     }
-
 }

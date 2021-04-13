@@ -36,7 +36,6 @@ import org.thingsboard.server.common.data.id.CustomerId;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.page.PageData;
 import org.thingsboard.server.common.data.page.PageLink;
-import org.thingsboard.server.common.data.security.Authority;
 import org.thingsboard.server.queue.util.TbCoreComponent;
 import org.thingsboard.server.service.security.permission.Operation;
 import org.thingsboard.server.service.security.permission.Resource;
@@ -45,18 +44,22 @@ import org.thingsboard.server.service.security.permission.Resource;
 @TbCoreComponent
 @RequestMapping("/api")
 public class CustomerController extends BaseController {
-
+    public static final String TENANT_ID = "tenantId";
     public static final String CUSTOMER_ID = "customerId";
     public static final String IS_PUBLIC = "isPublic";
 
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/customer/{customerId}", method = RequestMethod.GET)
     @ResponseBody
-    public Customer getCustomerById(@PathVariable(CUSTOMER_ID) String strCustomerId) throws ThingsboardException {
+    public Customer getCustomerById(
+        @PathVariable(CUSTOMER_ID) String strCustomerId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(CUSTOMER_ID, strCustomerId);
         try {
+            TenantId tenantId = getTenantId(requestTenantId);
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
-            return checkCustomerId(customerId, Operation.READ);
+            return checkCustomerId(customerId, Operation.READ, tenantId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -65,11 +68,15 @@ public class CustomerController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/customer/{customerId}/shortInfo", method = RequestMethod.GET)
     @ResponseBody
-    public JsonNode getShortCustomerInfoById(@PathVariable(CUSTOMER_ID) String strCustomerId) throws ThingsboardException {
+    public JsonNode getShortCustomerInfoById(
+        @PathVariable(CUSTOMER_ID) String strCustomerId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(CUSTOMER_ID, strCustomerId);
         try {
+            TenantId tenantId = getTenantId(requestTenantId);
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
-            Customer customer = checkCustomerId(customerId, Operation.READ);
+            Customer customer = checkCustomerId(customerId, Operation.READ, tenantId);
             ObjectMapper objectMapper = new ObjectMapper();
             ObjectNode infoObject = objectMapper.createObjectNode();
             infoObject.put("title", customer.getTitle());
@@ -83,11 +90,15 @@ public class CustomerController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/customer/{customerId}/title", method = RequestMethod.GET, produces = "application/text")
     @ResponseBody
-    public String getCustomerTitleById(@PathVariable(CUSTOMER_ID) String strCustomerId) throws ThingsboardException {
+    public String getCustomerTitleById(
+        @PathVariable(CUSTOMER_ID) String strCustomerId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(CUSTOMER_ID, strCustomerId);
         try {
+            TenantId tenantId = getTenantId(requestTenantId);
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
-            Customer customer = checkCustomerId(customerId, Operation.READ);
+            Customer customer = checkCustomerId(customerId, Operation.READ, tenantId);
             return customer.getTitle();
         } catch (Exception e) {
             throw handleException(e);
@@ -97,28 +108,29 @@ public class CustomerController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/customer", method = RequestMethod.POST)
     @ResponseBody
-    public Customer saveCustomer(@RequestBody Customer customer, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public Customer saveCustomer(
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId,
+        @RequestBody Customer customer)
+        throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-
-            customer.setTenantId(currentTenantId);
-
-            checkEntity(customer.getId(), customer, Resource.CUSTOMER);
-
+            TenantId tenantId = getTenantId(requestTenantId);
+            customer.setTenantId(tenantId);
+            checkEntity(customer.getId(), customer, Resource.CUSTOMER, tenantId);
             Customer savedCustomer = checkNotNull(customerService.saveCustomer(customer));
-
-            logEntityAction(savedCustomer.getId(), savedCustomer,
-                    savedCustomer.getId(),
-                    customer.getId() == null ? ActionType.ADDED : ActionType.UPDATED, null);
-
+            logEntityAction(
+                savedCustomer.getId(),
+                savedCustomer,
+                savedCustomer.getId(),
+                customer.getId() == null ? ActionType.ADDED : ActionType.UPDATED,
+                null);
             return savedCustomer;
         } catch (Exception e) {
-
-            logEntityAction(emptyId(EntityType.CUSTOMER), customer,
-                    null, customer.getId() == null ? ActionType.ADDED : ActionType.UPDATED, e);
+            logEntityAction(
+                emptyId(EntityType.CUSTOMER),
+                customer,
+                null,
+                customer.getId() == null ? ActionType.ADDED : ActionType.UPDATED,
+                e);
 
             throw handleException(e);
         }
@@ -127,27 +139,32 @@ public class CustomerController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/customer/{customerId}", method = RequestMethod.DELETE)
     @ResponseStatus(value = HttpStatus.OK)
-    public void deleteCustomer(@PathVariable(CUSTOMER_ID) String strCustomerId, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public void deleteCustomer(
+        @PathVariable(CUSTOMER_ID) String strCustomerId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(CUSTOMER_ID, strCustomerId);
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
+            TenantId tenantId = getTenantId(requestTenantId);
             CustomerId customerId = new CustomerId(toUUID(strCustomerId));
-            Customer customer = checkCustomerId(customerId, Operation.DELETE);
-            customerService.deleteCustomer(currentTenantId, customerId);
+            Customer customer = checkCustomerId(customerId, Operation.DELETE, tenantId);
+            customerService.deleteCustomer(tenantId, customerId);
 
-            logEntityAction(customerId, customer,
-                    customer.getId(),
-                    ActionType.DELETED, null, strCustomerId);
-
+            logEntityAction(
+                customerId,
+                customer,
+                customer.getId(),
+                ActionType.DELETED,
+                null,
+                strCustomerId);
         } catch (Exception e) {
-
-            logEntityAction(emptyId(EntityType.CUSTOMER),
-                    null,
-                    null,
-                    ActionType.DELETED, e, strCustomerId);
+            logEntityAction(
+                emptyId(EntityType.CUSTOMER),
+                null,
+                null,
+                ActionType.DELETED,
+                e,
+                strCustomerId);
 
             throw handleException(e);
         }
@@ -156,19 +173,18 @@ public class CustomerController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/customers", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<Customer> getCustomers(@RequestParam int pageSize,
-                                           @RequestParam int page,
-                                           @RequestParam(required = false) String textSearch,
-                                           @RequestParam(required = false) String sortProperty,
-                                           @RequestParam(required = false) String sortOrder,
-                                           @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public PageData<Customer> getCustomers(
+        @RequestParam int pageSize,
+        @RequestParam int page,
+        @RequestParam(required = false) String textSearch,
+        @RequestParam(required = false) String sortProperty,
+        @RequestParam(required = false) String sortOrder,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-            return checkNotNull(customerService.findCustomersByTenantId(currentTenantId, pageLink));
+            TenantId tenantId = getTenantId(requestTenantId);
+            return checkNotNull(customerService.findCustomersByTenantId(tenantId, pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -178,13 +194,12 @@ public class CustomerController extends BaseController {
     @RequestMapping(value = "/tenant/customers", params = {"customerTitle"}, method = RequestMethod.GET)
     @ResponseBody
     public Customer getTenantCustomer(
-            @RequestParam String customerTitle, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+            @RequestParam String customerTitle,
+            @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+            throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-            return checkNotNull(customerService.findCustomerByTenantIdAndTitle(currentTenantId, customerTitle));
+            TenantId tenantId = getTenantId(requestTenantId);
+            return checkNotNull(customerService.findCustomerByTenantIdAndTitle(tenantId, customerTitle));
         } catch (Exception e) {
             throw handleException(e);
         }

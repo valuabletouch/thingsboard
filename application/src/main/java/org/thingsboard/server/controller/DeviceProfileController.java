@@ -38,7 +38,6 @@ import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.page.PageData;
 import org.thingsboard.server.common.data.page.PageLink;
 import org.thingsboard.server.common.data.plugin.ComponentLifecycleEvent;
-import org.thingsboard.server.common.data.security.Authority;
 import org.thingsboard.server.dao.timeseries.TimeseriesService;
 import org.thingsboard.server.queue.util.TbCoreComponent;
 import org.thingsboard.server.service.security.permission.Operation;
@@ -52,7 +51,7 @@ import java.util.UUID;
 @RequestMapping("/api")
 @Slf4j
 public class DeviceProfileController extends BaseController {
-
+    public static final String TENANT_ID = "tenantId";
     private static final String DEVICE_PROFILE_ID = "deviceProfileId";
 
     @Autowired
@@ -61,11 +60,15 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/deviceProfile/{deviceProfileId}", method = RequestMethod.GET)
     @ResponseBody
-    public DeviceProfile getDeviceProfileById(@PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId) throws ThingsboardException {
+    public DeviceProfile getDeviceProfileById(
+        @PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(DEVICE_PROFILE_ID, strDeviceProfileId);
         try {
+            TenantId tenantId = getTenantId(requestTenantId);
             DeviceProfileId deviceProfileId = new DeviceProfileId(toUUID(strDeviceProfileId));
-            return checkDeviceProfileId(deviceProfileId, Operation.READ);
+            return checkDeviceProfileId(deviceProfileId, Operation.READ, tenantId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -74,15 +77,15 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/deviceProfileInfo/{deviceProfileId}", method = RequestMethod.GET)
     @ResponseBody
-    public DeviceProfileInfo getDeviceProfileInfoById(@PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public DeviceProfileInfo getDeviceProfileInfoById(
+        @PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(DEVICE_PROFILE_ID, strDeviceProfileId);
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
+            TenantId tenantId = getTenantId(requestTenantId);
             DeviceProfileId deviceProfileId = new DeviceProfileId(toUUID(strDeviceProfileId));
-            return checkNotNull(deviceProfileService.findDeviceProfileInfoById(currentTenantId, deviceProfileId));
+            return checkNotNull(deviceProfileService.findDeviceProfileInfoById(tenantId, deviceProfileId));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -91,13 +94,10 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/deviceProfileInfo/default", method = RequestMethod.GET)
     @ResponseBody
-    public DeviceProfileInfo getDefaultDeviceProfileInfo(@RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public DeviceProfileInfo getDefaultDeviceProfileInfo(@RequestParam(name = TENANT_ID, required = false) String requestTenantId) throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-            return checkNotNull(deviceProfileService.findDefaultDeviceProfileInfo(currentTenantId));
+            TenantId tenantId = getTenantId(requestTenantId);
+            return checkNotNull(deviceProfileService.findDefaultDeviceProfileInfo(tenantId));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -107,22 +107,22 @@ public class DeviceProfileController extends BaseController {
     @RequestMapping(value = "/deviceProfile/devices/keys/timeseries", method = RequestMethod.GET)
     @ResponseBody
     public List<String> getTimeseriesKeys(
-            @RequestParam(name = DEVICE_PROFILE_ID, required = false) String deviceProfileIdStr,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+        @RequestParam(name = DEVICE_PROFILE_ID, required = false) String deviceProfileIdStr,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
+        TenantId tenantId = getTenantId(requestTenantId);
+
         DeviceProfileId deviceProfileId;
+
         if (StringUtils.isNotEmpty(deviceProfileIdStr)) {
             deviceProfileId = new DeviceProfileId(UUID.fromString(deviceProfileIdStr));
-            checkDeviceProfileId(deviceProfileId, Operation.READ);
+            checkDeviceProfileId(deviceProfileId, Operation.READ, tenantId);
         } else {
             deviceProfileId = null;
         }
 
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-            return timeseriesService.findAllKeysByDeviceProfileId(currentTenantId, deviceProfileId);
+            return timeseriesService.findAllKeysByDeviceProfileId(tenantId, deviceProfileId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -132,22 +132,22 @@ public class DeviceProfileController extends BaseController {
     @RequestMapping(value = "/deviceProfile/devices/keys/attributes", method = RequestMethod.GET)
     @ResponseBody
     public List<String> getAttributesKeys(
-            @RequestParam(name = DEVICE_PROFILE_ID, required = false) String deviceProfileIdStr,
-            @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+        @RequestParam(name = DEVICE_PROFILE_ID, required = false) String deviceProfileIdStr,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
+        TenantId tenantId = getTenantId(requestTenantId);
+
         DeviceProfileId deviceProfileId;
+
         if (StringUtils.isNotEmpty(deviceProfileIdStr)) {
             deviceProfileId = new DeviceProfileId(UUID.fromString(deviceProfileIdStr));
-            checkDeviceProfileId(deviceProfileId, Operation.READ);
+            checkDeviceProfileId(deviceProfileId, Operation.READ, tenantId);
         } else {
             deviceProfileId = null;
         }
 
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
-            return attributesService.findAllKeysByDeviceProfileId(currentTenantId, deviceProfileId);
+            return attributesService.findAllKeysByDeviceProfileId(tenantId, deviceProfileId);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -156,37 +156,35 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/deviceProfile", method = RequestMethod.POST)
     @ResponseBody
-    public DeviceProfile saveDeviceProfile(@RequestBody DeviceProfile deviceProfile, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public DeviceProfile saveDeviceProfile(
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId,
+        @RequestBody DeviceProfile deviceProfile)
+        throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
             boolean isNew = deviceProfile.getId() == null;
-
-            if (tenantId != null && getAuthority().equals(Authority.ROOT)) {
-                deviceProfile.setTenantId(tenantId);
-            }
-            else {
-                deviceProfile.setTenantId(currentTenantId);
-            }
-
-            checkEntity(deviceProfile.getId(), deviceProfile, Resource.DEVICE_PROFILE);
-
+            TenantId tenantId = getTenantId(requestTenantId);
+            deviceProfile.setTenantId(tenantId);
+            checkEntity(deviceProfile.getId(), deviceProfile, Resource.DEVICE_PROFILE, tenantId);
             DeviceProfile savedDeviceProfile = checkNotNull(deviceProfileService.saveDeviceProfile(deviceProfile));
-
             tbClusterService.onDeviceProfileChange(savedDeviceProfile, null);
-            tbClusterService.onEntityStateChange(currentTenantId, savedDeviceProfile.getId(),
-                    isNew ? ComponentLifecycleEvent.CREATED : ComponentLifecycleEvent.UPDATED);
+            tbClusterService.onEntityStateChange(tenantId, savedDeviceProfile.getId(), isNew ? ComponentLifecycleEvent.CREATED : ComponentLifecycleEvent.UPDATED);
 
-            logEntityAction(savedDeviceProfile.getId(), savedDeviceProfile,
-                    null,
-                    isNew ? ActionType.ADDED : ActionType.UPDATED, null);
+            logEntityAction(
+                savedDeviceProfile.getId(),
+                savedDeviceProfile,
+                null,
+                isNew ? ActionType.ADDED : ActionType.UPDATED,
+                null);
 
             return savedDeviceProfile;
         } catch (Exception e) {
-            logEntityAction(emptyId(EntityType.DEVICE_PROFILE), deviceProfile,
-                    null, deviceProfile.getId() == null ? ActionType.ADDED : ActionType.UPDATED, e);
+            logEntityAction(
+                emptyId(EntityType.DEVICE_PROFILE),
+                deviceProfile,
+                null,
+                deviceProfile.getId() == null ? ActionType.ADDED : ActionType.UPDATED,
+                e);
+
             throw handleException(e);
         }
     }
@@ -194,29 +192,34 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/deviceProfile/{deviceProfileId}", method = RequestMethod.DELETE)
     @ResponseStatus(value = HttpStatus.OK)
-    public void deleteDeviceProfile(@PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public void deleteDeviceProfile(
+        @PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(DEVICE_PROFILE_ID, strDeviceProfileId);
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
+            TenantId tenantId = getTenantId(requestTenantId);
             DeviceProfileId deviceProfileId = new DeviceProfileId(toUUID(strDeviceProfileId));
-            DeviceProfile deviceProfile = checkDeviceProfileId(deviceProfileId, Operation.DELETE);
-            deviceProfileService.deleteDeviceProfile(currentTenantId, deviceProfileId);
-
+            DeviceProfile deviceProfile = checkDeviceProfileId(deviceProfileId, Operation.DELETE, tenantId);
+            deviceProfileService.deleteDeviceProfile(tenantId, deviceProfileId);
             tbClusterService.onDeviceProfileDelete(deviceProfile, null);
-            tbClusterService.onEntityStateChange(currentTenantId, deviceProfile.getId(), ComponentLifecycleEvent.DELETED);
+            tbClusterService.onEntityStateChange(tenantId, deviceProfile.getId(), ComponentLifecycleEvent.DELETED);
 
-            logEntityAction(deviceProfileId, deviceProfile,
-                    null,
-                    ActionType.DELETED, null, strDeviceProfileId);
-
+            logEntityAction(
+                deviceProfileId,
+                deviceProfile,
+                null,
+                ActionType.DELETED,
+                null,
+                strDeviceProfileId);
         } catch (Exception e) {
-            logEntityAction(emptyId(EntityType.DEVICE_PROFILE),
-                    null,
-                    null,
-                    ActionType.DELETED, e, strDeviceProfileId);
+            logEntityAction(
+                emptyId(EntityType.DEVICE_PROFILE),
+                null,
+                null,
+                ActionType.DELETED,
+                e,
+                strDeviceProfileId);
             throw handleException(e);
         }
     }
@@ -224,34 +227,47 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/deviceProfile/{deviceProfileId}/default", method = RequestMethod.POST)
     @ResponseBody
-    public DeviceProfile setDefaultDeviceProfile(@PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId, @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public DeviceProfile setDefaultDeviceProfile(
+        @PathVariable(DEVICE_PROFILE_ID) String strDeviceProfileId,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         checkParameter(DEVICE_PROFILE_ID, strDeviceProfileId);
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
+            TenantId tenantId = getTenantId(requestTenantId);
             DeviceProfileId deviceProfileId = new DeviceProfileId(toUUID(strDeviceProfileId));
-            DeviceProfile deviceProfile = checkDeviceProfileId(deviceProfileId, Operation.WRITE);
-            DeviceProfile previousDefaultDeviceProfile = deviceProfileService.findDefaultDeviceProfile(currentTenantId);
-            if (deviceProfileService.setDefaultDeviceProfile(currentTenantId, deviceProfileId)) {
+            DeviceProfile deviceProfile = checkDeviceProfileId(deviceProfileId, Operation.WRITE, tenantId);
+            DeviceProfile previousDefaultDeviceProfile = deviceProfileService.findDefaultDeviceProfile(tenantId);
+            if (deviceProfileService.setDefaultDeviceProfile(tenantId, deviceProfileId)) {
                 if (previousDefaultDeviceProfile != null) {
-                    previousDefaultDeviceProfile = deviceProfileService.findDeviceProfileById(currentTenantId, previousDefaultDeviceProfile.getId());
+                    previousDefaultDeviceProfile = deviceProfileService.findDeviceProfileById(tenantId, previousDefaultDeviceProfile.getId());
 
-                    logEntityAction(previousDefaultDeviceProfile.getId(), previousDefaultDeviceProfile,
-                            null, ActionType.UPDATED, null);
+                    logEntityAction(
+                        previousDefaultDeviceProfile.getId(),
+                        previousDefaultDeviceProfile,
+                        null,
+                        ActionType.UPDATED,
+                        null);
                 }
-                deviceProfile = deviceProfileService.findDeviceProfileById(currentTenantId, deviceProfileId);
 
-                logEntityAction(deviceProfile.getId(), deviceProfile,
-                        null, ActionType.UPDATED, null);
+                deviceProfile = deviceProfileService.findDeviceProfileById(tenantId, deviceProfileId);
+
+                logEntityAction(
+                    deviceProfile.getId(),
+                    deviceProfile,
+                    null,
+                    ActionType.UPDATED,
+                    null);
             }
             return deviceProfile;
         } catch (Exception e) {
-            logEntityAction(emptyId(EntityType.DEVICE_PROFILE),
-                    null,
-                    null,
-                    ActionType.UPDATED, e, strDeviceProfileId);
+            logEntityAction(
+                emptyId(EntityType.DEVICE_PROFILE),
+                null,
+                null,
+                ActionType.UPDATED,
+                e,
+                strDeviceProfileId);
+
             throw handleException(e);
         }
     }
@@ -259,19 +275,18 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN')")
     @RequestMapping(value = "/deviceProfiles", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<DeviceProfile> getDeviceProfiles(@RequestParam int pageSize,
-                                                     @RequestParam int page,
-                                                     @RequestParam(required = false) String textSearch,
-                                                     @RequestParam(required = false) String sortProperty,
-                                                     @RequestParam(required = false) String sortOrder,
-                                                     @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public PageData<DeviceProfile> getDeviceProfiles(
+        @RequestParam int pageSize,
+        @RequestParam int page,
+        @RequestParam(required = false) String textSearch,
+        @RequestParam(required = false) String sortProperty,
+        @RequestParam(required = false) String sortOrder,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
+            TenantId tenantId = getTenantId(requestTenantId);
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(deviceProfileService.findDeviceProfiles(currentTenantId, pageLink));
+            return checkNotNull(deviceProfileService.findDeviceProfiles(tenantId, pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -280,20 +295,19 @@ public class DeviceProfileController extends BaseController {
     @PreAuthorize("hasAnyAuthority('ROOT', 'TENANT_ADMIN', 'CUSTOMER_USER')")
     @RequestMapping(value = "/deviceProfileInfos", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<DeviceProfileInfo> getDeviceProfileInfos(@RequestParam int pageSize,
-                                                             @RequestParam int page,
-                                                             @RequestParam(required = false) String textSearch,
-                                                             @RequestParam(required = false) String sortProperty,
-                                                             @RequestParam(required = false) String sortOrder,
-                                                             @RequestParam(required = false) String transportType,
-                                                             @RequestParam(name = "tenantId", required = false) TenantId tenantId) throws ThingsboardException {
+    public PageData<DeviceProfileInfo> getDeviceProfileInfos(
+        @RequestParam int pageSize,
+        @RequestParam int page,
+        @RequestParam(required = false) String textSearch,
+        @RequestParam(required = false) String sortProperty,
+        @RequestParam(required = false) String sortOrder,
+        @RequestParam(required = false) String transportType,
+        @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
+        throws ThingsboardException {
         try {
-            TenantId currentTenantId =
-            getAuthority() == Authority.ROOT && tenantId != null
-                ? tenantId
-                : getTenantId();
+            TenantId tenantId = getTenantId(requestTenantId);
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(deviceProfileService.findDeviceProfileInfos(currentTenantId, pageLink, transportType));
+            return checkNotNull(deviceProfileService.findDeviceProfileInfos(tenantId, pageLink, transportType));
         } catch (Exception e) {
             throw handleException(e);
         }
