@@ -30,6 +30,9 @@ import { combineLatest } from 'rxjs';
 import { selectIsAuthenticated, selectIsUserLoaded } from '@core/auth/auth.selectors';
 import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators';
 import { AuthService } from '@core/auth/auth.service';
+import { ActionSetIframe } from './core/iframe/iframe.actions';
+import { UtilsService } from '@core/services/utils.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-root',
@@ -43,7 +46,9 @@ export class AppComponent implements OnInit {
               private translate: TranslateService,
               private matIconRegistry: MatIconRegistry,
               private domSanitizer: DomSanitizer,
-              private authService: AuthService) {
+              private authService: AuthService,
+              private utils: UtilsService,
+              private router: Router) {
 
     console.log(`V-Sensor Version: ${env.tbVersion}`);
 
@@ -93,6 +98,28 @@ export class AppComponent implements OnInit {
 
     this.setupTranslate();
     this.setupAuth();
+
+    if (this.utils.getQueryParam('iframe') === '1') {
+      this.store.dispatch(new ActionSetIframe(true));
+    }
+
+    let route = this.utils.getQueryParam('route');
+
+    if (route) {
+      while (route.startsWith('/')) {
+        route = route.substring(1);
+      }
+
+      while (route.endsWith('/')) {
+        route = route.substring(0, route.length - 2);
+      }
+
+      const url = this.router.parseUrl(route);
+
+      if (url) {
+        this.router.navigateByUrl(url);
+      }
+    }
   }
 
   setupTranslate() {

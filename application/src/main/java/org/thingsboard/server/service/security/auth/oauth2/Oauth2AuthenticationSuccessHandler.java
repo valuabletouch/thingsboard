@@ -84,7 +84,17 @@ public class Oauth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             JwtToken accessToken = tokenFactory.createAccessJwtToken(securityUser);
             JwtToken refreshToken = refreshTokenRepository.requestRefreshToken(securityUser);
 
-            getRedirectStrategy().sendRedirect(request, response, baseUrl + "/?accessToken=" + accessToken.getToken() + "&refreshToken=" + refreshToken.getToken());
+            String redirectUrl = baseUrl + "/?accessToken=" + accessToken.getToken() + "&refreshToken=" + refreshToken.getToken();
+
+            if ("1".equals(request.getParameter("iframe"))) {
+                redirectUrl += "&iframe=1";
+            }
+
+            if (request.getParameter("route") != null) {
+                redirectUrl += "&route=" + request.getParameter("route");
+            }
+
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
         } catch (Exception e) {
             getRedirectStrategy().sendRedirect(request, response, baseUrl + "/login?loginError=" +
                     URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));

@@ -32,12 +32,15 @@ import { SettingsEffects } from '@app/core/settings/settings.effects';
 import { NotificationState } from '@app/core/notification/notification.models';
 import { notificationReducer } from '@app/core/notification/notification.reducer';
 import { NotificationEffects } from '@app/core/notification/notification.effects';
+import { IframeState } from './iframe/iframe.models';
+import { iframeReducer } from './iframe/iframe.reducer';
 
 export const reducers: ActionReducerMap<AppState> = {
   load: loadReducer,
   auth: authReducer,
   settings: settingsReducer,
-  notification: notificationReducer
+  notification: notificationReducer,
+  iframe: iframeReducer
 };
 
 export const metaReducers: MetaReducer<AppState>[] = [
@@ -58,4 +61,5 @@ export interface AppState {
   auth: AuthState;
   settings: SettingsState;
   notification: NotificationState;
+  iframe: IframeState;
 }
