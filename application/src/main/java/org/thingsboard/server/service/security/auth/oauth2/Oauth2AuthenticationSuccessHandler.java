@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.thingsboard.server.common.data.id.CustomerId;
 import org.thingsboard.server.common.data.id.EntityId;
 import org.thingsboard.server.common.data.id.TenantId;
@@ -32,13 +33,14 @@ import org.thingsboard.server.service.security.model.SecurityUser;
 import org.thingsboard.server.service.security.model.token.JwtToken;
 import org.thingsboard.server.service.security.model.token.JwtTokenFactory;
 import org.thingsboard.server.service.security.system.SystemSecurityService;
-import org.thingsboard.server.utils.MiscUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Component(value = "oauth2AuthenticationSuccessHandler")
@@ -86,12 +88,22 @@ public class Oauth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             String redirectUrl = baseUrl + "/?accessToken=" + accessToken.getToken() + "&refreshToken=" + refreshToken.getToken();
 
-            if ("1".equals(request.getParameter("iframe"))) {
-                redirectUrl += "&iframe=1";
-            }
+            String queryString = request.getQueryString();
 
-            if (request.getParameter("route") != null) {
-                redirectUrl += "&route=" + request.getParameter("route");
+            if (!StringUtils.isEmpty(queryString)) {
+                List<String> queryStringItems = new ArrayList<String>();
+
+                for (String queryStringItem : queryString.split("&")) {
+                    if (queryStringItem.startsWith("code=") || queryStringItem.startsWith("state=")) {
+                        continue;
+                    }
+
+                    queryStringItems.add(queryStringItem);
+                }
+
+                if (queryStringItems.size() > 0) {
+                    redirectUrl += "&" + String.join("&", queryStringItems);
+                }
             }
 
             getRedirectStrategy().sendRedirect(request, response, redirectUrl);
