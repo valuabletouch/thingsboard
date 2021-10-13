@@ -118,6 +118,8 @@ database:
 
 # Cassandra driver configuration parameters
 cassandra:
+  vsensor:
+    enabled: "${CASSANDRA_USE_VSENSOR:false}"
   # V-Sensor cluster name
   cluster_name: "${CASSANDRA_CLUSTER_NAME:V-Sensor Cluster}"
   # V-Sensor keyspace name
@@ -410,6 +412,13 @@ spring:
     jpa:
       repositories:
         enabled: "true"
+    mongodb:
+      host: ${MONGODB_HOST:localhost}
+      port: ${MONGODB_PORT:27017}
+      username: ${MONGODB_USERNAME:}
+      password: ${MONGODB_PASSWORD:}
+      authentication-database: ${MONGODB_AUTHENTICATION_DATABASE:}
+      database: ${MONGODB_DATABASE:thingsboard}
   jpa:
     open-in-view: "false"
     hibernate:

@@ -35,3 +35,4 @@ pom.xml.versionsBackup
 rebuild-docker.sh
 .run/**
 .run
+.factorypath
