@@ -146,26 +146,15 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
 
         String redirectUriStr = expandRedirectUri(request, clientRegistration, redirectUriAction);
 
-        if ("1".equals(request.getParameter("iframe"))) {
+        String queryString = request.getQueryString();
+
+        if (!StringUtils.isEmpty(queryString)) {
             if (redirectUriStr.contains("?")) {
-                redirectUriStr += "&";
+                redirectUriStr += "&" + queryString;
             }
             else {
-                redirectUriStr += "?";
+                redirectUriStr += "?" + queryString;
             }
-
-            redirectUriStr += "iframe=1";
-        }
-
-        if (request.getParameter("route") != null) {
-            if (redirectUriStr.contains("?")) {
-                redirectUriStr += "&";
-            }
-            else {
-                redirectUriStr += "?";
-            }
-
-            redirectUriStr += "route=" + request.getParameter("route");
         }
 
         return builder
