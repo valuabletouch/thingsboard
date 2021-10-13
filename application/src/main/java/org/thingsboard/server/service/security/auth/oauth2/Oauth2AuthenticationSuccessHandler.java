@@ -100,8 +100,10 @@ public class Oauth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
                     queryStringItems.add(queryStringItem);
                 }
-    
-                redirectUrl += "&" + String.join("&", queryStringItems);
+
+                if (queryStringItems.size() > 0) {
+                    redirectUrl += "&" + String.join("&", queryStringItems);
+                }
             }
 
             getRedirectStrategy().sendRedirect(request, response, redirectUrl);
