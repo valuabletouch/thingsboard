@@ -1,0 +1,13 @@
+{
+    "java.autobuild.enabled": true,
+    "java.configuration.checkProjectSettingsExclusions": false,
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.debug.settings.enableRunDebugCodeLens": true,
+    "java.debug.settings.hotCodeReplace": "auto",
+    "java.dependency.packagePresentation": "hierarchical",
+    "java.implementationsCodeLens.enabled": true,
+    "java.referencesCodeLens.enabled": true,
+    "java.server.launchMode": "Standard",
+    "maven.pomfile.autoUpdateEffectivePOM": true,
+    "maven.view": "hierarchical"
+  }
