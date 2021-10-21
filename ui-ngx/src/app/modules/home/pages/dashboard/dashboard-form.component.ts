@@ -41,6 +41,8 @@ export class DashboardFormComponent extends EntityComponent<Dashboard> {
   dashboardScope: 'tenant' | 'customer' | 'customer_user';
   customerId: string;
 
+  iframe: boolean = null;
+
   publicLink: string;
   assignedCustomersText: string;
 
@@ -56,6 +58,11 @@ export class DashboardFormComponent extends EntityComponent<Dashboard> {
   ngOnInit() {
     this.dashboardScope = this.entitiesTableConfig.componentsData.dashboardScope;
     this.customerId = this.entitiesTableConfig.componentsData.customerId;
+
+    this.store.select('iframe').subscribe(state => {
+      this.iframe = state.value;
+    });
+
     super.ngOnInit();
   }
 

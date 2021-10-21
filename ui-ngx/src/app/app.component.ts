@@ -117,7 +117,7 @@ export class AppComponent implements OnInit {
       const url = this.router.parseUrl(route);
 
       if (url) {
-        this.router.navigateByUrl(url);
+        this.router.navigateByUrl(url, { replaceUrl: true });
       }
     }
   }
