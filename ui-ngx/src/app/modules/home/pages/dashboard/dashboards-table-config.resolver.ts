@@ -70,6 +70,8 @@ export class DashboardsTableConfigResolver implements Resolve<EntityTableConfig<
 
   private readonly config: EntityTableConfig<DashboardInfo | Dashboard> = new EntityTableConfig<DashboardInfo | Dashboard>();
 
+  iframe: boolean = null;
+
   constructor(private store: Store<AppState>,
               private dashboardService: DashboardService,
               private customerService: CustomerService,
@@ -79,6 +81,10 @@ export class DashboardsTableConfigResolver implements Resolve<EntityTableConfig<
               private datePipe: DatePipe,
               private router: Router,
               private dialog: MatDialog) {
+
+    this.store.select('iframe').subscribe(state => {
+      this.iframe = state.value;
+    });
 
     this.config.entityType = EntityType.DASHBOARD;
     this.config.entityComponent = DashboardFormComponent;
@@ -184,13 +190,18 @@ export class DashboardsTableConfigResolver implements Resolve<EntityTableConfig<
       }
     );
     if (dashboardScope === 'tenant') {
+      if (!this.iframe) {
+        actions.push(
+          {
+            name: this.translate.instant('dashboard.export'),
+            icon: 'file_download',
+            isEnabled: () => true,
+            onAction: ($event, entity) => this.exportDashboard($event, entity)
+          }
+        );
+      }
+
       actions.push(
-        {
-          name: this.translate.instant('dashboard.export'),
-          icon: 'file_download',
-          isEnabled: () => true,
-          onAction: ($event, entity) => this.exportDashboard($event, entity)
-        },
         {
           name: this.translate.instant('dashboard.make-public'),
           icon: 'share',
@@ -212,13 +223,18 @@ export class DashboardsTableConfigResolver implements Resolve<EntityTableConfig<
       );
     }
     if (dashboardScope === 'customer') {
+      if (!this.iframe) {
+        actions.push(
+          {
+            name: this.translate.instant('dashboard.export'),
+            icon: 'file_download',
+            isEnabled: () => true,
+            onAction: ($event, entity) => this.exportDashboard($event, entity)
+          }
+        );
+      }
+
       actions.push(
-        {
-          name: this.translate.instant('dashboard.export'),
-          icon: 'file_download',
-          isEnabled: () => true,
-          onAction: ($event, entity) => this.exportDashboard($event, entity)
-        },
         {
           name: this.translate.instant('dashboard.make-private'),
           icon: 'reply',

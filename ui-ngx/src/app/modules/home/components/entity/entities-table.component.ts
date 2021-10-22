@@ -22,6 +22,7 @@ import {
   ComponentFactoryResolver,
   ElementRef,
   EventEmitter,
+  Inject,
   Input,
   OnChanges,
   OnInit,
@@ -51,6 +52,7 @@ import {
   GroupActionDescriptor,
   HeaderActionDescriptor
 } from '@home/models/entity/entities-table-config.models';
+import { WINDOW } from '@core/services/window.service';
 import { EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
 import { AddEntityDialogComponent } from './add-entity-dialog.component';
@@ -100,6 +102,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   timewindow: Timewindow;
   dataSource: EntitiesDataSource<BaseData<HasId>>;
 
+  iframe: boolean = null;
+
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
 
@@ -114,7 +118,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   private updateDataSubscription: Subscription;
   private viewInited = false;
 
-  constructor(protected store: Store<AppState>,
+  constructor(@Inject(WINDOW) private window: Window,
+              protected store: Store<AppState>,
               public route: ActivatedRoute,
               public translate: TranslateService,
               public dialog: MatDialog,
@@ -131,6 +136,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     } else {
       this.init(this.route.snapshot.data.entitiesTableConfig);
     }
+
+    this.store.select('iframe').subscribe(state => {
+      this.iframe = state.value;
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -573,4 +582,12 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     return entity.id.id;
   }
 
+  closeIframe($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    if (this.window.parent) {
+      this.window.parent.postMessage('close-iframe', '*');
+    }
+  }
 }
