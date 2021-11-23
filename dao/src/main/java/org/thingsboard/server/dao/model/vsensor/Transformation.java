@@ -11,12 +11,17 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@Document(collection = "ReadingTypes")
+@Document(collection = "Transformations")
 @Data
 @AllArgsConstructor
-public class ReadingType implements Serializable {
+public class Transformation implements Serializable {
 
     @Id
     String id;
-    String code;
+    String fromEntityKey;
+    String toEntityKey;
+    String fromSystemKey;
+    String toSystemKey;
+    String fromKey;
+    String toKey;
 }
