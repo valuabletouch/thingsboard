@@ -1,7 +1,7 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo;
+package org.thingsboard.server.dao.nosql.mongo.repository.readingtype;
 
 import java.util.Optional;
 
