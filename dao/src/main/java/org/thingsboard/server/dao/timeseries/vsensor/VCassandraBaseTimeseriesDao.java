@@ -49,7 +49,10 @@ import org.thingsboard.server.dao.model.vsensor.ReadingType;
 import org.thingsboard.server.dao.model.vsensor.VModelConstants;
 import org.thingsboard.server.dao.nosql.CassandraAbstractAsyncDao;
 import org.thingsboard.server.dao.nosql.TbResultSet;
-import org.thingsboard.server.dao.nosql.mongo.ReadingTypeService;
+import org.thingsboard.server.dao.nosql.mongo.configurations.TransformationEntity;
+import org.thingsboard.server.dao.nosql.mongo.configurations.TransformationSystem;
+import org.thingsboard.server.dao.nosql.mongo.repository.readingtype.ReadingTypeService;
+import org.thingsboard.server.dao.nosql.mongo.repository.transformation.TransformationService;
 import org.thingsboard.server.dao.sqlts.AggregationTimeseriesDao;
 import org.thingsboard.server.dao.timeseries.SimpleListenableFuture;
 import org.thingsboard.server.dao.timeseries.TimeseriesDao;
@@ -74,6 +77,15 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
 
     @Autowired
     private ReadingTypeService readingTypeService;
+
+    @Autowired
+    private TransformationSystem transformationSystem;
+
+    @Autowired
+    private TransformationEntity transformationEntity;
+
+    @Autowired
+    private TransformationService transformationService;
 
     @Autowired
     private Environment environment;
@@ -104,7 +116,19 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
 
         Optional<ReadingType> readingType = readingTypeService.findByCode(query.getKey());
 
+        Optional<UUID> transformationEntityId = transformationService.getId(transformationSystem.getReadingType(), transformationEntity.getDataSource(), transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString());
+
+        Optional<UUID> transformationTenantId = transformationService.getId(transformationSystem.getReadingType(), transformationEntity.getTenant(), transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString());
+
         UUID key = null;
+
+        if (!transformationEntityId.isPresent()) {
+            log.warn("Failed to read DataSource from MongoDB.");
+        }
+
+        if (!transformationTenantId.isPresent()) {
+            log.warn("Failed to read Tenant from MongoDB.");
+        }
 
         if (readingType.isPresent()) {
             key = UUID.fromString(readingType.get().getId());
@@ -116,8 +140,8 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
         PreparedStatement proto = getFetchStmt(Aggregation.NONE, query.getOrder());
         BoundStatementBuilder stmtBuilder = new BoundStatementBuilder(proto.bind());
 
-        stmtBuilder.setUuid(0, tenantId.getId());
-        stmtBuilder.setUuid(1, entityId.getId());
+        stmtBuilder.setUuid(0, transformationTenantId.get());
+        stmtBuilder.setUuid(1, transformationEntityId.get());
         stmtBuilder.setUuid(2, key);
         stmtBuilder.setInstant(3, longToInstant(query.getStartTs()));
         stmtBuilder.setInstant(4, longToInstant(query.getEndTs()));

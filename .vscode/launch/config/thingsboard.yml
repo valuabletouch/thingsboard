@@ -408,17 +408,17 @@ spring.jpa.properties.hibernate.order_by.default_null_ordering: "last"
 
 # SQL DAO Configuration
 spring:
+  autoconfigure:
+    exclude: "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration"
   data:
     jpa:
       repositories:
         enabled: "true"
     mongodb:
-      host: ${MONGODB_HOST:localhost}
-      port: ${MONGODB_PORT:27017}
-      username: ${MONGODB_USERNAME:}
-      password: ${MONGODB_PASSWORD:}
-      authentication-database: ${MONGODB_AUTHENTICATION_DATABASE:}
-      database: ${MONGODB_DATABASE:thingsboard}
+      readingtype:
+        uri: ${READING_TYPE_MONGODB_URI:}
+      transformation:
+        uri: ${TRANSFORMATION_MONGODB_URI:}
   jpa:
     open-in-view: "false"
     hibernate:
@@ -770,3 +770,12 @@ management:
       exposure:
         # Expose metrics endpoint (use value 'prometheus' to enable prometheus metrics).
         include: '${METRICS_ENDPOINTS_EXPOSE:info}'
+
+transformation:
+  system:
+    thingsboard: "${TRANSFORMATON_SYSTEM_THINGSBOARD:thingsboard}"
+    readingtype: "${TRANSFORMATON_SYSTEM_READING_TYPE:thingsboard}"
+  entity:
+    tenant: "${TRANSFORMATON_SYSTEM_TENANT:tenant}"
+    device: "${TRANSFORMATON_SYSTEM_DEVICE:device}"
+    datasource: "${TRANSFORMATON_SYSTEM_DATA_SOURCE:datasource}"
