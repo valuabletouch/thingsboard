@@ -148,6 +148,7 @@
                 "CASSANDRA_USE_VSENSOR": true,
                 "CASSANDRA_URL": "localhost:9042",
                 "CASSANDRA_USE_CREDENTIALS": true,
+                "CASSANDRA_KEYSPACE_NAME_VSENSOR": "thingsboard",
                 "CASSANDRA_USERNAME": "root",
                 "CASSANDRA_PASSWORD": "secret",
                 "SPRING_JPA_DATABASE_PLATFORM": "org.hibernate.dialect.PostgreSQLDialect",

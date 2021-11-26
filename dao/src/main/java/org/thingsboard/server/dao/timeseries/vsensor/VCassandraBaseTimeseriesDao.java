@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
@@ -89,6 +90,9 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
 
     @Autowired
     private Environment environment;
+
+    @Value("${cassandra.vsensor.keyspace_name}")
+    private String keyspaceName;
 
     private PreparedStatement[] fetchStmtsAsc;
     private PreparedStatement[] fetchStmtsDesc;
@@ -303,7 +307,7 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
                 fetchStmts[type.ordinal()] = fetchStmts[Aggregation.SUM.ordinal()];
             } else {
                 String query = SELECT_PREFIX + String.join(", ", VModelConstants.getFetchColumnNames(type)) + " FROM "
-                        + VModelConstants.READINGS + "." + VModelConstants.READINGS + " WHERE "
+                        + keyspaceName + "." + VModelConstants.READINGS_TABLE + " WHERE "
                         + VModelConstants.TENANT_ID_READINGS_COLUMN + " = ?" + " AND "
                         + VModelConstants.DATA_SOURCE_ID_COLUMN + " = ?" + " AND "
                         + VModelConstants.READING_TYPE_ID_COLUMN + " = ?" + " AND " + VModelConstants.READ_AT_COLUMN

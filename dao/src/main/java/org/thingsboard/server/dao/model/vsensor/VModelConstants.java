@@ -14,7 +14,7 @@ public class VModelConstants {
     /**
      * Cassandra VSensor attributes and timeseries constants.
      */
-    public static final String READINGS = "readings";
+    public static final String READINGS_TABLE = "readings";
 
     public static final String TENANT_ID_READINGS_COLUMN = "tenantid";
     public static final String DATA_SOURCE_ID_COLUMN = "datasourceid";
@@ -48,10 +48,12 @@ public class VModelConstants {
         new String[] {
             count(LONG_VALUE_COLUMN),
             count(DOUBLE_VALUE_COLUMN),
-            count(BOOLEAN_VALUE_COLUMN),    
+            count(BOOLEAN_VALUE_COLUMN),
             count(STRING_VALUE_COLUMN),
             count(JSON_VALUE_COLUMN),
-            count(DATE_TIME_VALUE_COLUMN)
+            count(DATE_TIME_VALUE_COLUMN),
+            count(READING_TYPE_ID_COLUMN),
+            count(READ_AT_COLUMN)
         };
 
     protected static final String[] MIN_AGGREGATION_COLUMNS =
@@ -116,5 +118,4 @@ public class VModelConstants {
                 throw new RuntimeException("Aggregation type: " + aggregation + " is not supported!");
         }
     }
-    
 }

@@ -136,6 +136,7 @@ database:
 cassandra:
   vsensor:
     enabled: "${CASSANDRA_USE_VSENSOR:false}"
+    keyspace_name: "${CASSANDRA_KEYSPACE_NAME_VSENSOR:thingsboard}"
   # V-Sensor cluster name
   cluster_name: "${CASSANDRA_CLUSTER_NAME:V-Sensor Cluster}"
   # V-Sensor keyspace name
