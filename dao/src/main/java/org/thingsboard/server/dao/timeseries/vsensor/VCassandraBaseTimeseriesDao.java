@@ -313,7 +313,7 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
                         + VModelConstants.READING_TYPE_ID_COLUMN + " = ?" + " AND " + VModelConstants.READ_AT_COLUMN
                         + " > ?" + " AND " + VModelConstants.READ_AT_COLUMN + " <= ?"
                         + (type == Aggregation.NONE
-                                ? " ORDER BY " + VModelConstants.READ_AT_COLUMN + " " + orderBy + " LIMIT ?"
+                                ? " ORDER BY " + VModelConstants.READING_TYPE_ID_COLUMN + " " + orderBy + " LIMIT ?"
                                 : "");
 
                 fetchStmts[type.ordinal()] = prepare(query);
