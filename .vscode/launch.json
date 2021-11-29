@@ -69,6 +69,13 @@
                 "SPRING_DATASOURCE_URL": "jdbc:postgresql://localhost:5432/thingsboard",
                 "SPRING_DATASOURCE_USERNAME": "root",
                 "SPRING_DATASOURCE_PASSWORD": "secret",
+                "READING_TYPE_MONGODB_URI": "mongodb://root:secret@127.0.0.1:27017/thingsboard?authSource=admin",
+                "TRANSFORMATION_MONGODB_URI": "mongodb://root:secret@127.0.0.1:27017/thingsboard?authSource=admin",
+                "TRANSFORMATON_SYSTEM_READING_TYPE":"thingsboard",
+                "TRANSFORMATON_SYSTEM_THINGSBOARD":"thingsboard",
+                "TRANSFORMATON_SYSTEM_TENANT":"tenant",
+                "TRANSFORMATON_SYSTEM_DEVICE":"device",
+                "TRANSFORMATON_SYSTEM_DATA_SOURCE":"datasource",
                 "LOG_LEVEL": "info"
             }
         },
@@ -150,7 +157,7 @@
                 "SPRING_DATASOURCE_USERNAME": "root",
                 "SPRING_DATASOURCE_PASSWORD": "secret",
                 "READING_TYPE_MONGODB_URI": "mongodb://root:secret@127.0.0.1:27017/thingsboard?authSource=admin",
-                "TRANSFORMATION_MONGODB_URI": "mongodb://root:secret@127.0.0.1:27017/thingsboard?authSource=admin",                "PARSER_MONGODB_AUTHENTICATION_DATABASE": "admin",
+                "TRANSFORMATION_MONGODB_URI": "mongodb://root:secret@127.0.0.1:27017/thingsboard?authSource=admin",
                 "TRANSFORMATON_SYSTEM_READING_TYPE":"thingsboard",
                 "TRANSFORMATON_SYSTEM_THINGSBOARD":"thingsboard",
                 "TRANSFORMATON_SYSTEM_TENANT":"tenant",
