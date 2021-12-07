@@ -205,26 +205,26 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
         // NOTE: This is readonly service
-        return null;
+        return Futures.immediateFuture(0);
     }
 
     @Override
     public ListenableFuture<Integer> savePartition(TenantId tenantId, EntityId entityId, long tsKvEntryTs, String key,
             long ttl) {
         // NOTE: This is readonly service
-        return null;
+        return Futures.immediateFuture(0);
     }
 
     @Override
     public ListenableFuture<Void> remove(TenantId tenantId, EntityId entityId, DeleteTsKvQuery query) {
         // NOTE: This is readonly service
-        return null;
+        return Futures.immediateFuture(null);
     }
 
     @Override
     public ListenableFuture<Void> removePartition(TenantId tenantId, EntityId entityId, DeleteTsKvQuery query) {
         // NOTE: This is readonly service
-        return null;
+        return Futures.immediateFuture(null);
     }
 
     private static KvEntry toKvEntry(Row row, String key) {
