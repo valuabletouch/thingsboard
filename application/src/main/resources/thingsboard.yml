@@ -796,6 +796,6 @@ transformation:
     thingsboard: "${TRANSFORMATION_SYSTEM_THINGSBOARD:thingsboard}"
     readingtype: "${TRANSFORMATION_SYSTEM_READING_TYPE:thingsboard}"
   entity:
-    tenant: "${TRANSFORMATION_SYSTEM_TENANT:tenant}"
-    device: "${TRANSFORMATION_SYSTEM_DEVICE:device}"
-    datasource: "${TRANSFORMATION_SYSTEM_DATA_SOURCE:datasource}"
+    tenant: "${TRANSFORMATION_ENTITY_TENANT:tenant}"
+    device: "${TRANSFORMATION_ENTITY_DEVICE:device}"
+    datasource: "${TRANSFORMATION_ENTITY_DATA_SOURCE:datasource}"
