@@ -14,7 +14,7 @@ import lombok.Data;
 @Document(collection = "Transformations")
 @Data
 @AllArgsConstructor
-public class Transformation implements Serializable {
+public class TransformationDocument implements Serializable {
 
     @Id
     String id;

@@ -1,11 +1,9 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo.repository.readingtype;
+package org.thingsboard.server.common.data.vsensor;
 
 import java.util.Optional;
-
-import org.thingsboard.server.dao.model.vsensor.ReadingType;
 
 public interface ReadingTypeService {
 

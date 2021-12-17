@@ -15,7 +15,9 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.thingsboard.server.dao.model.vsensor.ReadingType;
+import org.thingsboard.server.common.data.vsensor.ReadingType;
+import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
+import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
 @Component
 public class ReadingTypeServiceImpl implements ReadingTypeService {
@@ -35,14 +37,28 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     public Optional<ReadingType> findById(String id) {
         cacheExpireList.add(new Pair<String, LocalDateTime>(id, LocalDateTime.now().plusNanos(CACHE_TTL)));
 
-        return repository.findById(id);
+        Optional<ReadingTypeDocument> result = repository.findById(id);
+
+        if (result.isPresent()) {
+            ReadingTypeDocument readingTypeDocument = result.get();
+            return Optional.of(new ReadingType(readingTypeDocument.getId(), readingTypeDocument.getCode()));
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Cacheable(value = CACHE_NAME)
     public Optional<ReadingType> findByCode(String code) {
         cacheExpireList.add(new Pair<String, LocalDateTime>(code, LocalDateTime.now().plusNanos(CACHE_TTL)));
 
-        return repository.findByCode(code);
+        Optional<ReadingTypeDocument> result = repository.findByCode(code);
+
+        if (result.isPresent()) {
+            ReadingTypeDocument readingTypeDocument = result.get();
+            return Optional.of(new ReadingType(readingTypeDocument.getId(), readingTypeDocument.getCode()));
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Scheduled(fixedRate = CACHE_EVICT_PERIOD)

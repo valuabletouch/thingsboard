@@ -1,7 +1,7 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo.repository.transformation;
+package org.thingsboard.server.common.data.vsensor;
 
 import java.util.Optional;
 import java.util.UUID;
