@@ -110,11 +110,12 @@ public class WidgetTypeController extends BaseController {
         @RequestParam(name = TENANT_ID, required = false) String requestTenantId)
         throws ThingsboardException {
         try {
-            TenantId tenantId = getTenantId(requestTenantId);
-
-            if (isSystem && Authority.SYS_ADMIN.equals(getAuthority())) {
+            TenantId tenantId;
+            if (isSystem) {
                 tenantId = TenantId.SYS_TENANT_ID;
-            } 
+            } else {
+                tenantId = getTenantId(requestTenantId);
+            }
             return checkNotNull(widgetTypeService.findWidgetTypesByTenantIdAndBundleAlias(tenantId, bundleAlias));
         } catch (Exception e) {
             throw handleException(e);
@@ -130,11 +131,13 @@ public class WidgetTypeController extends BaseController {
             @RequestParam String alias,
             @RequestParam(name = TENANT_ID, required = false) String requestTenantId) throws ThingsboardException {
         try {
-            TenantId tenantId = getTenantId(requestTenantId);
+            TenantId tenantId;
 
-            if (isSystem && Authority.SYS_ADMIN.equals(getAuthority())) {
+            if (isSystem) {
                 tenantId = TenantId.SYS_TENANT_ID;
-            } 
+            } else {
+                tenantId = getTenantId(requestTenantId);
+            }
 
             WidgetType widgetType = widgetTypeService.findWidgetTypeByTenantIdBundleAliasAndAlias(tenantId, bundleAlias, alias);
             checkNotNull(widgetType);
