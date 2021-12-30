@@ -16,7 +16,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.thingsboard.server.dao.model.vsensor.Transformation;
+import org.thingsboard.server.common.data.vsensor.TransformationService;
+import org.thingsboard.server.dao.model.vsensor.TransformationDocument;
 
 @Component
 public class TransformationServiceImpl implements TransformationService {
@@ -35,7 +36,7 @@ public class TransformationServiceImpl implements TransformationService {
     @Cacheable(cacheNames = CACHE_NAME, key = "#fromSystemKey + ':' + #fromEntityKey + ':' +  #toSystemKey + ':' +  #toEntityKey + ':' + #fromKey")
     public Optional<UUID> getId(String fromSystemKey, String fromEntityKey, String toSystemKey, String toEntityKey,
             String fromKey) {
-        Optional<List<Transformation>> result = repository
+        Optional<List<TransformationDocument>> result = repository
                 .findByFromSystemKeyAndFromEntityKeyAndToSystemKeyAndToEntityKeyAndFromKey(fromSystemKey, fromEntityKey,
                         toSystemKey, toEntityKey, fromKey.replace("-", ""));
 
@@ -43,7 +44,7 @@ public class TransformationServiceImpl implements TransformationService {
             throw new RuntimeException("No transformation found.");
         }
 
-        List<Transformation> list = result.get();
+        List<TransformationDocument> list = result.get();
 
         int count = list.size();
 
@@ -51,7 +52,7 @@ public class TransformationServiceImpl implements TransformationService {
             throw new RuntimeException("Transformation list is empty.");
         }
 
-        Transformation transformation = list.get(count - 1);
+        TransformationDocument transformation = list.get(count - 1);
 
         if (transformation == null) {
             throw new RuntimeException("Transformation is null.");

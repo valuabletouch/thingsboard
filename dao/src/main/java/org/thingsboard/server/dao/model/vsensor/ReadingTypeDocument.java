@@ -14,7 +14,7 @@ import lombok.Data;
 @Document(collection = "ReadingTypes")
 @Data
 @AllArgsConstructor
-public class ReadingType implements Serializable {
+public class ReadingTypeDocument implements Serializable {
 
     @Id
     String id;

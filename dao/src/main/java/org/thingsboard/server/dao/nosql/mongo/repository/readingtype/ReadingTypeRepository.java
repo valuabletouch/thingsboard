@@ -7,9 +7,9 @@ import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
-import org.thingsboard.server.dao.model.vsensor.ReadingType;
+import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
 @Service
-public interface ReadingTypeRepository extends MongoRepository<ReadingType, String> {
-    public Optional<ReadingType> findByCode(String code);
+public interface ReadingTypeRepository extends MongoRepository<ReadingTypeDocument, String> {
+    public Optional<ReadingTypeDocument> findByCode(String code);
 }
