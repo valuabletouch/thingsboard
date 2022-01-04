@@ -120,9 +120,9 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
 
         Optional<ReadingType> readingType = readingTypeService.findByCode(query.getKey());
 
-        Optional<UUID> transformationEntityId = transformationService.getId(transformationSystem.getReadingType(), transformationEntity.getDataSource(), transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString());
+        Optional<UUID> transformationEntityId = transformationService.getFromKey(transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(), transformationSystem.getReadingType(), transformationEntity.getDataSource());
 
-        Optional<UUID> transformationTenantId = transformationService.getId(transformationSystem.getReadingType(), transformationEntity.getTenant(), transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString());
+        Optional<UUID> transformationTenantId = transformationService.getFromKey(transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(), transformationEntity.getTenant());
 
         UUID key = null;
 
@@ -229,32 +229,26 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
 
     private static KvEntry toKvEntry(Row row, String key) {
         KvEntry kvEntry = null;
-        String strV = row.get(VModelConstants.STRING_VALUE_COLUMN, String.class);
-        if (strV != null) {
-            kvEntry = new StringDataEntry(key, strV);
-        } else {
+
+        if (row.get(VModelConstants.DOUBLE_VALUE_COLUMN, BigDecimal.class) != null) {
+            BigDecimal decimalV = row.get(VModelConstants.DOUBLE_VALUE_COLUMN, BigDecimal.class);
+            kvEntry = new DoubleDataEntry(key, decimalV.doubleValue());
+        } else if (row.get(VModelConstants.LONG_VALUE_COLUMN, Long.class) != null) {
             Long longV = row.get(VModelConstants.LONG_VALUE_COLUMN, Long.class);
-            if (longV != null) {
-                kvEntry = new LongDataEntry(key, longV);
-            } else {
-                BigDecimal decimalV = row.get(VModelConstants.DOUBLE_VALUE_COLUMN, BigDecimal.class);
-                if (decimalV != null) {
-                    kvEntry = new DoubleDataEntry(key, decimalV.doubleValue());
-                } else {
-                    Boolean boolV = row.get(VModelConstants.BOOLEAN_VALUE_COLUMN, Boolean.class);
-                    if (boolV != null) {
-                        kvEntry = new BooleanDataEntry(key, boolV);
-                    } else {
-                        String jsonV = row.get(VModelConstants.JSON_VALUE_COLUMN, String.class);
-                        if (StringUtils.isNoneEmpty(jsonV)) {
-                            kvEntry = new JsonDataEntry(key, jsonV);
-                        } else {
-                            log.warn("All values in key-value row are nullable ");
-                        }
-                    }
-                }
-            }
+            kvEntry = new LongDataEntry(key, longV);
+        } else if (row.get(VModelConstants.STRING_VALUE_COLUMN, String.class) != null) {
+            String strV = row.get(VModelConstants.STRING_VALUE_COLUMN, String.class);
+            kvEntry = new StringDataEntry(key, strV);
+        } else if (row.get(VModelConstants.BOOLEAN_VALUE_COLUMN, Boolean.class) != null) {
+            Boolean boolV = row.get(VModelConstants.BOOLEAN_VALUE_COLUMN, Boolean.class);
+            kvEntry = new BooleanDataEntry(key, boolV);
+        } else if (StringUtils.isNoneEmpty(row.get(VModelConstants.JSON_VALUE_COLUMN, String.class))) {
+            String jsonV = row.get(VModelConstants.JSON_VALUE_COLUMN, String.class);
+            kvEntry = new JsonDataEntry(key, jsonV);
+        } else {
+            log.warn("All values in key-value row are nullable ");
         }
+                        
         return kvEntry;
     }
 
