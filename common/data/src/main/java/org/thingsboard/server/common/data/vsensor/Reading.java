@@ -1,11 +1,14 @@
 package org.thingsboard.server.common.data.vsensor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import lombok.Data;
 
 @Data
 public class Reading {
+
+    private UUID tenantId;
 
     private UUID dataSourceId;
 
@@ -15,11 +18,11 @@ public class Reading {
 
     private String dataType;
 
-    private String valueBoolean;
+    private Boolean valueBoolean;
 
-    private String valueLong;
+    private Long valueLong;
 
-    private String valueDecimal;
+    private BigDecimal valueDecimal;
 
     private String valueString;
 

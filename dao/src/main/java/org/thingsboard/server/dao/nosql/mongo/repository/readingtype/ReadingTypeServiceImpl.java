@@ -21,21 +21,21 @@ import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
 @Component
 public class ReadingTypeServiceImpl implements ReadingTypeService {
-    public static final String CACHE_NAME = "readingTypes";
-    public static final long CACHE_TTL = 15 * 60 * 1000;
-    public static final long CACHE_EVICT_PERIOD = 60 * 1000;
+    private static final String CACHE_NAME = "readingTypes";
+    private static final long CACHE_TTL = 15 * 60 * 1000l;
+    private static final long CACHE_EVICT_PERIOD = 60 * 1000l;
 
-    private static List<Pair<String, LocalDateTime>> cacheExpireList = new ArrayList<Pair<String, LocalDateTime>>();
-
-    @Autowired
-    CacheManager cacheManager;
+    private static List<Pair<String, LocalDateTime>> cacheExpireList = new ArrayList<>();
 
     @Autowired
-    ReadingTypeRepository repository;
+    private CacheManager cacheManager;
+
+    @Autowired
+    private ReadingTypeRepository repository;
 
     @Cacheable(value = CACHE_NAME)
     public Optional<ReadingType> findById(String id) {
-        cacheExpireList.add(new Pair<String, LocalDateTime>(id, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        cacheExpireList.add(new Pair<>(id, LocalDateTime.now().plusNanos(CACHE_TTL)));
 
         Optional<ReadingTypeDocument> result = repository.findById(id);
 
@@ -49,7 +49,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
     @Cacheable(value = CACHE_NAME)
     public Optional<ReadingType> findByCode(String code) {
-        cacheExpireList.add(new Pair<String, LocalDateTime>(code, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        cacheExpireList.add(new Pair<>(code, LocalDateTime.now().plusNanos(CACHE_TTL)));
 
         Optional<ReadingTypeDocument> result = repository.findByCode(code);
 
