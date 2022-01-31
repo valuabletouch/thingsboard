@@ -3,6 +3,8 @@
  */
 package org.thingsboard.server.dao.model.vsensor;
 
+import java.util.UUID;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.thingsboard.server.common.data.kv.Aggregation;
 
@@ -20,6 +22,8 @@ public class VModelConstants {
     public static final String DATA_SOURCE_ID_COLUMN = "datasourceid";
     public static final String READING_TYPE_ID_COLUMN = "readingtypeid";
     public static final String READ_AT_COLUMN = "readat";
+    public static final String CREATED_AT_COLUMN = "createdat";
+    public static final String CREATED_BY_ID_COLUMN = "createdbyid";
     public static final String DATA_TYPE_COLUMN = "datatype";
 
     /**
@@ -83,6 +87,16 @@ public class VModelConstants {
             sum(DOUBLE_VALUE_COLUMN));
 
     protected static final String[] AVG_AGGREGATION_COLUMNS = SUM_AGGREGATION_COLUMNS;
+
+    public static final int DATA_TYPE_BOOLEAN = 3;
+    public static final int DATA_TYPE_STRING = 18;
+    public static final int DATA_TYPE_LONG = 11;
+    public static final int DATA_TYPE_DECIMAL = 15;
+    public static final int DATA_TYPE_OBJECT = 1;
+
+    public static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+    public static final UUID EMPTY_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
     public static String min(String s) {
         return "min(" + s + ")";

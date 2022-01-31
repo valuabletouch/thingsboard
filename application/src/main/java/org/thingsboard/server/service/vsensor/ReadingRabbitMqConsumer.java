@@ -200,11 +200,13 @@ public class ReadingRabbitMqConsumer {
             metaData.putValue("deviceName", device.getName());
             metaData.putValue("deviceType", device.getType());
             metaData.putValue("ts", tsKvEntry.getTs() + "");
-            metaData.putValue("saved", "1");
 
-            JsonObject json = new JsonObject();
-            json.add("values", getValuesJsonElement(tsKvEntry));
-            json.addProperty("ts", tsKvEntry.getTs());
+            JsonObject valuesJson = getValuesJsonElement(tsKvEntry);
+            valuesJson.addProperty("$is_already_saved", "1");
+
+            JsonObject messageJson = new JsonObject();
+            messageJson.add("values", valuesJson);
+            messageJson.addProperty("ts", tsKvEntry.getTs());
 
             RuleChainId ruleChainId;
             String tbQueueName;
@@ -220,7 +222,7 @@ public class ReadingRabbitMqConsumer {
             }
 
             TbMsg tbMsg = TbMsg.newMsg(tbQueueName, SessionMsgType.POST_TELEMETRY_REQUEST.name(), deviceId, metaData,
-                    gson.toJson(json), ruleChainId,
+                    gson.toJson(messageJson), ruleChainId,
                     null);
 
             TopicPartitionInfo tpi = partitionService.resolve(ServiceType.TB_RULE_ENGINE, tenantId,
