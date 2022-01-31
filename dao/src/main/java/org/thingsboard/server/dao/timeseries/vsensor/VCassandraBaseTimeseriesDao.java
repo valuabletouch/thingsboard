@@ -140,9 +140,9 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
         PreparedStatement proto = getFetchStmt(Aggregation.NONE, query.getOrder());
         BoundStatementBuilder stmtBuilder = new BoundStatementBuilder(proto.bind());
 
-        stmtBuilder.setUuid(0, transformationTenantId.isPresent() ? transformationTenantId.get() : EntityId.NULL_UUID);
-        stmtBuilder.setUuid(1, transformationDataSourceId.isPresent() ? transformationDataSourceId.get() : EntityId.NULL_UUID);
-        stmtBuilder.setUuid(2, readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : EntityId.NULL_UUID);
+        stmtBuilder.setUuid(0, transformationTenantId.isPresent() ? transformationTenantId.get() : VModelConstants.EMPTY_UUID);
+        stmtBuilder.setUuid(1, transformationDataSourceId.isPresent() ? transformationDataSourceId.get() : VModelConstants.EMPTY_UUID);
+        stmtBuilder.setUuid(2, readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : VModelConstants.EMPTY_UUID);
         stmtBuilder.setInstant(3, longToInstant(query.getStartTs()));
         stmtBuilder.setInstant(4, longToInstant(query.getEndTs()));
         stmtBuilder.setInt(5, query.getLimit());
@@ -222,9 +222,9 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
             BoundStatementBuilder stmtBuilder = new BoundStatementBuilder(getSaveStmt(tsKvEntry.getDataType()).bind());
 
             stmtBuilder
-                .setUuid(0, transformationTenantId.isPresent() ? transformationTenantId.get() : EntityId.NULL_UUID)
-                .setUuid(1, transformationDataSourceId.isPresent() ? transformationDataSourceId.get() : EntityId.NULL_UUID)
-                .setUuid(2, readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : EntityId.NULL_UUID)
+                .setUuid(0, transformationTenantId.isPresent() ? transformationTenantId.get() : VModelConstants.EMPTY_UUID)
+                .setUuid(1, transformationDataSourceId.isPresent() ? transformationDataSourceId.get() : VModelConstants.EMPTY_UUID)
+                .setUuid(2, readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : VModelConstants.EMPTY_UUID)
                 .setInstant(3, longToInstant(tsKvEntry.getTs()));
 
             addValue(tsKvEntry, stmtBuilder, 4);

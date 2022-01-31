@@ -96,6 +96,8 @@ public class VModelConstants {
 
     public static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
+    public static final UUID EMPTY_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
     public static String min(String s) {
         return "min(" + s + ")";
     }
