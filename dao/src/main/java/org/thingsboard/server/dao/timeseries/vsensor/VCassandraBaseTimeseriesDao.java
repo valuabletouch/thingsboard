@@ -209,22 +209,25 @@ public class VCassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao
 
             if (!transformationTenantId.isPresent()) {
                 log.warn("Failed to read Tenant from MongoDB.");
+                return Futures.immediateFuture(0);
             }
 
             if (!transformationDataSourceId.isPresent()) {
                 log.warn("Failed to read DataSource from MongoDB.");
+                return Futures.immediateFuture(0);
             }
 
             if (!readingType.isPresent()) {
                 log.warn("Failed to read ReadingType from MongoDB.");
+                return Futures.immediateFuture(0);
             }
 
             BoundStatementBuilder stmtBuilder = new BoundStatementBuilder(getSaveStmt(tsKvEntry.getDataType()).bind());
 
             stmtBuilder
-                .setUuid(0, transformationTenantId.isPresent() ? transformationTenantId.get() : VModelConstants.EMPTY_UUID)
-                .setUuid(1, transformationDataSourceId.isPresent() ? transformationDataSourceId.get() : VModelConstants.EMPTY_UUID)
-                .setUuid(2, readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : VModelConstants.EMPTY_UUID)
+                .setUuid(0, transformationTenantId.get())
+                .setUuid(1, transformationDataSourceId.get())
+                .setUuid(2, UUID.fromString(readingType.get().getId()))
                 .setInstant(3, longToInstant(tsKvEntry.getTs()));
 
             addValue(tsKvEntry, stmtBuilder, 4);
