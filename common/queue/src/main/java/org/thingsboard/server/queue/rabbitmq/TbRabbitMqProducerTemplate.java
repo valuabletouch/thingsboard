@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import lombok.extern.slf4j.Slf4j;
@@ -42,8 +43,9 @@ public class TbRabbitMqProducerTemplate<T extends TbQueueMsg> implements TbQueue
     private final TbQueueAdmin admin;
     private final TbRabbitMqSettings rabbitMqSettings;
     private final ListeningExecutorService producerExecutor;
-    private final Channel channel;
-    private final Connection connection;
+
+    private Channel channel;
+    private Connection connection;
 
     private final Set<TopicPartitionInfo> topics = ConcurrentHashMap.newKeySet();
 
@@ -52,19 +54,8 @@ public class TbRabbitMqProducerTemplate<T extends TbQueueMsg> implements TbQueue
         this.defaultTopic = defaultTopic;
         this.rabbitMqSettings = rabbitMqSettings;
         producerExecutor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
-        try {
-            connection = rabbitMqSettings.getConnectionFactory().newConnection();
-        } catch (IOException | TimeoutException e) {
-            log.error("Failed to create connection.", e);
-            throw new RuntimeException("Failed to create connection.", e);
-        }
 
-        try {
-            channel = connection.createChannel();
-        } catch (IOException e) {
-            log.error("Failed to create chanel.", e);
-            throw new RuntimeException("Failed to create chanel.", e);
-        }
+        createChannel();
     }
 
     @Override
@@ -80,9 +71,10 @@ public class TbRabbitMqProducerTemplate<T extends TbQueueMsg> implements TbQueue
     @Override
     public void send(TopicPartitionInfo tpi, T msg, TbQueueCallback callback) {
         createTopicIfNotExist(tpi);
-        AMQP.BasicProperties properties = new AMQP.BasicProperties();
+        
         try {
-            channel.basicPublish(rabbitMqSettings.getExchangeName(), tpi.getFullTopicName(), properties, gson.toJson(new DefaultTbQueueMsg(msg)).getBytes());
+            publishMessage(tpi, msg);
+
             if (callback != null) {
                 callback.onSuccess(null);
             }
@@ -121,5 +113,32 @@ public class TbRabbitMqProducerTemplate<T extends TbQueueMsg> implements TbQueue
         }
         admin.createTopicIfNotExists(tpi.getFullTopicName());
         topics.add(tpi);
+    }
+
+    private void createChannel() {
+        try {
+            connection = rabbitMqSettings.getConnectionFactory().newConnection();
+        } catch (IOException | TimeoutException e) {
+            log.error("Failed to create connection.", e);
+            throw new RuntimeException("Failed to create connection.", e);
+        }
+        try {
+            channel = connection.createChannel();
+        } catch (IOException e) {
+            log.error("Failed to create chanel.", e);
+            throw new RuntimeException("Failed to create chanel.", e);
+        }
+    }
+
+    private void publishMessage(TopicPartitionInfo tpi, T msg) throws IOException {
+        AMQP.BasicProperties properties = new AMQP.BasicProperties();
+
+        try {
+            channel.basicPublish(rabbitMqSettings.getExchangeName(), tpi.getFullTopicName(), properties, gson.toJson(new DefaultTbQueueMsg(msg)).getBytes());
+        } catch (AlreadyClosedException e) {
+            createChannel();
+            admin.createTopicIfNotExists(tpi.getFullTopicName());
+            channel.basicPublish(rabbitMqSettings.getExchangeName(), tpi.getFullTopicName(), properties, gson.toJson(new DefaultTbQueueMsg(msg)).getBytes());
+        }
     }
 }

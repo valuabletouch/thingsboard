@@ -17,9 +17,11 @@ package org.thingsboard.server.queue.rabbitmq;
 
 import com.google.gson.Gson;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
+
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.server.common.msg.queue.TopicPartitionInfo;
 import org.thingsboard.server.queue.TbQueueAdmin;
@@ -42,27 +44,19 @@ public class TbRabbitMqConsumerTemplate<T extends TbQueueMsg> extends AbstractTb
     private final Gson gson = new Gson();
     private final TbQueueAdmin admin;
     private final TbQueueMsgDecoder<T> decoder;
-    private final Channel channel;
-    private final Connection connection;
+    private final TbRabbitMqSettings rabbitMqSettings;
 
     private volatile Set<String> queues;
+
+    private Connection connection;
+    private Channel channel;
 
     public TbRabbitMqConsumerTemplate(TbQueueAdmin admin, TbRabbitMqSettings rabbitMqSettings, String topic, TbQueueMsgDecoder<T> decoder) {
         super(topic);
         this.admin = admin;
         this.decoder = decoder;
-        try {
-            connection = rabbitMqSettings.getConnectionFactory().newConnection();
-        } catch (IOException | TimeoutException e) {
-            log.error("Failed to create connection.", e);
-            throw new RuntimeException("Failed to create connection.", e);
-        }
-        try {
-            channel = connection.createChannel();
-        } catch (IOException e) {
-            log.error("Failed to create chanel.", e);
-            throw new RuntimeException("Failed to create chanel.", e);
-        }
+        this.rabbitMqSettings = rabbitMqSettings;
+        createChannel();
         stopped = false;
     }
 
@@ -71,7 +65,7 @@ public class TbRabbitMqConsumerTemplate<T extends TbQueueMsg> extends AbstractTb
         List<GetResponse> result = queues.stream()
                 .map(queue -> {
                     try {
-                        return channel.basicGet(queue, false);
+                        return getResponse(queue);
                     } catch (IOException e) {
                         log.error("Failed to get messages from queue: [{}]", queue);
                         throw new RuntimeException("Failed to get messages from queue.", e);
@@ -122,5 +116,30 @@ public class TbRabbitMqConsumerTemplate<T extends TbQueueMsg> extends AbstractTb
     public T decode(GetResponse message) throws InvalidProtocolBufferException {
         DefaultTbQueueMsg msg = gson.fromJson(new String(message.getBody()), DefaultTbQueueMsg.class);
         return decoder.decode(msg);
+    }
+
+    private void createChannel() {
+        try {
+            connection = rabbitMqSettings.getConnectionFactory().newConnection();
+        } catch (IOException | TimeoutException e) {
+            log.error("Failed to create connection.", e);
+            throw new RuntimeException("Failed to create connection.", e);
+        }
+        try {
+            channel = connection.createChannel();
+        } catch (IOException e) {
+            log.error("Failed to create chanel.", e);
+            throw new RuntimeException("Failed to create chanel.", e);
+        }
+    }
+
+    private GetResponse getResponse(String queue) throws IOException {
+        try {
+            return channel.basicGet(queue, false);
+        } catch (AlreadyClosedException e) {
+            createChannel();
+            admin.createTopicIfNotExists(queue); 
+            return channel.basicGet(queue, false);
+        }
     }
 }
