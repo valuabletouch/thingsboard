@@ -168,6 +168,7 @@
                 "TB_QUEUE_RABBIT_MQ_PASSWORD": "secret",
                 "TB_QUEUE_RABBIT_MQ_HOST": "localhost",
                 "TB_QUEUE_RABBIT_MQ_PORT": 5672,
+                "TB_QUEUE_RABBIT_MQ_AUTOMATIC_RECOVERY_ENABLED": true,
                 "TB_QUEUE_PARTITIONS_VIRTUAL_NODES_SIZE": 64,
                 "TB_QUEUE_RABBIT_MQ_VSENSOR_EXCHANGE_NAME": "exchange",
                 "TB_QUEUE_RABBIT_MQ_VSENSOR_ROUTING_KEY": "routing_key",
