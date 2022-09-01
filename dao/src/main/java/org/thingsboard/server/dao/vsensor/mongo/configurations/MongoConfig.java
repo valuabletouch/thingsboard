@@ -1,4 +1,4 @@
-package org.thingsboard.server.dao.nosql.mongo.configurations;
+package org.thingsboard.server.dao.vsensor.mongo.configurations;
 
 import org.springframework.boot.autoconfigure.mongo.MongoProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;

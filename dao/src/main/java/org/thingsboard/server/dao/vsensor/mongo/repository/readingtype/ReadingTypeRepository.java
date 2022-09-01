@@ -1,15 +1,15 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo.repository.readingtype;
+package org.thingsboard.server.dao.vsensor.mongo.repository.readingtype;
 
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
-@Service
+@Repository
 public interface ReadingTypeRepository extends MongoRepository<ReadingTypeDocument, String> {
     public Optional<ReadingTypeDocument> findByCode(String code);
 }

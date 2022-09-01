@@ -1,16 +1,16 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo.repository.transformation;
+package org.thingsboard.server.dao.vsensor.mongo.repository.transformation;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 import org.thingsboard.server.dao.model.vsensor.TransformationDocument;
 
-@Service
+@Repository
 public interface TransformationRepository extends MongoRepository<TransformationDocument, String> {
     public Optional<List<TransformationDocument>> findByFromSystemKeyAndFromEntityKeyAndFromKeyAndToSystemKeyAndToEntityKey(
             String fromSystemKey, String fromEntityKey, String fromKey, String toSystemKey, String toEntityKey);

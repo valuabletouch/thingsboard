@@ -1,7 +1,7 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo.repository.readingtype;
+package org.thingsboard.server.dao.vsensor.mongo.repository.readingtype;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,15 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.thingsboard.server.common.data.vsensor.ReadingType;
 import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
 import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
-@Component
+@Service
 public class ReadingTypeServiceImpl implements ReadingTypeService {
     private static final String CACHE_NAME = "readingTypes";
-    private static final long CACHE_TTL = 15 * 60 * 1000l;
+    private static final long CACHE_TTL = 15 * 60;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000l;
 
     private static List<Pair<String, LocalDateTime>> cacheExpireList = new ArrayList<>();
@@ -35,7 +35,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
     @Cacheable(value = CACHE_NAME)
     public Optional<ReadingType> findById(String id) {
-        cacheExpireList.add(new Pair<>(id, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        cacheExpireList.add(new Pair<>(id, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         Optional<ReadingTypeDocument> result = repository.findById(id);
 
@@ -49,7 +49,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
     @Cacheable(value = CACHE_NAME)
     public Optional<ReadingType> findByCode(String code) {
-        cacheExpireList.add(new Pair<>(code, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        cacheExpireList.add(new Pair<>(code, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         Optional<ReadingTypeDocument> result = repository.findByCode(code);
 

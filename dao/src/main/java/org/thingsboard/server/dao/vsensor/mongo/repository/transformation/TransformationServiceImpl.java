@@ -1,7 +1,7 @@
 /**
  * Özgün AY
  */
-package org.thingsboard.server.dao.nosql.mongo.repository.transformation;
+package org.thingsboard.server.dao.vsensor.mongo.repository.transformation;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,14 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.thingsboard.server.common.data.vsensor.TransformationService;
 import org.thingsboard.server.dao.model.vsensor.TransformationDocument;
 
-@Component
+@Service
 public class TransformationServiceImpl implements TransformationService {
     private static final String CACHE_NAME = "transformations";
-    private static final long CACHE_TTL = 24 * 60 * 60 * 1000l;
+    private static final long CACHE_TTL = 24 * 60 * 60l;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000l;
 
     private static List<Pair<String, LocalDateTime>> cacheExpireList = new ArrayList<>();
@@ -62,7 +62,7 @@ public class TransformationServiceImpl implements TransformationService {
 
         String key = toSystemKey + ":" + toEntityKey + ":" + toKey + ":" + fromSystemKey + ":" + fromEntityKey;
 
-        cacheExpireList.add(new Pair<>(key, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        cacheExpireList.add(new Pair<>(key, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         return uuid;
     }
@@ -96,7 +96,7 @@ public class TransformationServiceImpl implements TransformationService {
 
         String key = fromSystemKey + ":" + fromEntityKey + ":" + fromKey + ":" + toSystemKey + ":" + toEntityKey;
 
-        cacheExpireList.add(new Pair<>(key, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        cacheExpireList.add(new Pair<>(key, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         return uuid;
     }
