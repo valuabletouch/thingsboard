@@ -1,12 +1,13 @@
 package org.thingsboard.server.common.data.vsensor;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
 import lombok.Data;
 
 @Data
-public class Reading {
+public class Reading implements Serializable {
 
     private UUID tenantId;
 

@@ -1,4 +1,4 @@
-package org.thingsboard.server.service.vsensor;
+package org.thingsboard.server.vsensor.queue.rabbitmq;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,7 +31,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.thingsboard.server.common.data.Device;
 import org.thingsboard.server.common.data.DeviceProfile;
 import org.thingsboard.server.common.data.id.DeviceId;
@@ -61,8 +61,8 @@ import org.thingsboard.server.common.stats.StatsFactory;
 import org.thingsboard.server.common.stats.StatsType;
 import org.thingsboard.server.dao.device.DeviceProfileService;
 import org.thingsboard.server.dao.device.DeviceService;
-import org.thingsboard.server.dao.nosql.mongo.configurations.TransformationEntity;
-import org.thingsboard.server.dao.nosql.mongo.configurations.TransformationSystem;
+import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationEntity;
+import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationSystem;
 import org.thingsboard.server.gen.transport.TransportProtos.ToRuleEngineMsg;
 import org.thingsboard.server.queue.TbQueueProducer;
 import org.thingsboard.server.queue.common.TbProtoQueueMsg;
@@ -73,13 +73,13 @@ import org.thingsboard.server.queue.rabbitmq.TbRabbitMqSettings;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
+@Service
 @ConditionalOnExpression("'${queue.type:null}'=='rabbitmq'")
 public class ReadingRabbitMqConsumer {
 
     private static final String DEVICE_CACHE_NAME = "devices";
     private static final String DEVICE_PROFILE_CACHE_NAME = "deviceProfiles";
-    private static final long CACHE_TTL = 15 * 60 * 1000l;
+    private static final long CACHE_TTL = 15 * 60l;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000l;
 
     private static final List<Pair<DeviceId, LocalDateTime>> deviceCacheExpireList = new ArrayList<>();
@@ -329,14 +329,14 @@ public class ReadingRabbitMqConsumer {
 
     @Cacheable(value = DEVICE_CACHE_NAME)
     private Device findDeviceById(TenantId tenantId, DeviceId deviceId) {
-        deviceCacheExpireList.add(new Pair<>(deviceId, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        deviceCacheExpireList.add(new Pair<>(deviceId, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         return deviceService.findDeviceById(tenantId, deviceId);
     }
 
     @Cacheable(value = DEVICE_PROFILE_CACHE_NAME)
     private DeviceProfile findDeviceProfileById(TenantId tenantId, DeviceProfileId deviceProfileId) {
-        deviceProfileCacheExpireList.add(new Pair<>(deviceProfileId, LocalDateTime.now().plusNanos(CACHE_TTL)));
+        deviceProfileCacheExpireList.add(new Pair<>(deviceProfileId, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         return deviceProfileService.findDeviceProfileById(tenantId, deviceProfileId);
     }
