@@ -1,12 +1,14 @@
 package org.thingsboard.server.vsensor.queue.rabbitmq;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -70,6 +72,7 @@ import org.thingsboard.server.queue.discovery.PartitionService;
 import org.thingsboard.server.queue.provider.TbQueueProducerProvider;
 import org.thingsboard.server.queue.rabbitmq.TbRabbitMqSettings;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -89,8 +92,7 @@ public class ReadingRabbitMqConsumer {
 
     private static final JsonParser jsonParser = new JsonParser();
 
-    private static final List<SimpleDateFormat> 
-    simpleDateFormats = new ArrayList<>();
+    private static final List<SimpleDateFormat> simpleDateFormats = new ArrayList<>();
 
     @Value("${queue.rabbitmq.vsensor.exchange_name:}")
     private String exchangeName;
@@ -167,13 +169,21 @@ public class ReadingRabbitMqConsumer {
                 @Override
                 public void handleDelivery(String tag, Envelope env, AMQP.BasicProperties props, byte[] body) {
                     try {
-                        String message = new String(body, StandardCharsets.UTF_8);
-                        Reading reading = gson.fromJson(message, Reading.class);
-                        TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
-                        TenantId tenantId = getTenantId(reading.getTenantId());
-                        DeviceId deviceId = getDeviceId(reading.getDataSourceId());
+                        MessageContext messageContext = gson.fromJson(
+                                props.getHeaders().get("message_context").toString(),
+                                MessageContext.class);
 
-                        sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                        User user = gson.fromJson(messageContext.getUser().toString(), User.class);
+
+                        if (!Arrays.asList(user.getScopes()).contains("thingsboard")) {
+                            String message = new String(body, StandardCharsets.UTF_8);
+                            Reading reading = gson.fromJson(message, Reading.class);
+                            TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
+                            TenantId tenantId = getTenantId(reading.getTenantId());
+                            DeviceId deviceId = getDeviceId(reading.getDataSourceId());
+
+                            sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                        }
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }
@@ -376,5 +386,27 @@ public class ReadingRabbitMqConsumer {
         }
 
         throw lastException;
+    }
+
+    @Getter
+    private static class MessageContext {
+        private String correlationId;
+        private String spanContext;
+        private String connectionId;
+        private String traceId;
+        private String resourceId;
+        private Object user;
+        private String createdAt;
+    }
+
+    @Getter
+    private static class User {
+        private String id;
+        private String isAuthenticated;
+        private String isAdmin;
+        private String isSystem;
+        private String[] roles;
+        private String[] scopes;
+        private Array claims;
     }
 }
