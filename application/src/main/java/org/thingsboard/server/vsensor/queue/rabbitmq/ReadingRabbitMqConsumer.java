@@ -1,7 +1,6 @@
 package org.thingsboard.server.vsensor.queue.rabbitmq;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -9,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -173,9 +173,10 @@ public class ReadingRabbitMqConsumer {
                                 props.getHeaders().get("message_context").toString(),
                                 MessageContext.class);
 
-                        User user = gson.fromJson(messageContext.getUser().toString(), User.class);
+                        CorrelationContext correlationContext = gson.fromJson(messageContext.getUser().toString(),
+                                CorrelationContext.class);
 
-                        if (!Arrays.asList(user.getScopes()).contains("thingsboard")) {
+                        if (!Arrays.asList(correlationContext.getScopes()).contains("thingsboard")) {
                             String message = new String(body, StandardCharsets.UTF_8);
                             Reading reading = gson.fromJson(message, Reading.class);
                             TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
@@ -400,13 +401,13 @@ public class ReadingRabbitMqConsumer {
     }
 
     @Getter
-    private static class User {
+    private static class CorrelationContext {
         private String id;
         private String isAuthenticated;
         private String isAdmin;
         private String isSystem;
         private String[] roles;
         private String[] scopes;
-        private Array claims;
+        private HashMap<String, String[]> claims;
     }
 }
