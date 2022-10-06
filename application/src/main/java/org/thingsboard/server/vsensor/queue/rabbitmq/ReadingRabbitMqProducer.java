@@ -109,7 +109,7 @@ public class ReadingRabbitMqProducer {
         user.put("isAdmin", false);
         user.put("isSystem", true);
         user.put("roles", new String[] {});
-        user.put("scopes", new String[] {});
+        user.put("scopes", new String[] { "thingsboard" });
         user.put("claims", new HashMap<String, String[]>());
 
         Map<String, Object> messageContext = new HashMap<>();
