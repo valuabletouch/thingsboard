@@ -20,6 +20,7 @@ import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
 import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
 @Service
+@Slf4j
 public class ReadingTypeServiceImpl implements ReadingTypeService {
     private static final String CACHE_NAME = "readingTypes";
     private static final long CACHE_TTL = 15 * 60;
