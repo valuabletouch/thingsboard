@@ -141,15 +141,15 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
         Optional<ReadingType> readingType = readingTypeService.findByCode(query.getKey());
 
         if (!transformationTenantId.isPresent()) {
-            log.warn("Failed to read Tenant from MongoDB.");
+            log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
         }
 
         if (!transformationDataSourceId.isPresent()) {
-            log.warn("Failed to read DataSource from MongoDB.");
+            log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
         }
 
         if (!readingType.isPresent()) {
-            log.warn("Failed to read ReadingType from MongoDB.");
+            log.warn("ReadingType not found for code: " + query.getKey());
         }
 
         PreparedStatement proto = getFetchStmt(Aggregation.NONE, query.getOrder());
@@ -227,17 +227,20 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
             Optional<ReadingType> readingType = readingTypeService.findByCode(tsKvEntry.getKey());
 
             if (!transformationTenantId.isPresent()) {
-                log.warn("Failed to read Tenant from MongoDB.");
+                log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
+
                 return Futures.immediateFuture(0);
             }
 
             if (!transformationDataSourceId.isPresent()) {
-                log.warn("Failed to read DataSource from MongoDB.");
+                log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
+
                 return Futures.immediateFuture(0);
             }
 
             if (!readingType.isPresent()) {
-                log.warn("Failed to read ReadingType from MongoDB.");
+                log.warn("ReadingType not found for code: " + tsKvEntry.getKey());
+
                 return Futures.immediateFuture(0);
             }
 
@@ -355,11 +358,14 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
         long readAtTs = readAt.toEpochMilli();
         String key = row.get(VModelConstants.READING_TYPE_ID_COLUMN, UUID.class).toString();
         Optional<ReadingType> readingType = readingTypeService.findById(key);
+
         if (readingType.isPresent()) {
             String code = readingType.get().getCode();
+
             return new BasicTsKvEntry(readAtTs, toKvEntry(row, code));
         } else {
-            log.warn("Failed to read ReadingType from MongoDB.");
+            log.warn("ReadingType not found for id: " + key);
+
             return new BasicTsKvEntry(readAtTs, toKvEntry(row, key));
         }
     }
