@@ -19,6 +19,8 @@ import org.thingsboard.server.common.data.vsensor.ReadingType;
 import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
 import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
 @Slf4j
 public class ReadingTypeServiceImpl implements ReadingTypeService {
