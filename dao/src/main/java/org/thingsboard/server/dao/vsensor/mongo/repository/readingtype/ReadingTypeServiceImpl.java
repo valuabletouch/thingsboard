@@ -58,7 +58,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
             return Optional.of(new ReadingType(readingTypeDocument.getId(), readingTypeDocument.getCode()));
         } else {
-            log.error("No ReadingType found on repository by code: " + code);
+            log.error("No ReadingType found on repository by code: {}", code);
 
             return Optional.empty();
         }
