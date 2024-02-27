@@ -63,7 +63,7 @@ public class ThingsboardUpdateService {
     public void performInstall() {
         try {
             if (!isUpgrade) {
-                Throwable e = new Throwable("Value of " + INSTALL_UPGRADE_ENV_NAME + " is " + isUpgrade.toString());
+                Throwable e = new Throwable("Value of " + INSTALL_UPGRADE_ENV_NAME + " is " + isUpgrade);
                 throw new ThingsboardUpdateException("Value of " + INSTALL_UPGRADE_ENV_NAME + " is not set to true", e);
             }
 

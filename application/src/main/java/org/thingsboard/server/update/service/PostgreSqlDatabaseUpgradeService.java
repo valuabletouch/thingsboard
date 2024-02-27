@@ -27,7 +27,7 @@ import org.thingsboard.server.service.install.SystemDataLoaderService;
 import org.thingsboard.server.service.install.update.DefaultDataUpdateService;
 import org.thingsboard.server.update.configuration.TbRuleEngineQueueConfiguration;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -409,7 +409,7 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseEntitiesUpgrade
     }
 
     private void loadSql(Path sqlFile, Connection conn) throws Exception {
-        String sql = new String(Files.readAllBytes(sqlFile), Charset.forName("UTF-8"));
+        String sql = new String(Files.readAllBytes(sqlFile), StandardCharsets.UTF_8);
         Statement st = conn.createStatement();
         st.setQueryTimeout((int) TimeUnit.HOURS.toSeconds(3));
         st.execute(sql);//NOSONAR, ignoring because method used to execute thingsboard database upgrade script

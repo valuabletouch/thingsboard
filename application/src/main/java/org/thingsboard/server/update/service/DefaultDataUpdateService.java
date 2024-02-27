@@ -59,9 +59,9 @@ import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.update.DataUpdateService;
 import org.thingsboard.server.service.install.update.PaginatedUpdater;
 import org.thingsboard.server.service.security.auth.jwt.settings.JwtSettingsService;
+import org.thingsboard.server.update.component.RateLimitsUpdater;
 import org.thingsboard.server.update.configuration.DeviceConnectivityConfiguration;
 import org.thingsboard.server.update.dao.AuditLogDao;
-import org.thingsboard.server.update.component.RateLimitsUpdater;
 import org.thingsboard.server.utils.TbNodeUpgradeUtils;
 
 import java.util.ArrayList;
