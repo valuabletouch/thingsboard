@@ -690,8 +690,6 @@ spring.mvc.cors:
       #Set whether credentials are supported. When not set, credentials are not supported.
       allow-credentials: "true"
 
-install.upgrade: "true"
-
 # General spring parameters
 spring.main.allow-circular-references: "true" # Spring Boot configuration property that controls whether circular dependencies between beans are allowed.
 spring.freemarker.checkTemplateLocation: "false" # spring freemarker configuration
@@ -729,9 +727,9 @@ spring:
     # Database connection URL
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/thingsboard}"
     # Database user name
-    username: "${SPRING_DATASOURCE_USERNAME:root}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
     # Database user password
-    password: "${SPRING_DATASOURCE_PASSWORD:secret}"
+    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     hikari:
       # This property controls the amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak. A value of 0 means leak detection is disabled
       leakDetectionThreshold: "${SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD:0}"
