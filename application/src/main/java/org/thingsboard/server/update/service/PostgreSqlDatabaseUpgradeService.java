@@ -21,7 +21,6 @@ import org.thingsboard.server.dao.asset.AssetDao;
 import org.thingsboard.server.dao.asset.AssetProfileService;
 import org.thingsboard.server.dao.queue.QueueService;
 import org.thingsboard.server.dao.tenant.TenantService;
-import org.thingsboard.server.service.install.DatabaseEntitiesUpgradeService;
 import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.SystemDataLoaderService;
 import org.thingsboard.server.service.install.update.DefaultDataUpdateService;
@@ -41,7 +40,7 @@ import java.util.function.Consumer;
 @Service
 @Profile("update")
 @Slf4j
-public class PostgreSqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService {
+public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService {
 
     private static final String SCHEMA_UPDATE_SQL = "schema_update.sql";
 
@@ -389,95 +388,114 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseEntitiesUpgrade
         }
     }
 
-    private void updateSchema(String oldVersionStr, int oldVersion, String newVersionStr, int newVersion, Consumer<Connection> additionalAction) {
+    @Override
+    public String getCurrentSchemeVersion() throws Exception{
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
-            log.info("Updating schema ...");
-            if (isOldSchema(conn, oldVersion)) {
-                Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", oldVersionStr, SCHEMA_UPDATE_SQL);
-                loadSql(schemaUpdateFile, conn);
-                if (additionalAction != null) {
-                    additionalAction.accept(conn);
-                }
-                conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = " + newVersion + ";");
-                log.info("Schema updated to version {}", newVersionStr);
-            } else {
-                log.info("Skip schema re-update to version {}. Use env flag 'SKIP_SCHEMA_VERSION_CHECK' to force the re-update.", newVersionStr);
-            }
-        } catch (Exception e) {
-            log.error("Failed updating schema!!!", e);
-        }
-    }
-
-    private void loadSql(Path sqlFile, Connection conn) throws Exception {
-        String sql = new String(Files.readAllBytes(sqlFile), StandardCharsets.UTF_8);
-        Statement st = conn.createStatement();
-        st.setQueryTimeout((int) TimeUnit.HOURS.toSeconds(3));
-        st.execute(sql);//NOSONAR, ignoring because method used to execute thingsboard database upgrade script
-        printWarnings(st);
-        Thread.sleep(5000);
-    }
-
-    private void runSchemaUpdateScript(Connection connection, String version) throws Exception {
-        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
-        loadSql(schemaUpdateFile, connection);
-    }
-
-    protected void printWarnings(Statement statement) throws SQLException {
-        SQLWarning warnings = statement.getWarnings();
-        if (warnings != null) {
-            log.info("{}", warnings.getMessage());
-            SQLWarning nextWarning = warnings.getNextWarning();
-            while (nextWarning != null) {
-                log.info("{}", nextWarning.getMessage());
-                nextWarning = nextWarning.getNextWarning();
-            }
-        }
-    }
-
-    protected boolean isOldSchema(Connection conn, long fromVersion) {
-        if (DefaultDataUpdateService.getEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
-            log.info("Skipped DB schema version check due to SKIP_SCHEMA_VERSION_CHECK set to true!");
-            return true;
-        }
-        boolean isOldSchema = true;
-        try {
             Statement statement = conn.createStatement();
             statement.execute("CREATE TABLE IF NOT EXISTS tb_schema_settings ( schema_version bigint NOT NULL, CONSTRAINT tb_schema_settings_pkey PRIMARY KEY (schema_version));");
             Thread.sleep(1000);
             ResultSet resultSet = statement.executeQuery("SELECT schema_version FROM tb_schema_settings;");
             if (resultSet.next()) {
-                isOldSchema = resultSet.getLong(1) <= fromVersion;
-            } else {
-                resultSet.close();
-                statement.execute("INSERT INTO tb_schema_settings (schema_version) VALUES (" + fromVersion + ")");
+                String result = resultSet.getString(1);
+                statement.close();
+                return result.replaceAll("00", ".");
             }
-            statement.close();
+            throw new SQLException("Failed to check current PostgreSQL schema");
         } catch (InterruptedException | SQLException e) {
             log.info("Failed to check current PostgreSQL schema due to: {}", e.getMessage());
+            throw e;
         }
-        return isOldSchema;
     }
 
-    private Queue queueConfigToQueue(TbRuleEngineQueueConfiguration queueSettings) {
-        Queue queue = new Queue();
-        queue.setTenantId(TenantId.SYS_TENANT_ID);
-        queue.setName(queueSettings.getName());
-        queue.setTopic(queueSettings.getTopic());
-        queue.setPollInterval(queueSettings.getPollInterval());
-        queue.setPartitions(queueSettings.getPartitions());
-        queue.setPackProcessingTimeout(queueSettings.getPackProcessingTimeout());
-        SubmitStrategy submitStrategy = new SubmitStrategy();
-        submitStrategy.setBatchSize(queueSettings.getSubmitStrategy().getBatchSize());
-        submitStrategy.setType(SubmitStrategyType.valueOf(queueSettings.getSubmitStrategy().getType()));
-        queue.setSubmitStrategy(submitStrategy);
-        ProcessingStrategy processingStrategy = new ProcessingStrategy();
-        processingStrategy.setType(ProcessingStrategyType.valueOf(queueSettings.getProcessingStrategy().getType()));
-        processingStrategy.setRetries(queueSettings.getProcessingStrategy().getRetries());
-        processingStrategy.setFailurePercentage(queueSettings.getProcessingStrategy().getFailurePercentage());
-        processingStrategy.setPauseBetweenRetries(queueSettings.getProcessingStrategy().getPauseBetweenRetries());
-        processingStrategy.setMaxPauseBetweenRetries(queueSettings.getProcessingStrategy().getMaxPauseBetweenRetries());
-        queue.setProcessingStrategy(processingStrategy);
-        queue.setConsumerPerPartition(queueSettings.isConsumerPerPartition());
-        return queue;
+private void updateSchema(String oldVersionStr, int oldVersion, String newVersionStr, int newVersion, Consumer<Connection> additionalAction) {
+    try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
+        log.info("Updating schema ...");
+        if (isOldSchema(conn, oldVersion)) {
+            Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", oldVersionStr, SCHEMA_UPDATE_SQL);
+            loadSql(schemaUpdateFile, conn);
+            if (additionalAction != null) {
+                additionalAction.accept(conn);
+            }
+            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = " + newVersion + ";");
+            log.info("Schema updated to version {}", newVersionStr);
+        } else {
+            log.info("Skip schema re-update to version {}. Use env flag 'SKIP_SCHEMA_VERSION_CHECK' to force the re-update.", newVersionStr);
+        }
+    } catch (Exception e) {
+        log.error("Failed updating schema!!!", e);
     }
+}
+
+private void loadSql(Path sqlFile, Connection conn) throws Exception {
+    String sql = new String(Files.readAllBytes(sqlFile), StandardCharsets.UTF_8);
+    Statement st = conn.createStatement();
+    st.setQueryTimeout((int) TimeUnit.HOURS.toSeconds(3));
+    st.execute(sql);//NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+    printWarnings(st);
+    Thread.sleep(5000);
+}
+
+private void runSchemaUpdateScript(Connection connection, String version) throws Exception {
+    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
+    loadSql(schemaUpdateFile, connection);
+}
+
+protected void printWarnings(Statement statement) throws SQLException {
+    SQLWarning warnings = statement.getWarnings();
+    if (warnings != null) {
+        log.info("{}", warnings.getMessage());
+        SQLWarning nextWarning = warnings.getNextWarning();
+        while (nextWarning != null) {
+            log.info("{}", nextWarning.getMessage());
+            nextWarning = nextWarning.getNextWarning();
+        }
+    }
+}
+
+protected boolean isOldSchema(Connection conn, long fromVersion) {
+    if (DefaultDataUpdateService.getEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
+        log.info("Skipped DB schema version check due to SKIP_SCHEMA_VERSION_CHECK set to true!");
+        return true;
+    }
+    boolean isOldSchema = true;
+    try {
+        Statement statement = conn.createStatement();
+        statement.execute("CREATE TABLE IF NOT EXISTS tb_schema_settings ( schema_version bigint NOT NULL, CONSTRAINT tb_schema_settings_pkey PRIMARY KEY (schema_version));");
+        Thread.sleep(1000);
+        ResultSet resultSet = statement.executeQuery("SELECT schema_version FROM tb_schema_settings;");
+        if (resultSet.next()) {
+            isOldSchema = resultSet.getLong(1) <= fromVersion;
+        } else {
+            resultSet.close();
+            statement.execute("INSERT INTO tb_schema_settings (schema_version) VALUES (" + fromVersion + ")");
+        }
+        statement.close();
+    } catch (InterruptedException | SQLException e) {
+        log.info("Failed to check current PostgreSQL schema due to: {}", e.getMessage());
+    }
+    return isOldSchema;
+}
+
+private Queue queueConfigToQueue(TbRuleEngineQueueConfiguration queueSettings) {
+    Queue queue = new Queue();
+    queue.setTenantId(TenantId.SYS_TENANT_ID);
+    queue.setName(queueSettings.getName());
+    queue.setTopic(queueSettings.getTopic());
+    queue.setPollInterval(queueSettings.getPollInterval());
+    queue.setPartitions(queueSettings.getPartitions());
+    queue.setPackProcessingTimeout(queueSettings.getPackProcessingTimeout());
+    SubmitStrategy submitStrategy = new SubmitStrategy();
+    submitStrategy.setBatchSize(queueSettings.getSubmitStrategy().getBatchSize());
+    submitStrategy.setType(SubmitStrategyType.valueOf(queueSettings.getSubmitStrategy().getType()));
+    queue.setSubmitStrategy(submitStrategy);
+    ProcessingStrategy processingStrategy = new ProcessingStrategy();
+    processingStrategy.setType(ProcessingStrategyType.valueOf(queueSettings.getProcessingStrategy().getType()));
+    processingStrategy.setRetries(queueSettings.getProcessingStrategy().getRetries());
+    processingStrategy.setFailurePercentage(queueSettings.getProcessingStrategy().getFailurePercentage());
+    processingStrategy.setPauseBetweenRetries(queueSettings.getProcessingStrategy().getPauseBetweenRetries());
+    processingStrategy.setMaxPauseBetweenRetries(queueSettings.getProcessingStrategy().getMaxPauseBetweenRetries());
+    queue.setProcessingStrategy(processingStrategy);
+    queue.setConsumerPerPartition(queueSettings.isConsumerPerPartition());
+    return queue;
+}
 }

@@ -30,7 +30,7 @@ public class ThingsboardUpdateService {
     @Value("${" + INSTALL_UPGRADE_ENV_NAME + ":false}")
     private Boolean isUpgrade;
 
-    @Value("${install.upgrade.from_version:3.2.1}")
+    @Value("${install.upgrade.from_version:1.2.3}")
     private String upgradeFromVersion;
 
     @Value("${state.persistToTelemetry:false}")
@@ -40,7 +40,7 @@ public class ThingsboardUpdateService {
     private EntityDatabaseSchemaService entityDatabaseSchemaService;
 
     @Autowired
-    private DatabaseEntitiesUpgradeService databaseEntitiesUpgradeService;
+    private DatabaseUpgradeService databaseEntitiesUpgradeService;
 
     @Autowired(required = false)
     private DatabaseTsUpgradeService databaseTsUpgradeService;
@@ -67,20 +67,25 @@ public class ThingsboardUpdateService {
                 throw new ThingsboardUpdateException("Value of " + INSTALL_UPGRADE_ENV_NAME + " is not set to true", e);
             }
 
-            log.info("Starting ThingsBoard Upgrade from version {} ...", upgradeFromVersion);
+            upgradeFromVersion = databaseEntitiesUpgradeService.getCurrentSchemeVersion();
+
+            List<String> versions = Lists.newArrayList("3.2.1", "3.2.2", "3.3.2", "3.3.3", "3.3.4", "3.4.0", "3.4.1", "3.4.4", "3.5.0", "3.5.1", "3.6.0", "3.6.1", "3.6.2"); // Oldest to newest
+
+            int index = versions.indexOf(upgradeFromVersion);
+
+            if (index == -1) {
+                Throwable e = new Throwable("Supported versions are " + versions);
+                throw new ThingsboardUpdateException("Current version is " + upgradeFromVersion + " and not supported", e);
+            }
+
+            String upgradeToVersion = versions.get(versions.size() - 1);
+
+            log.info("Starting ThingsBoard Upgrade from version {} to version {}", upgradeFromVersion, upgradeToVersion);
 
             cacheCleanupService.clearCache(upgradeFromVersion);
 
-            List<String> versions = Lists.newArrayList("3.2.1", "3.2.2", "3.3.2", "3.3.3", "3.3.4", "3.4.0", "3.4.1", "3.4.4", "3.5.0", "3.5.1", "3.6.0", "3.6.1", "3.6.2");
-
-            String currentVersion = versions.get(0); //TODO: bunu db'den oku
-
-            if (!versions.contains(currentVersion)) {
-                Throwable e = new Throwable("Supported versions are " + versions);
-                throw new ThingsboardUpdateException("Current version is " + currentVersion + " and not supported", e);
-            }
-
-            for (String version : versions) {
+            for (int i = index; i < versions.size(); i++) {
+                String version = versions.get(i);
                 switch (version) {
                     case "3.2.1":
                         log.info("Upgrading ThingsBoard from version 3.2.1 to 3.2.2 ...");
