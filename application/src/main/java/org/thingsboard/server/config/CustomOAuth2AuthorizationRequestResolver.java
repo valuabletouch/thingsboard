@@ -36,6 +36,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.thingsboard.server.common.data.StringUtils;
+import org.thingsboard.server.dao.oauth2.HybridClientRegistrationRepository;
 import org.thingsboard.server.dao.oauth2.OAuth2Configuration;
 import org.thingsboard.server.dao.oauth2.OAuth2Service;
 import org.thingsboard.server.queue.util.TbCoreComponent;
@@ -60,6 +61,9 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
     private static final String DEFAULT_LOGIN_PROCESSING_URI = "/login/oauth2/code/";
     private static final String REGISTRATION_ID_URI_VARIABLE_NAME = "registrationId";
     private static final char PATH_DELIMITER = '/';
+
+    private final AntPathRequestMatcher authorizationRequestWithoutRegistrationIdMatcher =
+            new AntPathRequestMatcher(DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
 
     private final AntPathRequestMatcher authorizationRequestMatcher = new AntPathRequestMatcher(
             DEFAULT_AUTHORIZATION_REQUEST_BASE_URI + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
@@ -117,11 +121,22 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
 
     @SuppressWarnings("deprecation")
     private OAuth2AuthorizationRequest resolve(HttpServletRequest request, String registrationId, String redirectUriAction, String appPackage, String appToken) {
+        ClientRegistration clientRegistration = null;
         if (registrationId == null) {
-            return null;
+            if (authorizationRequestWithoutRegistrationIdMatcher.matches(request) &&
+                    this.clientRegistrationRepository instanceof HybridClientRegistrationRepository) {
+                HybridClientRegistrationRepository repository =
+                        (HybridClientRegistrationRepository) this.clientRegistrationRepository;
+                clientRegistration = repository.getFirst();
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            clientRegistration = this.clientRegistrationRepository.findByRegistrationId(registrationId);
         }
 
-        ClientRegistration clientRegistration = this.clientRegistrationRepository.findByRegistrationId(registrationId);
         if (clientRegistration == null) {
             throw new IllegalArgumentException("Invalid Client Registration with Id: " + registrationId);
         }

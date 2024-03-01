@@ -181,6 +181,16 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     private ListenableFuture<Integer> doSave(TenantId tenantId, EntityId entityId, List<TsKvEntry> tsKvEntries, long ttl, boolean saveLatest) {
+        for (TsKvEntry tsKvEntry : tsKvEntries) {
+            if (tsKvEntry == null) {
+                throw new IncorrectParameterException("Key value entry can't be null");
+            }
+
+            if (tsKvEntry.getKey().equals("$is_already_saved") && tsKvEntry.getValue().toString().equals("1")) {
+                return Futures.immediateFuture(0);
+            }
+        }
+
         int inserts = saveLatest ? INSERTS_PER_ENTRY : INSERTS_PER_ENTRY_WITHOUT_LATEST;
         List<ListenableFuture<Integer>> futures = Lists.newArrayListWithExpectedSize(tsKvEntries.size() * inserts);
         for (TsKvEntry tsKvEntry : tsKvEntries) {

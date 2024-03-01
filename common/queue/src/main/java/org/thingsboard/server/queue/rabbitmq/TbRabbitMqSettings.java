@@ -59,6 +59,7 @@ public class TbRabbitMqSettings {
         connectionFactory.setUsername(username);
         connectionFactory.setPassword(password);
         connectionFactory.setAutomaticRecoveryEnabled(automaticRecoveryEnabled);
+        connectionFactory.setTopologyRecoveryEnabled(automaticRecoveryEnabled);
         connectionFactory.setConnectionTimeout(connectionTimeout);
         connectionFactory.setHandshakeTimeout(handshakeTimeout);
     }
