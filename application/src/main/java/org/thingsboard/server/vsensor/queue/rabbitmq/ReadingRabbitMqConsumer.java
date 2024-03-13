@@ -271,7 +271,7 @@ public class ReadingRabbitMqConsumer {
     }
 
     private TsKvEntry convertResultToTsKvEntry(Reading reading) throws ParseException {
-        long readAtTs = getEpochTime(reading.getReadAt());
+        long readAtTs = getEpochTime(String.valueOf(reading.getReadAt()));
         String key = reading.getReadingTypeId().toString();
         Optional<ReadingType> readingType = readingTypeService.findById(key);
         if (readingType.isPresent()) {

@@ -17,6 +17,7 @@ package org.thingsboard.server.common.data.vsensor;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import lombok.Data;
@@ -30,7 +31,7 @@ public class Reading implements Serializable {
 
     private UUID readingTypeId;
 
-    private String readAt;
+    private OffsetDateTime readAt;
 
     private String dataType;
 
@@ -42,7 +43,7 @@ public class Reading implements Serializable {
 
     private String valueString;
 
-    private String valueDatetime;
+    private OffsetDateTime valueDatetime;
 
     private String valueJson;
 }

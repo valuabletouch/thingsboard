@@ -1,19 +1,4 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
  * Özgün AY
  */
 package org.thingsboard.server.dao.model.vsensor;
@@ -51,8 +36,7 @@ public class VModelConstants {
     public static final String STRING_VALUE_COLUMN = "valuestring";
     public static final String JSON_VALUE_COLUMN = "valuejson";
 
-    protected static final String[] NONE_AGGREGATION_COLUMNS =
-        new String[] {
+    protected static final String[] NONE_AGGREGATION_COLUMNS = new String[] {
             LONG_VALUE_COLUMN,
             DOUBLE_VALUE_COLUMN,
             BOOLEAN_VALUE_COLUMN,
@@ -61,10 +45,9 @@ public class VModelConstants {
             DATE_TIME_VALUE_COLUMN,
             READING_TYPE_ID_COLUMN,
             READ_AT_COLUMN
-        };
+    };
 
-    protected static final String[] COUNT_AGGREGATION_COLUMNS =
-        new String[] {
+    protected static final String[] COUNT_AGGREGATION_COLUMNS = new String[] {
             count(LONG_VALUE_COLUMN),
             count(DOUBLE_VALUE_COLUMN),
             count(BOOLEAN_VALUE_COLUMN),
@@ -73,10 +56,9 @@ public class VModelConstants {
             count(DATE_TIME_VALUE_COLUMN),
             count(READING_TYPE_ID_COLUMN),
             count(READ_AT_COLUMN)
-        };
+    };
 
-    protected static final String[] MIN_AGGREGATION_COLUMNS =
-        ArrayUtils.addAll(
+    protected static final String[] MIN_AGGREGATION_COLUMNS = ArrayUtils.addAll(
             COUNT_AGGREGATION_COLUMNS,
             min(LONG_VALUE_COLUMN),
             min(DOUBLE_VALUE_COLUMN),
@@ -85,8 +67,7 @@ public class VModelConstants {
             min(JSON_VALUE_COLUMN),
             min(DATE_TIME_VALUE_COLUMN));
 
-    protected static final String[] MAX_AGGREGATION_COLUMNS =
-        ArrayUtils.addAll(
+    protected static final String[] MAX_AGGREGATION_COLUMNS = ArrayUtils.addAll(
             COUNT_AGGREGATION_COLUMNS,
             max(LONG_VALUE_COLUMN),
             max(DOUBLE_VALUE_COLUMN),
@@ -95,8 +76,7 @@ public class VModelConstants {
             max(DATE_TIME_VALUE_COLUMN),
             max(JSON_VALUE_COLUMN));
 
-    protected static final String[] SUM_AGGREGATION_COLUMNS =
-        ArrayUtils.addAll(
+    protected static final String[] SUM_AGGREGATION_COLUMNS = ArrayUtils.addAll(
             COUNT_AGGREGATION_COLUMNS,
             sum(LONG_VALUE_COLUMN),
             sum(DOUBLE_VALUE_COLUMN));
