@@ -173,10 +173,12 @@ public class ReadingRabbitMqConsumer {
                                 props.getHeaders().get("message_context").toString(),
                                 MessageContext.class);
 
-                        CorrelationContext correlationContext = gson.fromJson(messageContext.getUser().toString(),
+                        CorrelationContext correlationContext = gson.fromJson(messageContext.getIdentity().toString(),
                                 CorrelationContext.class);
 
-                        if (!Arrays.asList(correlationContext.getScopes()).contains("thingsboard")) {
+                        List<String> scopes = correlationContext.getScopes() != null ? Arrays.asList(correlationContext.getScopes()) : null;
+
+                        if (scopes == null || !scopes.contains("thingsboard")) {
                             String message = new String(body, StandardCharsets.UTF_8);
                             Reading reading = gson.fromJson(message, Reading.class);
                             TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
@@ -392,18 +394,17 @@ public class ReadingRabbitMqConsumer {
     @Getter
     private static class MessageContext {
         private String correlationId;
-        private String spanContext;
+        private String initiator;
         private String connectionId;
         private String traceId;
         private String resourceId;
-        private Object user;
+        private Object identity;
         private String createdAt;
     }
 
     @Getter
     private static class CorrelationContext {
         private String id;
-        private String isAuthenticated;
         private String isAdmin;
         private String isSystem;
         private String[] roles;

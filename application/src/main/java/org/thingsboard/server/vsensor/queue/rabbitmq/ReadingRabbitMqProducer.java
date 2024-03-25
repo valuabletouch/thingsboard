@@ -103,22 +103,18 @@ public class ReadingRabbitMqProducer {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         dateFormat.setTimeZone(timeZone);
 
-        Map<String, Object> user = new HashMap<>();
-        user.put("id", null);
-        user.put("isAuthenticated", false);
-        user.put("isAdmin", false);
-        user.put("isSystem", true);
-        user.put("roles", new String[] {});
-        user.put("scopes", new String[] { "thingsboard" });
-        user.put("claims", new HashMap<String, String[]>());
+        Map<String, Object> identity = new HashMap<>();
+        identity.put("id", null);
+        identity.put("isAuthenticated", false);
+        identity.put("isSystem", true);
+        identity.put("scopes", new String[] { "thingsboard" });
 
         Map<String, Object> messageContext = new HashMap<>();
         messageContext.put("correlationId", correlationId);
-        messageContext.put("spanContext", null);
+        messageContext.put("initiator", "thingsboard");
         messageContext.put("connectionId", UUID.randomUUID().toString().replace("-", ""));
         messageContext.put("traceId", UUID.randomUUID().toString().replace("-", ""));
-        messageContext.put("resourceId", null);
-        messageContext.put("user", user);
+        messageContext.put("identity", identity);
         messageContext.put("createdAt", dateFormat.format(new Date(System.currentTimeMillis())));
 
         Map<String, Object> headers = new HashMap<>();
