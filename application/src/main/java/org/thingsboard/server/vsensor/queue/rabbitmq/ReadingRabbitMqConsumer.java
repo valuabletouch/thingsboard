@@ -122,7 +122,11 @@ public class ReadingRabbitMqConsumer {
 
     private MessagesStats ruleEngineProducerStats;
 
-    public ReadingRabbitMqConsumer(TbQueueProducerProvider producerProvider, CacheManager cacheManager, TbRabbitMqSettings rabbitMqSettings, ReadingTypeService readingTypeService, DeviceService deviceService, DeviceProfileService deviceProfileService, PartitionService partitionService, StatsFactory statsFactory, TransformationService transformationService, TransformationSystem transformationSystem, TransformationEntity transformationEntity) {
+    public ReadingRabbitMqConsumer(TbQueueProducerProvider producerProvider, CacheManager cacheManager,
+            TbRabbitMqSettings rabbitMqSettings, ReadingTypeService readingTypeService, DeviceService deviceService,
+            DeviceProfileService deviceProfileService, PartitionService partitionService, StatsFactory statsFactory,
+            TransformationService transformationService, TransformationSystem transformationSystem,
+            TransformationEntity transformationEntity) {
         this.producerProvider = producerProvider;
         this.cacheManager = cacheManager;
         this.rabbitMqSettings = rabbitMqSettings;
@@ -169,10 +173,12 @@ public class ReadingRabbitMqConsumer {
                                 props.getHeaders().get("message_context").toString(),
                                 MessageContext.class);
 
-                        CorrelationContext correlationContext = gson.fromJson(messageContext.getUser().toString(),
+                        CorrelationContext correlationContext = gson.fromJson(messageContext.getIdentity().toString(),
                                 CorrelationContext.class);
 
-                        if (!Arrays.asList(correlationContext.getScopes()).contains("thingsboard")) {
+                        List<String> scopes = Arrays.asList(correlationContext.getScopes());
+
+                        if (scopes != null && !scopes.contains("thingsboard")) {
                             String message = new String(body, StandardCharsets.UTF_8);
                             Reading reading = gson.fromJson(message, Reading.class);
                             TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
@@ -388,18 +394,17 @@ public class ReadingRabbitMqConsumer {
     @Getter
     private static class MessageContext {
         private String correlationId;
-        private String spanContext;
+        private String initiator;
         private String connectionId;
         private String traceId;
         private String resourceId;
-        private Object user;
+        private Object identity;
         private String createdAt;
     }
 
     @Getter
     private static class CorrelationContext {
         private String id;
-        private String isAuthenticated;
         private String isAdmin;
         private String isSystem;
         private String[] roles;
