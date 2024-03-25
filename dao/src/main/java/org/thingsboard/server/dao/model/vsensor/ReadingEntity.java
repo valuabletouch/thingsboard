@@ -15,6 +15,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "\"Readings\"")
 @Getter
+@IdClass(ReadingCompositeKey.class)
 public class ReadingEntity implements ToData<Reading> {
 
     protected static final String SUM = "SUM";
@@ -28,6 +29,7 @@ public class ReadingEntity implements ToData<Reading> {
     protected Long aggValuesCount;
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "\"Id\"", columnDefinition = "uuid")
     private UUID id;
 
@@ -101,14 +103,16 @@ public class ReadingEntity implements ToData<Reading> {
         dataType = reading.getDataType();
     }
 
-    public ReadingEntity(String strValue, Long aggValuesLastTs) {
-        this.aggValuesLastTs = aggValuesLastTs;
-        this.valueString = strValue;
+    public ReadingEntity(String strValue, OffsetDateTime aggValuesLastTs) {
+        if (!isAllNull(strValue, aggValuesLastTs)) {
+            this.valueString = strValue;
+            this.aggValuesLastTs = aggValuesLastTs != null ? aggValuesLastTs.toInstant().toEpochMilli() : 0;
+        }
     }
 
-    public ReadingEntity(Long longValue, BigDecimal doubleValue, Long longCountValue, Long doubleCountValue, String aggType, Long aggValuesLastTs) {
-        this.aggValuesLastTs = aggValuesLastTs;
+    public ReadingEntity(Long longValue, BigDecimal doubleValue, Long longCountValue, Long doubleCountValue, String aggType, OffsetDateTime aggValuesLastTs) {
         if (!isAllNull(longValue, doubleValue, longCountValue, doubleCountValue)) {
+            this.aggValuesLastTs = aggValuesLastTs != null ? aggValuesLastTs.toInstant().toEpochMilli() : 0;
             switch (aggType) {
                 case AVG:
                     BigDecimal sum = new BigDecimal(0);
@@ -147,17 +151,22 @@ public class ReadingEntity implements ToData<Reading> {
         }
     }
 
-    public ReadingEntity(Long booleanValueCount, Long strValueCount, Long longValueCount, Long doubleValueCount, Long jsonValueCount, Long aggValuesLastTs) {
-        this.aggValuesLastTs = aggValuesLastTs;
+    public ReadingEntity(Long booleanValueCount, Long strValueCount, Long longValueCount, Long doubleValueCount, Long jsonValueCount, OffsetDateTime aggValuesLastTs) {
         if (!isAllNull(booleanValueCount, strValueCount, longValueCount, doubleValueCount)) {
-            if (booleanValueCount != 0) {
+            this.aggValuesLastTs = aggValuesLastTs != null ? aggValuesLastTs.toInstant().toEpochMilli() : 0;
+            if (booleanValueCount != null) {
                 this.valueLong = booleanValueCount;
-            } else if (strValueCount != 0) {
+            } else if (strValueCount != null) {
                 this.valueLong = strValueCount;
-            } else if (jsonValueCount != 0) {
+            } else if (jsonValueCount != null) {
                 this.valueLong = jsonValueCount;
+            } else if (longValueCount != null) {
+                this.valueLong = longValueCount;
+                if (doubleValueCount != null) {
+                    this.valueLong += doubleValueCount;
+                }
             } else {
-                this.valueLong = longValueCount + doubleValueCount;
+                this.valueLong = 0L;
             }
         }
     }

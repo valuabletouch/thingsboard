@@ -20,6 +20,7 @@ import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
 import org.thingsboard.server.common.data.vsensor.TransformationService;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.sqlts.ts.TsKvEntity;
+import org.thingsboard.server.dao.model.vsensor.ReadingAggregationDto;
 import org.thingsboard.server.dao.model.vsensor.ReadingEntity;
 import org.thingsboard.server.dao.model.vsensor.VModelConstants;
 import org.thingsboard.server.dao.service.Validator;
@@ -40,6 +41,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -53,7 +55,7 @@ import static org.thingsboard.server.common.data.StringUtils.isBlank;
 @SqlTsDao
 @Primary
 @ConditionalOnExpression("${sql.vsensor.enabled}")
-public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao implements TimeseriesService {
+public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao implements TimeseriesService {
 
     @Value("${database.ts_max_intervals}")
     private long maxTsIntervals;
@@ -78,7 +80,7 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
 
     @Override
     public ListenableFuture<ReadTsKvQueryResult> findAllAsync(TenantId tenantId, EntityId entityId,
-    ReadTsKvQuery query) {
+            ReadTsKvQuery query) {
         var aggParams = query.getAggParameters();
 
         if (query.getAggregation() == Aggregation.NONE) {
@@ -145,7 +147,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
                         query.getKey(), startTs, endTs, ts, query.getAggregation());
                 startPeriod = endTs;
 
-                ListenableFuture<Optional<TsKvEntity>> aggregateTsKvEntry = convertReadingEntityAndAggregationTypeToTsKvEntry(aggregateReadingEntry, query.getAggregation().toString());
+                ListenableFuture<Optional<TsKvEntity>> aggregateTsKvEntry = convertReadingEntityAndAggregationTypeToTsKvEntry(
+                        aggregateReadingEntry, query.getAggregation().toString());
 
                 futures.add(aggregateTsKvEntry);
             }
@@ -206,7 +209,7 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
         }
     }
 
-    ListenableFuture<Optional<ReadingEntity>> findAndAggregateAsync(EntityId entityId, String key, long startTs,
+    ListenableFuture<Optional<ReadingEntity>> findAndAggregateAsync(EntityId entityId, String key, long startTs, // sysadmin neden burada?
             long endTs, long ts, Aggregation aggregation) {
         return service.submit(() -> {
             ReadingEntity entity = switchReadingAggregation(entityId, key, startTs, endTs, aggregation);
@@ -225,7 +228,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
     }
 
     @Override
-    public ListenableFuture<List<ReadTsKvQueryResult>> findAllByQueries(TenantId tenantId, EntityId entityId, List<ReadTsKvQuery> queries) {
+    public ListenableFuture<List<ReadTsKvQueryResult>> findAllByQueries(TenantId tenantId, EntityId entityId,
+            List<ReadTsKvQuery> queries) {
         validate(entityId);
         queries.forEach(this::validate);
 
@@ -246,7 +250,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
     }
 
     @Override
-    public ListenableFuture<List<TsKvEntry>> findAll(TenantId tenantId, EntityId entityId, List<ReadTsKvQuery> queries) {
+    public ListenableFuture<List<TsKvEntry>> findAll(TenantId tenantId, EntityId entityId,
+            List<ReadTsKvQuery> queries) {
         return Futures.immediateFuture(null);
     }
 
@@ -276,7 +281,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
     }
 
     @Override
-    public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, List<TsKvEntry> tsKvEntryList, long ttl) {
+    public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, List<TsKvEntry> tsKvEntryList,
+            long ttl) {
         for (TsKvEntry tsKvEntry : tsKvEntryList) {
             save(tenantId, entityId, tsKvEntry, ttl);
         }
@@ -284,7 +290,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
     }
 
     @Override
-    public ListenableFuture<Integer> saveWithoutLatest(TenantId tenantId, EntityId entityId, List<TsKvEntry> tsKvEntry, long ttl) {
+    public ListenableFuture<Integer> saveWithoutLatest(TenantId tenantId, EntityId entityId, List<TsKvEntry> tsKvEntry,
+            long ttl) {
         return Futures.immediateFuture(null);
     }
 
@@ -294,12 +301,14 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
     }
 
     @Override
-    public ListenableFuture<List<TsKvLatestRemovingResult>> remove(TenantId tenantId, EntityId entityId, List<DeleteTsKvQuery> queries) {
+    public ListenableFuture<List<TsKvLatestRemovingResult>> remove(TenantId tenantId, EntityId entityId,
+            List<DeleteTsKvQuery> queries) {
         return Futures.immediateFuture(null);
     }
 
     @Override
-    public ListenableFuture<List<TsKvLatestRemovingResult>> removeLatest(TenantId tenantId, EntityId entityId, Collection<String> keys) {
+    public ListenableFuture<List<TsKvLatestRemovingResult>> removeLatest(TenantId tenantId, EntityId entityId,
+            Collection<String> keys) {
         return Futures.immediateFuture(null);
     }
 
@@ -318,35 +327,94 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
         return null;
     }
 
-    private ReadingEntity switchReadingAggregation(EntityId entityId, String key, long startTs, long endTs, Aggregation aggregation) {
+    private ReadingEntity switchReadingAggregation(EntityId entityId, String key, long startTs, long endTs,
+            Aggregation aggregation) {
         UUID dataSourceId = convertEntityIdToDataSourceId(entityId);
         UUID readingTypeId = convertEntityKeyToReadingTypeId(key);
         OffsetDateTime dateFrom = longToOffsetDateTime(startTs);
         OffsetDateTime dateTo = longToOffsetDateTime(endTs);
         switch (aggregation) {
             case AVG:
-                return readingRepository.findAvg(dataSourceId, readingTypeId, dateFrom, dateTo);
-            case MAX:
-                var max = readingRepository.findNumericMax(dataSourceId, readingTypeId, dateFrom, dateTo);
-                if (max.isNotEmpty()) {
-                    return max;
+                ReadingAggregationDto avgDto = readingRepository.findNumericMax(dataSourceId, readingTypeId, dateFrom,
+                        dateTo);
+                if (!isAggregationNull(avgDto)) {
+                    return new ReadingEntity(avgDto.getLongValue(), avgDto.getDoubleValue(), avgDto.getLongCountValue(),
+                            avgDto.getDoubleCountValue(), avgDto.getAggType(),
+                            OffsetDateTime.ofInstant(avgDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")));
                 } else {
-                    return readingRepository.findStringMax(dataSourceId, readingTypeId, dateFrom, dateTo);
+                    return new ReadingEntity();
+                }
+            case MAX:
+                ReadingAggregationDto numericMaxDto = readingRepository.findNumericMax(dataSourceId, readingTypeId,
+                        dateFrom, dateTo);
+                if (!isAggregationNull(numericMaxDto)) {
+                    return new ReadingEntity(numericMaxDto.getLongValue(), numericMaxDto.getDoubleValue(),
+                            numericMaxDto.getLongCountValue(), numericMaxDto.getDoubleCountValue(),
+                            numericMaxDto.getAggType(),
+                            OffsetDateTime.ofInstant(numericMaxDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")));
+                } else {
+                    ReadingAggregationDto stringMaxDto = readingRepository.findStringMax(dataSourceId, readingTypeId,
+                            dateFrom, dateTo);
+                    return new ReadingEntity(
+                            stringMaxDto.getStrValue(),
+                            stringMaxDto.getAggValuesLastTs() != null
+                                    ? OffsetDateTime.ofInstant(stringMaxDto.getAggValuesLastTs().toInstant(),
+                                            ZoneId.of("UTC"))
+                                    : null);
                 }
             case MIN:
-                var min = readingRepository.findNumericMin(dataSourceId, readingTypeId, dateFrom, dateTo);
-                if (min.isNotEmpty()) {
-                    return min;
+                ReadingAggregationDto numericMinDto = readingRepository.findNumericMin(dataSourceId, readingTypeId,
+                        dateFrom, dateTo);
+                if (!isAggregationNull(numericMinDto)) {
+                    return new ReadingEntity(numericMinDto.getLongValue(), numericMinDto.getDoubleValue(),
+                            numericMinDto.getLongCountValue(), numericMinDto.getDoubleCountValue(),
+                            numericMinDto.getAggType(),
+                            OffsetDateTime.ofInstant(numericMinDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")));
                 } else {
-                    return readingRepository.findStringMin(dataSourceId, readingTypeId, dateFrom, dateTo);
+                    ReadingAggregationDto stringMinDto = readingRepository.findStringMin(dataSourceId, readingTypeId,
+                            dateFrom, dateTo);
+                    return new ReadingEntity(
+                            stringMinDto.getStrValue(),
+                            stringMinDto.getAggValuesLastTs() != null
+                                    ? OffsetDateTime.ofInstant(stringMinDto.getAggValuesLastTs().toInstant(),
+                                            ZoneId.of("UTC"))
+                                    : null);
                 }
             case SUM:
-                return readingRepository.findSum(dataSourceId, readingTypeId, dateFrom, dateTo);
+                ReadingAggregationDto sumDto = readingRepository.findSum(dataSourceId, readingTypeId, dateFrom, dateTo);
+                if (!isAggregationNull(sumDto)) {
+                    return new ReadingEntity(
+                        sumDto.getLongValue(),
+                        sumDto.getDoubleValue(),
+                        sumDto.getLongCountValue(),
+                        sumDto.getDoubleCountValue(),
+                        sumDto.getAggType(),
+                        sumDto.getAggValuesLastTs() != null ?
+                            OffsetDateTime.ofInstant(sumDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")) :
+                            null);
+                } else {
+                    return new ReadingEntity();
+                }
             case COUNT:
-                return readingRepository.findCount(dataSourceId, readingTypeId, dateFrom, dateTo);
+                ReadingAggregationDto countDto = readingRepository.findSum(dataSourceId, readingTypeId, dateFrom,
+                        dateTo);
+                return new ReadingEntity(
+                        countDto.getBooleanCountValue(),
+                        countDto.getStrCountValue(),
+                        countDto.getLongCountValue(),
+                        countDto.getDoubleCountValue(),
+                        countDto.getJsonCountValue(),
+                        countDto.getAggValuesLastTs() != null
+                                ? OffsetDateTime.ofInstant(countDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC"))
+                                : null);
             default:
                 throw new IllegalArgumentException("Not supported aggregation type: " + aggregation);
         }
+    }
+
+    private boolean isAggregationNull(ReadingAggregationDto aggregation) {
+        return aggregation.getLongValue() == null && aggregation.getDoubleValue() == null
+                && aggregation.getLongCountValue() == null && aggregation.getDoubleCountValue() == null;
     }
 
     private UUID convertEntityIdToDataSourceId(EntityId entityId) {
@@ -376,7 +444,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
         }
     }
 
-    private ListenableFuture<Optional<TsKvEntity>> convertReadingEntityAndAggregationTypeToTsKvEntry(ListenableFuture<Optional<ReadingEntity>> readingEntity, String aggregation) {
+    private ListenableFuture<Optional<TsKvEntity>> convertReadingEntityAndAggregationTypeToTsKvEntry(
+            ListenableFuture<Optional<ReadingEntity>> readingEntity, String aggregation) {
         return Futures.transform(readingEntity, new Function<>() {
             @Nullable
             @Override
@@ -398,7 +467,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
     private TsKvEntity convertToTsKvEntity(ReadingEntity entity, String aggregation) {
         TsKvEntity tsKvEntity = new TsKvEntity();
         tsKvEntity.setEntityId(entity.getDataSourceId());
-        tsKvEntity.setKey(getOrSaveKeyId(readingTypeService.findById(entity.getReadingTypeId().toString()).get().getCode()));
+        tsKvEntity.setKey(
+                getOrSaveKeyId(readingTypeService.findById(entity.getReadingTypeId().toString()).get().getCode()));
         tsKvEntity.setTs(entity.getReadAt().toInstant().toEpochMilli());
         tsKvEntity.setStrKey(entity.getReadingTypeId().toString());
         tsKvEntity.setAggValuesCount(entity.getAggValuesCount());
@@ -406,7 +476,20 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
         tsKvEntity.setBooleanValue(entity.getValueBoolean());
         tsKvEntity.setStrValue(entity.getValueString());
         tsKvEntity.setLongValue(entity.getValueLong());
-        tsKvEntity.setDoubleValue(entity.getValueDecimal().doubleValue());
+        // tsKvEntity.setDoubleValue(entity.getValueDecimal().doubleValue());
+
+        if (entity.getValueDecimal() != null) {
+            if (entity.getValueDecimal().compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) > 0) {
+                tsKvEntity.setDoubleValue(Double.MAX_VALUE);
+            } else if (entity.getValueDecimal().compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) < 0) {
+                tsKvEntity.setDoubleValue(Double.MIN_VALUE);
+            } else {
+                tsKvEntity.setDoubleValue(entity.getValueDecimal().doubleValue());
+            }
+        } else {
+            tsKvEntity.setDoubleValue(0D);
+        }
+
         tsKvEntity.setJsonValue(entity.getValueJson());
         return tsKvEntity;
     }
@@ -438,7 +521,6 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
 
         return kvEntry;
     }
-
 
     private static void addValue(KvEntry kvEntry, Reading reading) {
         switch (kvEntry.getDataType()) {
@@ -489,7 +571,6 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
         return OffsetDateTime.ofInstant(Instant.ofEpochMilli(ts), TimeZone.getDefault().toZoneId());
     }
 
-
     private static void validate(EntityId entityId) {
         Validator.validateEntityId(entityId, "Incorrect entityId " + entityId);
     }
@@ -506,7 +587,8 @@ public class PsqlTimeseriesDao extends  AbstractChunkedAggregationTimeseriesDao 
             long step = Math.max(query.getInterval(), 1000);
             long intervalCounts = (query.getEndTs() - query.getStartTs()) / step;
             if (intervalCounts > maxTsIntervals || intervalCounts < 0) {
-                throw new IncorrectParameterException("Incorrect ReadingQuery. Number of intervals is to high - " + intervalCounts + ". " +
+                throw new IncorrectParameterException("Incorrect ReadingQuery. Number of intervals is to high - "
+                        + intervalCounts + ". " +
                         "Please increase 'interval' parameter for your query or reduce the time range of the query.");
             }
         }

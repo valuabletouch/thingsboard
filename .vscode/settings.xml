@@ -1,0 +1,31 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    
+    <!-- Genel ayarlar -->
+    <localRepository>${user.home}/.m2/repository</localRepository>
+    <interactiveMode>false</interactiveMode>
+    <usePluginRegistry>false</usePluginRegistry>
+    <offline>false</offline>
+    
+    <!-- Profil ayarları -->
+    <profiles>
+        <!-- Profil tanımlarını buraya ekleyin -->
+        <profile>
+            <id>default</id>
+            <maven.skip.test>true</maven.skip.test>
+            <license.skip>true</license.skip>
+            <file.encoding>UTF-8</file.encoding>
+            <jansi.passthrough>true<jansi.passthrough>
+            <dockerfile.skip>true</dockerfile.skip>
+            <blackBoxTests.skip>true</blackBoxTests.skip>
+        </profile>
+    </profiles>
+    
+    <!-- Ayna (mirror) ayarları -->
+    <mirrors>
+        <!-- Ayna (mirror) tanımlarını buraya ekleyin -->
+    </mirrors>
+    
+</settings>

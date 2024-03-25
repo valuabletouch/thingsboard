@@ -24,6 +24,7 @@ import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -454,7 +455,7 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        reading.setReadAt(dateFormat.format(new Date(ttl)));
+        reading.setReadAt(OffsetDateTime.ofInstant(Instant.ofEpochMilli(ttl), TimeZone.getDefault().toZoneId()));
     }
 
     private static void addValue(KvEntry kvEntry, Reading reading) {

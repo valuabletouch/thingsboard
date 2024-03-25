@@ -72,10 +72,6 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.thingsboard.common</groupId>
-            <artifactId>transport</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
