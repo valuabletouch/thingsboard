@@ -1,13 +1,14 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.service;
+package org.thingsboard.server.vsensor.update.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.thingsboard.server.service.install.DatabaseSchemaService;
 import org.thingsboard.server.service.install.InstallScripts;
+import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -80,7 +81,7 @@ public abstract class SqlAbstractDatabaseSchemaService implements DatabaseSchema
             Thread.sleep(5000);
         } catch (InterruptedException | SQLException e) {
             log.error("Failed to execute query: {} due to: {}", query, e.getMessage());
-            throw new RuntimeException("Failed to execute query: " + query, e);
+            throw new ThingsboardUpdateException("Failed to execute query: " + query, e);
         }
     }
 

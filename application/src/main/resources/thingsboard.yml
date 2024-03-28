@@ -14,7 +14,13 @@
 # limitations under the License.
 #
 
-install.upgrade: "false"
+upgrade:
+  do_upgrade: "${UPGRADE_THINGSBOARD:false}"
+  from_version: "${UPGRADE_FROM_VERSION:1.2.3}"  
+
+install:
+  upgrade: "${INSTALL_UPGRADE:false}"
+  data_dir: "${INSTALL_DATA_DIRECTORY:}"
 # Server common parameters
 server:
   # Server bind-address
@@ -726,9 +732,9 @@ spring:
         enabled: "true"
     mongodb:
       readingtype:
-        uri: "${READING_TYPE_MONGODB_URI:mongodb://root:secret@localhost:27017/vsensor-definition?authSource=admin}"
+        uri: "${READING_TYPE_MONGODB_URI:mongodb://mongo:mongo@localhost:27017/readingType}"
       transformation:
-        uri: "${TRANSFORMATION_MONGODB_URI:mongodb://root:secret@localhost:27017/identity-transform?authSource=admin}"
+        uri: "${TRANSFORMATION_MONGODB_URI:mongodb://mongo:mongo@localhost:27017/transformation}"
   jpa:
     properties:
       javax.persistence.query.timeout: "${JAVAX_PERSISTENCE_QUERY_TIMEOUT:30000}" # General timeout for JDBC queries
@@ -742,9 +748,9 @@ spring:
     # Database connection URL
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/thingsboard}"
     # Database user name
-    username: "${SPRING_DATASOURCE_USERNAME:root}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
     # Database user password
-    password: "${SPRING_DATASOURCE_PASSWORD:secret}"
+    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
     hikari:
       # This property controls the amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak. A value of 0 means leak detection is disabled
       leakDetectionThreshold: "${SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD:0}"
@@ -755,11 +761,11 @@ spring:
       # Database driver for Spring JPA - org.postgresql.Driver
       driverClassName: "${SPRING_READINGS_DRIVER_CLASS_NAME:org.postgresql.Driver}"
       # Database connection URL
-      url: "${SPRING_DATASOURCE_READINGS_URL:jdbc:postgresql://localhost:5432/VSensorReadingApi}"
+      url: "${SPRING_DATASOURCE_READINGS_URL:jdbc:postgresql://localhost:5432/readings}"
       # Database user name
-      username: "${SPRING_DATASOURCE_READINGS_USERNAME:root}"
+      username: "${SPRING_DATASOURCE_READINGS_USERNAME:postgres}"
       # Database user password
-      password: "${SPRING_DATASOURCE_READINGS_PASSWORD:secret}"
+      password: "${SPRING_DATASOURCE_READINGS_PASSWORD:postgres}"
       hikari:
         # This property controls the amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak. A value of 0 means leak detection is disabled
         leakDetectionThreshold: "${SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD:0}"

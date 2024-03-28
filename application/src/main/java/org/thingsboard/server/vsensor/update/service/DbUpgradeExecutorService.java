@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.service;
+package org.thingsboard.server.vsensor.update.service;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

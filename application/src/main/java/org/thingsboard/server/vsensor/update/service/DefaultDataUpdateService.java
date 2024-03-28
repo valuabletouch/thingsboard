@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.service;
+package org.thingsboard.server.vsensor.update.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -59,10 +59,11 @@ import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.update.DataUpdateService;
 import org.thingsboard.server.service.install.update.PaginatedUpdater;
 import org.thingsboard.server.service.security.auth.jwt.settings.JwtSettingsService;
-import org.thingsboard.server.update.component.RateLimitsUpdater;
-import org.thingsboard.server.update.configuration.DeviceConnectivityConfiguration;
-import org.thingsboard.server.update.dao.AuditLogDao;
 import org.thingsboard.server.utils.TbNodeUpgradeUtils;
+import org.thingsboard.server.vsensor.update.component.RateLimitsUpdater;
+import org.thingsboard.server.vsensor.update.configuration.DeviceConnectivityConfiguration;
+import org.thingsboard.server.vsensor.update.dao.AuditLogDao;
+import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -180,7 +181,8 @@ public class DefaultDataUpdateService implements DataUpdateService {
                 migrateDeviceConnectivity();
                 break;
             default:
-                throw new RuntimeException("Unable to update data, unsupported fromVersion: " + fromVersion);
+                Throwable e = new Throwable("Unsupported version " + fromVersion);
+                throw new ThingsboardUpdateException("Unable to update data, unsupported fromVersion: " + fromVersion, e);
         }
     }
 
@@ -260,7 +262,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
         try {
             return Futures.allAsList(saveFutures).get().size();
         } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException("Failed to process save rule nodes requests due to: ", e);
+            throw new ThingsboardUpdateException("Failed to process save rule nodes requests due to: ", e);
         }
     }
 

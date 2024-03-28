@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.service;
+package org.thingsboard.server.vsensor.update.service;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.FutureCallback;
@@ -56,7 +56,7 @@ import org.thingsboard.server.dao.user.UserService;
 import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.SystemDataLoaderService;
 import org.thingsboard.server.service.security.auth.jwt.settings.JwtSettingsService;
-import org.thingsboard.server.update.configuration.DeviceConnectivityUpdateConfiguration;
+import org.thingsboard.server.vsensor.update.configuration.DeviceConnectivityUpdateConfiguration;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;

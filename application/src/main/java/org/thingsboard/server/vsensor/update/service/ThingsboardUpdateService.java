@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.service;
+package org.thingsboard.server.vsensor.update.service;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
@@ -14,23 +14,23 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.server.service.install.*;
 import org.thingsboard.server.service.install.update.CacheCleanupService;
 import org.thingsboard.server.service.install.update.DataUpdateService;
-import org.thingsboard.server.update.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
+
+import static org.thingsboard.server.vsensor.update.service.DefaultDataUpdateService.getEnv;
 
 import java.util.List;
-
-import static org.thingsboard.server.update.service.DefaultDataUpdateService.getEnv;
 
 @Service
 @Profile("update")
 @Slf4j
 public class ThingsboardUpdateService {
 
-    private final static String INSTALL_UPGRADE_ENV_NAME = "install.upgrade";
+    private final static String INSTALL_UPGRADE_ENV_NAME = "upgrade.do_upgrade";
 
     @Value("${" + INSTALL_UPGRADE_ENV_NAME + ":false}")
     private Boolean isUpgrade;
 
-    @Value("${install.upgrade.from_version:1.2.3}")
+    @Value("${upgrade.from_version:1.2.3}")
     private String upgradeFromVersion;
 
     @Value("${state.persistToTelemetry:false}")
@@ -69,24 +69,31 @@ public class ThingsboardUpdateService {
 
             upgradeFromVersion = databaseEntitiesUpgradeService.getCurrentSchemeVersion();
 
-            List<String> versions = Lists.newArrayList("3.2.1", "3.2.2", "3.3.2", "3.3.3", "3.3.4", "3.4.0", "3.4.1", "3.4.4", "3.5.0", "3.5.1", "3.6.0", "3.6.1", "3.6.2"); // Oldest to newest
+            List<String> versions = Lists.newArrayList("3.2.0", "3.2.1", "3.2.2", "3.3.2", "3.3.3", "3.3.4", "3.4.0",
+                    "3.4.1", "3.4.4", "3.5.0", "3.5.1", "3.6.0", "3.6.1", "3.6.2"); // Oldest to newest
 
             int index = versions.indexOf(upgradeFromVersion);
 
             if (index == -1) {
                 Throwable e = new Throwable("Supported versions are " + versions);
-                throw new ThingsboardUpdateException("Current version is " + upgradeFromVersion + " and not supported", e);
+                throw new ThingsboardUpdateException("Current version is " + upgradeFromVersion + " and not supported",
+                        e);
             }
 
             String upgradeToVersion = versions.get(versions.size() - 1);
 
-            log.info("Starting ThingsBoard Upgrade from version {} to version {}", upgradeFromVersion, upgradeToVersion);
+            log.info("Starting ThingsBoard Upgrade from version {} to version {}", upgradeFromVersion,
+                    upgradeToVersion);
 
             cacheCleanupService.clearCache(upgradeFromVersion);
 
             for (int i = index; i < versions.size(); i++) {
                 String version = versions.get(i);
                 switch (version) {
+                    case "3.2.0":
+                        log.info("Upgrading ThingsBoard from version 3.2.0 to 3.2.1 ...");
+                        databaseEntitiesUpgradeService.upgradeDatabase("3.2.0");
+                        break;
                     case "3.2.1":
                         log.info("Upgrading ThingsBoard from version 3.2.1 to 3.2.2 ...");
                         if (databaseTsUpgradeService != null) {
@@ -151,7 +158,8 @@ public class ThingsboardUpdateService {
                         if (!getEnv("SKIP_IMAGES_MIGRATION", false)) {
                             installScripts.setUpdateImages(true);
                         } else {
-                            log.info("Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
+                            log.info(
+                                    "Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
                         }
                         break;
                     case "3.6.2":
@@ -159,10 +167,12 @@ public class ThingsboardUpdateService {
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.2");
                         systemDataLoaderService.updateDefaultNotificationConfigs();
                         installScripts.updateImages();
-                        //TODO DON'T FORGET to update switch statement in the CacheCleanupService if you need to clear the cache
+                        // TODO DON'T FORGET to update switch statement in the CacheCleanupService if
+                        // you need to clear the cache
                         break;
                     default:
-                        throw new RuntimeException("Unable to upgrade ThingsBoard, unsupported fromVersion: " + upgradeFromVersion);
+                        throw new ThingsboardUpdateException(
+                                "Unable to upgrade ThingsBoard, unsupported fromVersion: " + upgradeFromVersion);
                 }
             }
 
@@ -187,4 +197,3 @@ public class ThingsboardUpdateService {
     }
 
 }
-

@@ -1,0 +1,91 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Launch ThingsBoard Updater",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.vsensor.update.ThingsboardUpdateApplication",
+            "projectName": "org.thingsboard-application",
+            "shortenCommandLine": "jarmanifest",
+            "vmArgs": [
+                "-Dinstall.load_demo=true",
+                "-Dinstall.upgrade=false",
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                // "-Xlog:gc*",
+                "-XX:+PrintGCDateStamps",
+                "-XX:+PrintHeapAtGC",
+                "-XX:+PrintTenuringDistribution",
+                "-XX:+PrintGCApplicationStoppedTime",
+                "-XX:+UseGCLogFileRotation",
+                "-XX:NumberOfGCLogFiles=10",
+                "-XX:GCLogFileSize=10M",
+                "-XX:-UseBiasedLocking",
+                "-XX:+UseTLAB",
+                "-XX:+ResizeTLAB",
+                "-XX:+PerfDisableSharedMem",
+                "-XX:+UseCondCardMark",
+                "-XX:CMSWaitDuration=10000",
+                "-XX:+UseParNewGC",
+                "-XX:+UseConcMarkSweepGC",
+                "-XX:+CMSParallelRemarkEnabled",
+                "-XX:+CMSParallelInitialMarkEnabled",
+                "-XX:+CMSEdenChunksRecordAlways",
+                "-XX:CMSInitiatingOccupancyFraction=75",
+                "-XX:+UseCMSInitiatingOccupancyOnly",
+                "-XX:+ExitOnOutOfMemoryError",
+                "-Dspring.jpa.hibernate.ddl-auto=none",
+            ],
+            "args": [
+                "--spring.profiles.active=update",
+                "org.springframework.boot.loader.PropertiesLauncher"
+            ],
+            
+        },
+        {
+            "type": "java",
+            "name": "Launch ThingsBoard Coap Transport Server",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.coap.ThingsboardCoapTransportApplication",
+            "projectName": "coap"
+        },
+        {
+            "type": "java",
+            "name": "Launch ThingsBoard Http Transport Server",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.http.ThingsboardHttpTransportApplication",
+            "projectName": "http"
+        },
+        {
+            "type": "java",
+            "name": "Launch ThingsBoard Mqtt Transport Server",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.mqtt.ThingsboardMqttTransportApplication",
+            "projectName": "application"
+        },
+        {
+            "type": "java",
+            "name": "Launch Coap Device Emulator",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.coap.client.DeviceEmulator",
+            "projectName": "coap"
+        },
+        {
+            "type": "java",
+            "name": "Debug Mqtt Ssl Client",
+            "request": "launch",
+            "mainClass": "org.thingsboard.client.tools.MqttSslClient",
+            "projectName": "tools"
+        }
+    ]
+}

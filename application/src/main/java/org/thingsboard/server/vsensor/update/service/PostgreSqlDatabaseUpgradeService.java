@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.service;
+package org.thingsboard.server.vsensor.update.service;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -24,7 +24,8 @@ import org.thingsboard.server.dao.tenant.TenantService;
 import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.SystemDataLoaderService;
 import org.thingsboard.server.service.install.update.DefaultDataUpdateService;
-import org.thingsboard.server.update.configuration.TbRuleEngineQueueConfiguration;
+import org.thingsboard.server.vsensor.update.configuration.TbRuleEngineQueueConfiguration;
+import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -81,6 +82,19 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
     @Override
     public void upgradeDatabase(String fromVersion) throws Exception {
         switch (fromVersion) {
+            case "3.2.0":
+                try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
+                    log.info("Updating schema ...");
+                    try {
+                        conn.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_device_device_profile_id ON device(tenant_id, device_profile_id);");
+                        conn.createStatement().execute("ALTER TABLE dashboard ALTER COLUMN configuration TYPE varchar;");
+                        conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 3002001;");
+                    } catch (Exception e) {
+                        log.error("Failed updating schema!!!", e);
+                    }
+                    log.info("Schema updated.");
+                }
+                break;
             case "3.2.1":
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
@@ -384,7 +398,7 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 updateSchema("3.6.2", 3006002, "3.6.3", 3006003, null);
                 break;
             default:
-                throw new RuntimeException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
+                throw new ThingsboardUpdateException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
         }
     }
 

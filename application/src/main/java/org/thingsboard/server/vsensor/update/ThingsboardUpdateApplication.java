@@ -1,20 +1,19 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update;
+package org.thingsboard.server.vsensor.update;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.thingsboard.server.update.service.ThingsboardUpdateService;
+import org.thingsboard.server.vsensor.update.service.ThingsboardUpdateService;
 
 import java.util.Arrays;
 
 @Slf4j
-@SpringBootConfiguration
-@ComponentScan({"org.thingsboard.server.update",
+@ComponentScan({"org.thingsboard.server.vsensor.update",
         "org.thingsboard.server.install",
         "org.thingsboard.server.service.component",
         "org.thingsboard.server.service.install",

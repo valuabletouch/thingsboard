@@ -1,3 +1,6 @@
+/*
+* Ahmet Ertuğrul KAYA
+*/
 package org.thingsboard.server.vsensor.dao.readings;
 
 import org.springframework.data.domain.Pageable;
@@ -7,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.thingsboard.server.dao.model.vsensor.ReadingAggregationDto;
 import org.thingsboard.server.dao.model.vsensor.ReadingEntity;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;

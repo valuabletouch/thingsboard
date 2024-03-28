@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.exception;
+package org.thingsboard.server.vsensor.update.exception;
 
 import org.springframework.boot.ExitCodeGenerator;
 
@@ -9,6 +9,10 @@ public class ThingsboardUpdateException extends RuntimeException implements Exit
 
     public ThingsboardUpdateException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    public ThingsboardUpdateException(String message) {
+        super(message);
     }
 
     public int getExitCode() {

@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.configuration;
+package org.thingsboard.server.vsensor.update.configuration;
 
 import lombok.Data;
 

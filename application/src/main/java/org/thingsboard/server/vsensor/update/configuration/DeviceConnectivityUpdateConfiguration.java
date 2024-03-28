@@ -1,7 +1,7 @@
 /*
-Author Ahmet Ertuğrul KAYA
+* Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.update.configuration;
+package org.thingsboard.server.vsensor.update.configuration;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,7 +16,7 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties(prefix = "device")
 @Data
-public class DeviceConnectivityConfiguration {
+public class DeviceConnectivityUpdateConfiguration {
     private Map<String, DeviceConnectivityInfo> connectivity = new HashMap<>();
 
     public boolean isEnabled(String protocol) {
