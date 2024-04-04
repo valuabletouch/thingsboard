@@ -3,8 +3,7 @@ package org.thingsboard.server.dao.model.vsensor;
 import java.io.Serializable;
 import java.util.UUID;
 
-import javax.persistence.Transient;
-
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

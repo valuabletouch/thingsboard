@@ -18,6 +18,7 @@ import org.thingsboard.server.common.data.vsensor.Reading;
 import org.thingsboard.server.common.data.vsensor.ReadingType;
 import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
 import org.thingsboard.server.common.data.vsensor.TransformationService;
+import org.thingsboard.server.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.sqlts.ts.TsKvEntity;
 import org.thingsboard.server.dao.model.vsensor.ReadingAggregationDto;
@@ -74,6 +75,9 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Autowired
     private ReadingRabbitMqProducer readingRabbitMqProducer;
+
+    @Autowired
+    private KeyDictionaryDao keyDictionaryDao;
 
     @Override
     public ListenableFuture<ReadTsKvQueryResult> findAllAsync(TenantId tenantId, EntityId entityId,
@@ -465,7 +469,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
         TsKvEntity tsKvEntity = new TsKvEntity();
         tsKvEntity.setEntityId(entity.getDataSourceId());
         tsKvEntity.setKey(
-                getOrSaveKeyId(readingTypeService.findById(entity.getReadingTypeId().toString()).get().getCode()));
+            keyDictionaryDao.getOrSaveKeyId(readingTypeService.findById(entity.getReadingTypeId().toString()).get().getCode()));
         tsKvEntity.setTs(entity.getReadAt().toInstant().toEpochMilli());
         tsKvEntity.setStrKey(entity.getReadingTypeId().toString());
         tsKvEntity.setAggValuesCount(entity.getAggValuesCount());

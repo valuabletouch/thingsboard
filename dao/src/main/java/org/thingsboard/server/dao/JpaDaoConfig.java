@@ -33,7 +33,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.thingsboard.server.dao.sqlts.sql.JpaSqlTimeseriesDao;
 import org.thingsboard.server.dao.util.TbAutoConfiguration;
 
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
+
 import javax.sql.DataSource;
 
 /**

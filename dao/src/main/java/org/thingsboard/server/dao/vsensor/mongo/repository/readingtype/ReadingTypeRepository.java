@@ -27,4 +27,5 @@ import org.thingsboard.server.dao.model.vsensor.ReadingTypeDocument;
 @Repository
 public interface ReadingTypeRepository extends MongoRepository<ReadingTypeDocument, String> {
     public Optional<ReadingTypeDocument> findByCode(String code);
+    public Optional<ReadingTypeDocument> findById(String id);
 }
