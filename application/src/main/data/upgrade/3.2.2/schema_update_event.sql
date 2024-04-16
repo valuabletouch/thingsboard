@@ -16,6 +16,8 @@
 
 -- PROCEDURE: public.cleanup_events_by_ttl(bigint, bigint, bigint)
 
+CREATE TABLE IF NOT EXISTS public.event ( id UUID NOT NULL, created_time BIGINT NOT NULL, body TEXT, entity_id UUID, entity_type VARCHAR(255), event_type VARCHAR(255), event_uid VARCHAR(255), tenant_id UUID, ts BIGINT NOT NULL, CONSTRAINT event_pkey PRIMARY KEY (id), CONSTRAINT event_unq_key UNIQUE (tenant_id, entity_id, entity_type, event_type, event_uid) );
+
 DROP PROCEDURE IF EXISTS public.cleanup_events_by_ttl(bigint, bigint, bigint);
 
 CREATE OR REPLACE PROCEDURE public.cleanup_events_by_ttl(

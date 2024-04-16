@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@Document(collection = "Transformations")
+@Document(collection = "\"Transformations\"")
 @Data
 @AllArgsConstructor
 public class TransformationDocument implements Serializable {

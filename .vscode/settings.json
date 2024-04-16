@@ -1,5 +1,6 @@
 {
     "maven.view": "hierarchical",
     "java.dependency.packagePresentation": "hierarchical",
-    "java.dependency.syncWithFolderExplorer": false
+    "java.dependency.syncWithFolderExplorer": false,
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

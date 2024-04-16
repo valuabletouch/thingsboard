@@ -35,6 +35,7 @@ public class ThingsboardUpdateApplication {
             application.setAdditionalProfiles("update");
             ConfigurableApplicationContext context = application.run(updateArguments(args));
             context.getBean(ThingsboardUpdateService.class).performInstall();
+            log.info("Finished updating!");
         } catch (Exception e) {
             log.error(e.getMessage());
             System.exit(1);

@@ -121,19 +121,25 @@ public class ThingsboardInstallService {
                             if (!getEnv("SKIP_IMAGES_MIGRATION", false)) {
                                 installScripts.setUpdateImages(true);
                             } else {
-                                log.info("Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
+                                log.info(
+                                        "Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
                             }
                         case "3.6.2":
                             log.info("Upgrading ThingsBoard from version 3.6.2 to 3.6.3 ...");
                             databaseEntitiesUpgradeService.upgradeDatabase("3.6.2");
                             systemDataLoaderService.updateDefaultNotificationConfigs();
                         case "3.6.3":
-                            log.info("Upgrading ThingsBoard from version 3.6.3 to 3.7.0 ...");
+                            log.info("Upgrading ThingsBoard from version 3.6.3 to 3.6.4 ...");
                             databaseEntitiesUpgradeService.upgradeDatabase("3.6.3");
-                            //TODO DON'T FORGET to update switch statement in the CacheCleanupService if you need to clear the cache
+                        case "3.6.4":
+                            log.info("Upgrading ThingsBoard from version 3.6.4 to 3.7.0 ...");
+                            databaseEntitiesUpgradeService.upgradeDatabase("3.6.4");
+                            // TODO DON'T FORGET to update switch statement in the CacheCleanupService if
+                            // you need to clear the cache
                             break;
                         default:
-                            throw new RuntimeException("Unable to upgrade ThingsBoard, unsupported fromVersion: " + upgradeFromVersion);
+                            throw new RuntimeException(
+                                    "Unable to upgrade ThingsBoard, unsupported fromVersion: " + upgradeFromVersion);
                     }
                     entityDatabaseSchemaService.createOrUpdateViewsAndFunctions();
                     entityDatabaseSchemaService.createOrUpdateDeviceInfoView(persistToTelemetry);
@@ -184,8 +190,8 @@ public class ThingsboardInstallService {
                 systemDataLoaderService.createQueues();
                 systemDataLoaderService.createDefaultNotificationConfigs();
 
-//                systemDataLoaderService.loadSystemPlugins();
-//                systemDataLoaderService.loadSystemRules();
+                // systemDataLoaderService.loadSystemPlugins();
+                // systemDataLoaderService.loadSystemRules();
                 installScripts.loadSystemLwm2mResources();
                 installScripts.loadSystemImages();
 
@@ -196,7 +202,6 @@ public class ThingsboardInstallService {
                 log.info("Installation finished successfully!");
             }
 
-
         } catch (Exception e) {
             log.error("Unexpected error during ThingsBoard installation!", e);
             throw new ThingsboardInstallException("Unexpected error during ThingsBoard installation!", e);
@@ -206,4 +211,3 @@ public class ThingsboardInstallService {
     }
 
 }
-
