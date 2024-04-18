@@ -341,7 +341,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 if (!isAggregationNull(avgDto)) {
                     return new ReadingEntity(avgDto.getLongValue(), avgDto.getDoubleValue(), avgDto.getLongCountValue(),
                             avgDto.getDoubleCountValue(), avgDto.getAggType(),
-                            OffsetDateTime.ofInstant(avgDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")));
+                            OffsetDateTime.ofInstant(avgDto.getAggValuesLastTs(), ZoneId.of("UTC")));
                 } else {
                     return new ReadingEntity();
                 }
@@ -352,14 +352,14 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                     return new ReadingEntity(numericMaxDto.getLongValue(), numericMaxDto.getDoubleValue(),
                             numericMaxDto.getLongCountValue(), numericMaxDto.getDoubleCountValue(),
                             numericMaxDto.getAggType(),
-                            OffsetDateTime.ofInstant(numericMaxDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")));
+                            OffsetDateTime.ofInstant(numericMaxDto.getAggValuesLastTs(), ZoneId.of("UTC")));
                 } else {
                     ReadingAggregationDto stringMaxDto = readingRepository.findStringMax(dataSourceId, readingTypeId,
                             dateFrom, dateTo);
                     return new ReadingEntity(
                             stringMaxDto.getStrValue(),
                             stringMaxDto.getAggValuesLastTs() != null
-                                    ? OffsetDateTime.ofInstant(stringMaxDto.getAggValuesLastTs().toInstant(),
+                                    ? OffsetDateTime.ofInstant(stringMaxDto.getAggValuesLastTs(),
                                             ZoneId.of("UTC"))
                                     : null);
                 }
@@ -370,14 +370,14 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                     return new ReadingEntity(numericMinDto.getLongValue(), numericMinDto.getDoubleValue(),
                             numericMinDto.getLongCountValue(), numericMinDto.getDoubleCountValue(),
                             numericMinDto.getAggType(),
-                            OffsetDateTime.ofInstant(numericMinDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")));
+                            OffsetDateTime.ofInstant(numericMinDto.getAggValuesLastTs(), ZoneId.of("UTC")));
                 } else {
                     ReadingAggregationDto stringMinDto = readingRepository.findStringMin(dataSourceId, readingTypeId,
                             dateFrom, dateTo);
                     return new ReadingEntity(
                             stringMinDto.getStrValue(),
                             stringMinDto.getAggValuesLastTs() != null
-                                    ? OffsetDateTime.ofInstant(stringMinDto.getAggValuesLastTs().toInstant(),
+                                    ? OffsetDateTime.ofInstant(stringMinDto.getAggValuesLastTs(),
                                             ZoneId.of("UTC"))
                                     : null);
                 }
@@ -391,7 +391,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                         sumDto.getDoubleCountValue(),
                         sumDto.getAggType(),
                         sumDto.getAggValuesLastTs() != null ?
-                            OffsetDateTime.ofInstant(sumDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC")) :
+                            OffsetDateTime.ofInstant(sumDto.getAggValuesLastTs(), ZoneId.of("UTC")) :
                             null);
                 } else {
                     return new ReadingEntity();
@@ -406,7 +406,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                         countDto.getDoubleCountValue(),
                         countDto.getJsonCountValue(),
                         countDto.getAggValuesLastTs() != null
-                                ? OffsetDateTime.ofInstant(countDto.getAggValuesLastTs().toInstant(), ZoneId.of("UTC"))
+                                ? OffsetDateTime.ofInstant(countDto.getAggValuesLastTs(), ZoneId.of("UTC"))
                                 : null);
             default:
                 throw new IllegalArgumentException("Not supported aggregation type: " + aggregation);

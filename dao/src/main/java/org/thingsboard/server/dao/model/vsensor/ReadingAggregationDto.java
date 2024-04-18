@@ -2,6 +2,7 @@ package org.thingsboard.server.dao.model.vsensor;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -31,5 +32,5 @@ public interface ReadingAggregationDto {
 
     String getAggType();
 
-    Timestamp getAggValuesLastTs();
+    Instant getAggValuesLastTs();
 }

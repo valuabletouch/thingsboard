@@ -16,7 +16,6 @@
 
 upgrade:
   do_upgrade: "${UPGRADE_THINGSBOARD:false}"
-  from_version: "${UPGRADE_FROM_VERSION:1.2.3}"  
 
 install:
   upgrade: "${INSTALL_UPGRADE:false}"

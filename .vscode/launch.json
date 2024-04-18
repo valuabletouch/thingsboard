@@ -16,7 +16,8 @@
             "name": "ThingsboardInstallApplication",
             "request": "launch",
             "mainClass": "org.thingsboard.server.ThingsboardInstallApplication",
-            "projectName": "org.thingsboard-application"
+            "projectName": "org.thingsboard-application",
+            "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env"
         },
         {
             "type": "java",
@@ -97,7 +98,7 @@
                 "--spring.profiles.active=update",
                 "org.springframework.boot.loader.PropertiesLauncher"
             ],
-            "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env" 
+            "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env"
         },
         {
             "type": "java",
