@@ -1,26 +1,10 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
- * Özgün AY
- */
+* Özgün AY
+*/
 package org.thingsboard.server.vsensor.dao.timeseries;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -60,7 +44,6 @@ import org.thingsboard.server.common.data.vsensor.Reading;
 import org.thingsboard.server.common.data.vsensor.ReadingType;
 import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
 import org.thingsboard.server.common.data.vsensor.TransformationService;
-import org.thingsboard.server.dao.model.vsensor.VModelConstants;
 import org.thingsboard.server.dao.nosql.CassandraAbstractAsyncDao;
 import org.thingsboard.server.dao.nosql.TbResultSet;
 import org.thingsboard.server.dao.sqlts.AggregationTimeseriesDao;
@@ -68,15 +51,13 @@ import org.thingsboard.server.dao.timeseries.SimpleListenableFuture;
 import org.thingsboard.server.dao.timeseries.TimeseriesDao;
 import org.thingsboard.server.dao.timeseries.TimeseriesLatestDao;
 import org.thingsboard.server.dao.util.NoSqlTsDao;
+import org.thingsboard.server.dao.vsensor.models.VModelConstants;
 import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationEntity;
 import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationSystem;
 import org.thingsboard.server.vsensor.queue.rabbitmq.ReadingRabbitMqProducer;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * @author Özgün Ay
- */
 @Service
 @Slf4j
 @NoSqlTsDao
@@ -128,7 +109,8 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
     }
 
     @Override
-    public ListenableFuture<ReadTsKvQueryResult> findAllAsync(TenantId tenantId, EntityId entityId, ReadTsKvQuery query) {
+    public ListenableFuture<ReadTsKvQueryResult> findAllAsync(TenantId tenantId, EntityId entityId,
+            ReadTsKvQuery query) {
         final SimpleListenableFuture<List<TsKvEntry>> resultFuture = new SimpleListenableFuture<>();
 
         Optional<UUID> transformationTenantId = transformationService.getFromKey(transformationSystem.getThingsboard(),
@@ -158,7 +140,8 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
 
         stmtBuilder.setUuid(0, transformationTenantId.orElse(VModelConstants.EMPTY_UUID));
         stmtBuilder.setUuid(1, transformationDataSourceId.orElse(VModelConstants.EMPTY_UUID));
-        stmtBuilder.setUuid(2, readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : VModelConstants.EMPTY_UUID);
+        stmtBuilder.setUuid(2,
+                readingType.isPresent() ? UUID.fromString(readingType.get().getId()) : VModelConstants.EMPTY_UUID);
         stmtBuilder.setInstant(3, longToInstant(query.getStartTs()));
         stmtBuilder.setInstant(4, longToInstant(query.getEndTs()));
         stmtBuilder.setInt(5, query.getLimit());
@@ -509,17 +492,17 @@ public class CassandraTimeseriesDao extends CassandraAbstractAsyncDao
             } else if (type == Aggregation.AVG && fetchStmts[Aggregation.SUM.ordinal()] != null) {
                 fetchStmts[type.ordinal()] = fetchStmts[Aggregation.SUM.ordinal()];
             } else {
-                String query =
-                    "SELECT " + String.join(", ", VModelConstants.getFetchColumnNames(type)) +
-                    " FROM " + keyspaceName + "." + VModelConstants.READINGS_TABLE +
-                    " WHERE " + VModelConstants.TENANT_ID_READINGS_COLUMN + " = ?" +
-                    " AND " + VModelConstants.DATA_SOURCE_ID_COLUMN + " = ?" +
-                    " AND " + VModelConstants.READING_TYPE_ID_COLUMN + " = ?" +
-                    " AND " + VModelConstants.READ_AT_COLUMN + " > ?" +
-                    " AND " + VModelConstants.READ_AT_COLUMN + " <= ?" +
-                    (type == Aggregation.NONE
-                        ? " ORDER BY " + VModelConstants.READ_AT_COLUMN + " " + orderBy.toUpperCase() + " LIMIT ?"
-                        : "");
+                String query = "SELECT " + String.join(", ", VModelConstants.getFetchColumnNames(type)) +
+                        " FROM " + keyspaceName + "." + VModelConstants.READINGS_TABLE +
+                        " WHERE " + VModelConstants.TENANT_ID_READINGS_COLUMN + " = ?" +
+                        " AND " + VModelConstants.DATA_SOURCE_ID_COLUMN + " = ?" +
+                        " AND " + VModelConstants.READING_TYPE_ID_COLUMN + " = ?" +
+                        " AND " + VModelConstants.READ_AT_COLUMN + " > ?" +
+                        " AND " + VModelConstants.READ_AT_COLUMN + " <= ?" +
+                        (type == Aggregation.NONE
+                                ? " ORDER BY " + VModelConstants.READ_AT_COLUMN + " " + orderBy.toUpperCase()
+                                        + " LIMIT ?"
+                                : "");
 
                 fetchStmts[type.ordinal()] = prepare(query);
             }

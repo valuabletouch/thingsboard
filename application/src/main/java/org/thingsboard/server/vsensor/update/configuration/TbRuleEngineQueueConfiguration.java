@@ -8,7 +8,6 @@ import lombok.Data;
 @Data
 @Deprecated
 public class TbRuleEngineQueueConfiguration {
-
     private String name;
     private String topic;
     private int pollInterval;
@@ -17,5 +16,4 @@ public class TbRuleEngineQueueConfiguration {
     private long packProcessingTimeout;
     private TbRuleEngineQueueSubmitStrategyConfiguration submitStrategy;
     private TbRuleEngineQueueAckStrategyConfiguration processingStrategy;
-
 }

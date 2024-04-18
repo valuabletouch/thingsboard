@@ -1,3 +1,6 @@
+/**
+* Özgün AY
+*/
 package org.thingsboard.server.dao.vsensor.mongo.configurations;
 
 import org.springframework.boot.autoconfigure.mongo.MongoProperties;

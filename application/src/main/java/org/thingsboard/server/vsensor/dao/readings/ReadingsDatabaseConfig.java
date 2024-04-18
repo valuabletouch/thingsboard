@@ -52,5 +52,4 @@ public class ReadingsDatabaseConfig {
             @Qualifier("readingsEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
-
 }

@@ -1,7 +1,7 @@
 /**
- * Özgün AY
- */
-package org.thingsboard.server.dao.model.vsensor;
+* Özgün AY
+*/
+package org.thingsboard.server.dao.vsensor.models;
 
 import java.io.Serializable;
 

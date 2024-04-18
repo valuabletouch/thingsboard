@@ -204,5 +204,4 @@ public class ThingsboardUpdateService {
             SpringApplication.exit(context);
         }
     }
-
 }

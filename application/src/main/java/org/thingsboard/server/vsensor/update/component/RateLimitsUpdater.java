@@ -100,5 +100,4 @@ public class RateLimitsUpdater extends PaginatedUpdater<String, TenantProfile> {
 
         tenantProfileService.saveTenantProfile(TenantId.SYS_TENANT_ID, tenantProfile);
     }
-
 }

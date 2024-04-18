@@ -82,5 +82,4 @@ public class JpaUpgradeAuditLogDao extends JpaPartitionedAbstractDao<AuditLogEnt
     public void createPartition(AuditLogEntity entity) {
         partitioningRepository.createPartitionIfNotExists(TABLE_NAME, entity.getCreatedTime(), TimeUnit.HOURS.toMillis(partitionSizeInHours));
     }
-
 }

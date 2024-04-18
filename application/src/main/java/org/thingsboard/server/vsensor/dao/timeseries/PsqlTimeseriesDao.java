@@ -1,3 +1,6 @@
+/**
+* Özgün AY
+*/
 package org.thingsboard.server.vsensor.dao.timeseries;
 
 import com.google.common.base.Function;
@@ -21,14 +24,14 @@ import org.thingsboard.server.common.data.vsensor.TransformationService;
 import org.thingsboard.server.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.sqlts.ts.TsKvEntity;
-import org.thingsboard.server.dao.model.vsensor.ReadingAggregationDto;
-import org.thingsboard.server.dao.model.vsensor.ReadingEntity;
-import org.thingsboard.server.dao.model.vsensor.VModelConstants;
 import org.thingsboard.server.dao.service.Validator;
 import org.thingsboard.server.dao.sqlts.AbstractChunkedAggregationTimeseriesDao;
 import org.thingsboard.server.dao.timeseries.TimeseriesService;
 import org.thingsboard.server.dao.util.SqlTsDao;
 import org.thingsboard.server.dao.util.TimeUtils;
+import org.thingsboard.server.dao.vsensor.models.ReadingAggregationDto;
+import org.thingsboard.server.dao.vsensor.models.ReadingEntity;
+import org.thingsboard.server.dao.vsensor.models.VModelConstants;
 import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationEntity;
 import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationSystem;
 import org.thingsboard.server.vsensor.dao.readings.ReadingRepository;

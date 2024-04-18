@@ -1,4 +1,7 @@
-package org.thingsboard.server.dao.model.vsensor;
+/**
+* Ahmet Ertuğrul KAYA
+*/
+package org.thingsboard.server.dao.vsensor.models;
 
 import lombok.Data;
 import lombok.Getter;

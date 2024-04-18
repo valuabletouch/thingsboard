@@ -84,5 +84,4 @@ public abstract class SqlAbstractDatabaseSchemaService implements DatabaseSchema
             throw new ThingsboardUpdateException("Failed to execute query: " + query, e);
         }
     }
-
 }

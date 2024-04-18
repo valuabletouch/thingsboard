@@ -18,5 +18,4 @@ public class ThingsboardUpdateException extends RuntimeException implements Exit
     public int getExitCode() {
         return 1;
     }
-
 }

@@ -86,8 +86,10 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     try {
-                        conn.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_device_device_profile_id ON device(tenant_id, device_profile_id);");
-                        conn.createStatement().execute("ALTER TABLE dashboard ALTER COLUMN configuration TYPE varchar;");
+                        conn.createStatement().execute(
+                                "CREATE INDEX IF NOT EXISTS idx_device_device_profile_id ON device(tenant_id, device_profile_id);");
+                        conn.createStatement()
+                                .execute("ALTER TABLE dashboard ALTER COLUMN configuration TYPE varchar;");
                         conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 3002001;");
                     } catch (Exception e) {
                         log.error("Failed updating schema!!!", e);
@@ -98,8 +100,10 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
             case "3.2.1":
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
-                    conn.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_id_and_created_time ON audit_log(tenant_id, created_time);");
-                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.1", SCHEMA_UPDATE_SQL);
+                    conn.createStatement().execute(
+                            "CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_id_and_created_time ON audit_log(tenant_id, created_time);");
+                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.1",
+                            SCHEMA_UPDATE_SQL);
                     loadSql(schemaUpdateFile, conn);
                     conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 3002002;");
                     log.info("Schema updated.");
@@ -111,17 +115,31 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     try {
-                        conn.createStatement().execute("ALTER TABLE rule_chain ADD COLUMN type varchar(255) DEFAULT 'CORE'"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                        conn.createStatement()
+                                .execute("ALTER TABLE rule_chain ADD COLUMN type varchar(255) DEFAULT 'CORE'"); // NOSONAR,
+                                                                                                                // ignoring
+                                                                                                                // because
+                                                                                                                // method
+                                                                                                                // used
+                                                                                                                // to
+                                                                                                                // execute
+                                                                                                                // thingsboard
+                                                                                                                // database
+                                                                                                                // upgrade
+                                                                                                                // script
                     } catch (Exception ignored) {
                     }
-                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.2", SCHEMA_UPDATE_SQL);
+                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.2",
+                            SCHEMA_UPDATE_SQL);
                     loadSql(schemaUpdateFile, conn);
                     log.info("Load Edge TTL functions ...");
-                    schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.2", "schema_update_ttl.sql");
+                    schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.2",
+                            "schema_update_ttl.sql");
                     loadSql(schemaUpdateFile, conn);
                     log.info("Edge TTL functions successfully loaded!");
                     log.info("Updating indexes and TTL procedure for event table...");
-                    schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.2", "schema_update_event.sql");
+                    schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.2.2",
+                            "schema_update_event.sql");
                     loadSql(schemaUpdateFile, conn);
                     log.info("Updating schema settings...");
                     conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 3003002;");
@@ -133,20 +151,47 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
             case "3.3.2":
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
-                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.2", SCHEMA_UPDATE_SQL);
+                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.2",
+                            SCHEMA_UPDATE_SQL);
                     loadSql(schemaUpdateFile, conn);
                     try {
-                        conn.createStatement().execute("ALTER TABLE alarm ADD COLUMN propagate_to_owner boolean DEFAULT false;"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
-                        conn.createStatement().execute("ALTER TABLE alarm ADD COLUMN propagate_to_tenant boolean DEFAULT false;"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                        conn.createStatement()
+                                .execute("ALTER TABLE alarm ADD COLUMN propagate_to_owner boolean DEFAULT false;"); // NOSONAR,
+                                                                                                                    // ignoring
+                                                                                                                    // because
+                                                                                                                    // method
+                                                                                                                    // used
+                                                                                                                    // to
+                                                                                                                    // execute
+                                                                                                                    // thingsboard
+                                                                                                                    // database
+                                                                                                                    // upgrade
+                                                                                                                    // script
+                        conn.createStatement()
+                                .execute("ALTER TABLE alarm ADD COLUMN propagate_to_tenant boolean DEFAULT false;"); // NOSONAR,
+                                                                                                                     // ignoring
+                                                                                                                     // because
+                                                                                                                     // method
+                                                                                                                     // used
+                                                                                                                     // to
+                                                                                                                     // execute
+                                                                                                                     // thingsboard
+                                                                                                                     // database
+                                                                                                                     // upgrade
+                                                                                                                     // script
                     } catch (Exception ignored) {
                     }
 
                     try {
-                        conn.createStatement().execute("insert into entity_alarm(tenant_id, entity_id, created_time, alarm_type, customer_id, alarm_id)" +
-                                " select tenant_id, originator_id, created_time, type, customer_id, id from alarm ON CONFLICT DO NOTHING;");
-                        conn.createStatement().execute("insert into entity_alarm(tenant_id, entity_id, created_time, alarm_type, customer_id, alarm_id)" +
-                                " select a.tenant_id, r.from_id, created_time, type, customer_id, id" +
-                                " from alarm a inner join relation r on r.relation_type_group = 'ALARM' and r.relation_type = 'ANY' and a.id = r.to_id ON CONFLICT DO NOTHING;");
+                        conn.createStatement().execute(
+                                "insert into entity_alarm(tenant_id, entity_id, created_time, alarm_type, customer_id, alarm_id)"
+                                        +
+                                        " select tenant_id, originator_id, created_time, type, customer_id, id from alarm ON CONFLICT DO NOTHING;");
+                        conn.createStatement().execute(
+                                "insert into entity_alarm(tenant_id, entity_id, created_time, alarm_type, customer_id, alarm_id)"
+                                        +
+                                        " select a.tenant_id, r.from_id, created_time, type, customer_id, id" +
+                                        " from alarm a inner join relation r on r.relation_type_group = 'ALARM' and r.relation_type = 'ANY' and a.id = r.to_id ON CONFLICT DO NOTHING;");
                         conn.createStatement().execute("delete from relation r where r.relation_type_group = 'ALARM';");
                     } catch (Exception e) {
                         log.error("Failed to update alarm relations!!!", e);
@@ -154,7 +199,8 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
 
                     log.info("Updating lwm2m device profiles ...");
                     try {
-                        schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.2", "schema_update_lwm2m_bootstrap.sql");
+                        schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.2",
+                                "schema_update_lwm2m_bootstrap.sql");
                         loadSql(schemaUpdateFile, conn);
                         log.info("Updating server`s public key from HexDec to Base64 in profile for LWM2M...");
                         conn.createStatement().execute("call update_profile_bootstrap();");
@@ -176,13 +222,30 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     try {
-                        conn.createStatement().execute("ALTER TABLE edge DROP COLUMN edge_license_key;"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
-                        conn.createStatement().execute("ALTER TABLE edge DROP COLUMN cloud_endpoint;"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                        conn.createStatement().execute("ALTER TABLE edge DROP COLUMN edge_license_key;"); // NOSONAR,
+                                                                                                          // ignoring
+                                                                                                          // because
+                                                                                                          // method used
+                                                                                                          // to execute
+                                                                                                          // thingsboard
+                                                                                                          // database
+                                                                                                          // upgrade
+                                                                                                          // script
+                        conn.createStatement().execute("ALTER TABLE edge DROP COLUMN cloud_endpoint;"); // NOSONAR,
+                                                                                                        // ignoring
+                                                                                                        // because
+                                                                                                        // method used
+                                                                                                        // to execute
+                                                                                                        // thingsboard
+                                                                                                        // database
+                                                                                                        // upgrade
+                                                                                                        // script
                     } catch (Exception ignored) {
                     }
 
                     log.info("Updating TTL cleanup procedure for the event table...");
-                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.3", "schema_event_ttl_procedure.sql");
+                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.3",
+                            "schema_event_ttl_procedure.sql");
                     loadSql(schemaUpdateFile, conn);
                     schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.3", SCHEMA_UPDATE_SQL);
                     loadSql(schemaUpdateFile, conn);
@@ -197,7 +260,8 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
             case "3.3.4":
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
-                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.4", SCHEMA_UPDATE_SQL);
+                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.3.4",
+                            SCHEMA_UPDATE_SQL);
                     loadSql(schemaUpdateFile, conn);
 
                     log.info("Loading queues...");
@@ -205,7 +269,8 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                         if (!CollectionUtils.isEmpty(queueConfig.getQueues())) {
                             queueConfig.getQueues().forEach(queueSettings -> {
                                 Queue queue = queueConfigToQueue(queueSettings);
-                                Queue existing = queueService.findQueueByTenantIdAndName(queue.getTenantId(), queue.getName());
+                                Queue existing = queueService.findQueueByTenantIdAndName(queue.getTenantId(),
+                                        queue.getName());
                                 if (existing == null) {
                                     queueService.saveQueue(queue);
                                 }
@@ -226,7 +291,8 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
             case "3.4.0":
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
-                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.0", SCHEMA_UPDATE_SQL);
+                    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.0",
+                            SCHEMA_UPDATE_SQL);
                     loadSql(schemaUpdateFile, conn);
                     log.info("Updating schema settings...");
                     conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 3004001;");
@@ -245,10 +311,12 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                         } catch (Exception e) {
                         }
 
-                        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.1", "schema_update_before.sql");
+                        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.1",
+                                "schema_update_before.sql");
                         loadSql(schemaUpdateFile, conn);
 
-                        conn.createStatement().execute("DELETE FROM asset a WHERE NOT exists(SELECT id FROM tenant WHERE id = a.tenant_id);");
+                        conn.createStatement().execute(
+                                "DELETE FROM asset a WHERE NOT exists(SELECT id FROM tenant WHERE id = a.tenant_id);");
 
                         log.info("Creating default asset profiles...");
 
@@ -293,7 +361,8 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                         log.info("Updating asset profiles...");
                         conn.createStatement().execute("call update_asset_profiles()");
 
-                        schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.1", "schema_update_after.sql");
+                        schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.1",
+                                "schema_update_after.sql");
                         loadSql(schemaUpdateFile, conn);
 
                         conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 3004002;");
@@ -307,28 +376,76 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 3004002)) {
-                        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.4", SCHEMA_UPDATE_SQL);
+                        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.4.4",
+                                SCHEMA_UPDATE_SQL);
                         loadSql(schemaUpdateFile, conn);
 
                         try {
-                            conn.createStatement().execute("VACUUM FULL ANALYZE alarm;"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                            conn.createStatement().execute("VACUUM FULL ANALYZE alarm;"); // NOSONAR, ignoring because
+                                                                                          // method used to execute
+                                                                                          // thingsboard database
+                                                                                          // upgrade script
                         } catch (Exception e) {
                         }
 
                         try {
-                            conn.createStatement().execute("ALTER TABLE asset_profile ADD COLUMN default_edge_rule_chain_id uuid"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                            conn.createStatement()
+                                    .execute("ALTER TABLE asset_profile ADD COLUMN default_edge_rule_chain_id uuid"); // NOSONAR,
+                                                                                                                      // ignoring
+                                                                                                                      // because
+                                                                                                                      // method
+                                                                                                                      // used
+                                                                                                                      // to
+                                                                                                                      // execute
+                                                                                                                      // thingsboard
+                                                                                                                      // database
+                                                                                                                      // upgrade
+                                                                                                                      // script
                         } catch (Exception e) {
                         }
                         try {
-                            conn.createStatement().execute("ALTER TABLE device_profile ADD COLUMN default_edge_rule_chain_id uuid"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                            conn.createStatement()
+                                    .execute("ALTER TABLE device_profile ADD COLUMN default_edge_rule_chain_id uuid"); // NOSONAR,
+                                                                                                                       // ignoring
+                                                                                                                       // because
+                                                                                                                       // method
+                                                                                                                       // used
+                                                                                                                       // to
+                                                                                                                       // execute
+                                                                                                                       // thingsboard
+                                                                                                                       // database
+                                                                                                                       // upgrade
+                                                                                                                       // script
                         } catch (Exception e) {
                         }
                         try {
-                            conn.createStatement().execute("ALTER TABLE asset_profile ADD CONSTRAINT fk_default_edge_rule_chain_asset_profile FOREIGN KEY (default_edge_rule_chain_id) REFERENCES rule_chain(id)"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                            conn.createStatement().execute(
+                                    "ALTER TABLE asset_profile ADD CONSTRAINT fk_default_edge_rule_chain_asset_profile FOREIGN KEY (default_edge_rule_chain_id) REFERENCES rule_chain(id)"); // NOSONAR,
+                                                                                                                                                                                             // ignoring
+                                                                                                                                                                                             // because
+                                                                                                                                                                                             // method
+                                                                                                                                                                                             // used
+                                                                                                                                                                                             // to
+                                                                                                                                                                                             // execute
+                                                                                                                                                                                             // thingsboard
+                                                                                                                                                                                             // database
+                                                                                                                                                                                             // upgrade
+                                                                                                                                                                                             // script
                         } catch (Exception e) {
                         }
                         try {
-                            conn.createStatement().execute("ALTER TABLE device_profile ADD CONSTRAINT fk_default_edge_rule_chain_device_profile FOREIGN KEY (default_edge_rule_chain_id) REFERENCES rule_chain(id)"); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+                            conn.createStatement().execute(
+                                    "ALTER TABLE device_profile ADD CONSTRAINT fk_default_edge_rule_chain_device_profile FOREIGN KEY (default_edge_rule_chain_id) REFERENCES rule_chain(id)"); // NOSONAR,
+                                                                                                                                                                                               // ignoring
+                                                                                                                                                                                               // because
+                                                                                                                                                                                               // method
+                                                                                                                                                                                               // used
+                                                                                                                                                                                               // to
+                                                                                                                                                                                               // execute
+                                                                                                                                                                                               // thingsboard
+                                                                                                                                                                                               // database
+                                                                                                                                                                                               // upgrade
+                                                                                                                                                                                               // script
                         } catch (Exception e) {
                         }
 
@@ -344,35 +461,43 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 break;
             case "3.5.1":
                 updateSchema("3.5.1", 3005001, "3.6.0", 3006000, conn -> {
-                    String[] entityNames = new String[]{"device", "component_descriptor", "customer", "dashboard", "rule_chain", "rule_node", "ota_package",
-                            "asset_profile", "asset", "device_profile", "tb_user", "tenant_profile", "tenant", "widgets_bundle", "entity_view", "edge"};
+                    String[] entityNames = new String[] { "device", "component_descriptor", "customer", "dashboard",
+                            "rule_chain", "rule_node", "ota_package",
+                            "asset_profile", "asset", "device_profile", "tb_user", "tenant_profile", "tenant",
+                            "widgets_bundle", "entity_view", "edge" };
                     for (String entityName : entityNames) {
                         try {
-                            conn.createStatement().execute("ALTER TABLE " + entityName + " DROP COLUMN search_text CASCADE");
+                            conn.createStatement()
+                                    .execute("ALTER TABLE " + entityName + " DROP COLUMN search_text CASCADE");
                         } catch (Exception e) {
                         }
                     }
                     try {
-                        conn.createStatement().execute("ALTER TABLE component_descriptor ADD COLUMN IF NOT EXISTS configuration_version int DEFAULT 0;");
+                        conn.createStatement().execute(
+                                "ALTER TABLE component_descriptor ADD COLUMN IF NOT EXISTS configuration_version int DEFAULT 0;");
                     } catch (Exception e) {
                     }
                     try {
-                        conn.createStatement().execute("ALTER TABLE rule_node ADD COLUMN IF NOT EXISTS configuration_version int DEFAULT 0;");
+                        conn.createStatement().execute(
+                                "ALTER TABLE rule_node ADD COLUMN IF NOT EXISTS configuration_version int DEFAULT 0;");
                     } catch (Exception e) {
                     }
                     try {
-                        conn.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_rule_node_type_configuration_version ON rule_node(type, configuration_version);");
+                        conn.createStatement().execute(
+                                "CREATE INDEX IF NOT EXISTS idx_rule_node_type_configuration_version ON rule_node(type, configuration_version);");
                     } catch (Exception e) {
                     }
                     try {
                         conn.createStatement().execute("UPDATE rule_node SET " +
-                                "configuration = (configuration::jsonb || '{\"updateAttributesOnlyOnValueChange\": \"false\"}'::jsonb)::varchar, " +
+                                "configuration = (configuration::jsonb || '{\"updateAttributesOnlyOnValueChange\": \"false\"}'::jsonb)::varchar, "
+                                +
                                 "configuration_version = 1 " +
                                 "WHERE type = 'org.thingsboard.rule.engine.telemetry.TbMsgAttributesNode' AND configuration_version < 1;");
                     } catch (Exception e) {
                     }
                     try {
-                        conn.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_notification_recipient_id_unread ON notification(recipient_id) WHERE status <> 'READ';");
+                        conn.createStatement().execute(
+                                "CREATE INDEX IF NOT EXISTS idx_notification_recipient_id_unread ON notification(recipient_id) WHERE status <> 'READ';");
                     } catch (Exception e) {
                     }
                 });
@@ -383,13 +508,15 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
             case "3.6.1":
                 updateSchema("3.6.1", 3006001, "3.6.2", 3006002, connection -> {
                     try {
-                        Path saveAttributesNodeUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.6.1", "save_attributes_node_update.sql");
+                        Path saveAttributesNodeUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", "3.6.1",
+                                "save_attributes_node_update.sql");
                         loadSql(saveAttributesNodeUpdateFile, connection);
                     } catch (Exception e) {
                         log.warn("Failed to execute update script for save attributes rule nodes due to: ", e);
                     }
                     try {
-                        connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_asset_profile_id ON asset(tenant_id, asset_profile_id);");
+                        connection.createStatement().execute(
+                                "CREATE INDEX IF NOT EXISTS idx_asset_profile_id ON asset(tenant_id, asset_profile_id);");
                     } catch (Exception e) {
                     }
                 });
@@ -404,15 +531,17 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 updateSchema("3.6.4", 3006004, "3.7.0", 3007000, null);
                 break;
             default:
-                throw new ThingsboardUpdateException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
+                throw new ThingsboardUpdateException(
+                        "Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
         }
     }
 
     @Override
-    public String getCurrentSchemeVersion() throws Exception{
+    public String getCurrentSchemeVersion() throws Exception {
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
             Statement statement = conn.createStatement();
-            statement.execute("CREATE TABLE IF NOT EXISTS tb_schema_settings ( schema_version bigint NOT NULL, CONSTRAINT tb_schema_settings_pkey PRIMARY KEY (schema_version));");
+            statement.execute(
+                    "CREATE TABLE IF NOT EXISTS tb_schema_settings ( schema_version bigint NOT NULL, CONSTRAINT tb_schema_settings_pkey PRIMARY KEY (schema_version));");
             Thread.sleep(1000);
             ResultSet resultSet = statement.executeQuery("SELECT schema_version FROM tb_schema_settings;");
             if (resultSet.next()) {
@@ -427,95 +556,101 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
         }
     }
 
-private void updateSchema(String oldVersionStr, int oldVersion, String newVersionStr, int newVersion, Consumer<Connection> additionalAction) {
-    try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
-        log.info("Updating schema ...");
-        if (isOldSchema(conn, oldVersion)) {
-            Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", oldVersionStr, SCHEMA_UPDATE_SQL);
-            loadSql(schemaUpdateFile, conn);
-            if (additionalAction != null) {
-                additionalAction.accept(conn);
+    private void updateSchema(String oldVersionStr, int oldVersion, String newVersionStr, int newVersion,
+            Consumer<Connection> additionalAction) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
+            log.info("Updating schema ...");
+            if (isOldSchema(conn, oldVersion)) {
+                Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", oldVersionStr,
+                        SCHEMA_UPDATE_SQL);
+                loadSql(schemaUpdateFile, conn);
+                if (additionalAction != null) {
+                    additionalAction.accept(conn);
+                }
+                conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = " + newVersion + ";");
+                log.info("Schema updated to version {}", newVersionStr);
+            } else {
+                log.info(
+                        "Skip schema re-update to version {}. Use env flag 'SKIP_SCHEMA_VERSION_CHECK' to force the re-update.",
+                        newVersionStr);
             }
-            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = " + newVersion + ";");
-            log.info("Schema updated to version {}", newVersionStr);
-        } else {
-            log.info("Skip schema re-update to version {}. Use env flag 'SKIP_SCHEMA_VERSION_CHECK' to force the re-update.", newVersionStr);
-        }
-    } catch (Exception e) {
-        log.error("Failed updating schema!!!", e);
-    }
-}
-
-private void loadSql(Path sqlFile, Connection conn) throws Exception {
-    String sql = new String(Files.readAllBytes(sqlFile), StandardCharsets.UTF_8);
-    Statement st = conn.createStatement();
-    st.setQueryTimeout((int) TimeUnit.HOURS.toSeconds(3));
-    st.execute(sql);//NOSONAR, ignoring because method used to execute thingsboard database upgrade script
-    printWarnings(st);
-    Thread.sleep(5000);
-}
-
-private void runSchemaUpdateScript(Connection connection, String version) throws Exception {
-    Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
-    loadSql(schemaUpdateFile, connection);
-}
-
-protected void printWarnings(Statement statement) throws SQLException {
-    SQLWarning warnings = statement.getWarnings();
-    if (warnings != null) {
-        log.info("{}", warnings.getMessage());
-        SQLWarning nextWarning = warnings.getNextWarning();
-        while (nextWarning != null) {
-            log.info("{}", nextWarning.getMessage());
-            nextWarning = nextWarning.getNextWarning();
+        } catch (Exception e) {
+            log.error("Failed updating schema!!!", e);
         }
     }
-}
 
-protected boolean isOldSchema(Connection conn, long fromVersion) {
-    if (DefaultDataUpdateService.getEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
-        log.info("Skipped DB schema version check due to SKIP_SCHEMA_VERSION_CHECK set to true!");
-        return true;
+    private void loadSql(Path sqlFile, Connection conn) throws Exception {
+        String sql = new String(Files.readAllBytes(sqlFile), StandardCharsets.UTF_8);
+        Statement st = conn.createStatement();
+        st.setQueryTimeout((int) TimeUnit.HOURS.toSeconds(3));
+        st.execute(sql);// NOSONAR, ignoring because method used to execute thingsboard database upgrade
+                        // script
+        printWarnings(st);
+        Thread.sleep(5000);
     }
-    boolean isOldSchema = true;
-    try {
-        Statement statement = conn.createStatement();
-        statement.execute("CREATE TABLE IF NOT EXISTS tb_schema_settings ( schema_version bigint NOT NULL, CONSTRAINT tb_schema_settings_pkey PRIMARY KEY (schema_version));");
-        Thread.sleep(1000);
-        ResultSet resultSet = statement.executeQuery("SELECT schema_version FROM tb_schema_settings;");
-        if (resultSet.next()) {
-            isOldSchema = resultSet.getLong(1) <= fromVersion;
-        } else {
-            resultSet.close();
-            statement.execute("INSERT INTO tb_schema_settings (schema_version) VALUES (" + fromVersion + ")");
+
+    private void runSchemaUpdateScript(Connection connection, String version) throws Exception {
+        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
+        loadSql(schemaUpdateFile, connection);
+    }
+
+    protected void printWarnings(Statement statement) throws SQLException {
+        SQLWarning warnings = statement.getWarnings();
+        if (warnings != null) {
+            log.info("{}", warnings.getMessage());
+            SQLWarning nextWarning = warnings.getNextWarning();
+            while (nextWarning != null) {
+                log.info("{}", nextWarning.getMessage());
+                nextWarning = nextWarning.getNextWarning();
+            }
         }
-        statement.close();
-    } catch (InterruptedException | SQLException e) {
-        log.info("Failed to check current PostgreSQL schema due to: {}", e.getMessage());
     }
-    return isOldSchema;
-}
 
-private Queue queueConfigToQueue(TbRuleEngineQueueConfiguration queueSettings) {
-    Queue queue = new Queue();
-    queue.setTenantId(TenantId.SYS_TENANT_ID);
-    queue.setName(queueSettings.getName());
-    queue.setTopic(queueSettings.getTopic());
-    queue.setPollInterval(queueSettings.getPollInterval());
-    queue.setPartitions(queueSettings.getPartitions());
-    queue.setPackProcessingTimeout(queueSettings.getPackProcessingTimeout());
-    SubmitStrategy submitStrategy = new SubmitStrategy();
-    submitStrategy.setBatchSize(queueSettings.getSubmitStrategy().getBatchSize());
-    submitStrategy.setType(SubmitStrategyType.valueOf(queueSettings.getSubmitStrategy().getType()));
-    queue.setSubmitStrategy(submitStrategy);
-    ProcessingStrategy processingStrategy = new ProcessingStrategy();
-    processingStrategy.setType(ProcessingStrategyType.valueOf(queueSettings.getProcessingStrategy().getType()));
-    processingStrategy.setRetries(queueSettings.getProcessingStrategy().getRetries());
-    processingStrategy.setFailurePercentage(queueSettings.getProcessingStrategy().getFailurePercentage());
-    processingStrategy.setPauseBetweenRetries(queueSettings.getProcessingStrategy().getPauseBetweenRetries());
-    processingStrategy.setMaxPauseBetweenRetries(queueSettings.getProcessingStrategy().getMaxPauseBetweenRetries());
-    queue.setProcessingStrategy(processingStrategy);
-    queue.setConsumerPerPartition(queueSettings.isConsumerPerPartition());
-    return queue;
-}
+    protected boolean isOldSchema(Connection conn, long fromVersion) {
+        if (DefaultDataUpdateService.getEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
+            log.info("Skipped DB schema version check due to SKIP_SCHEMA_VERSION_CHECK set to true!");
+            return true;
+        }
+        boolean isOldSchema = true;
+        try {
+            Statement statement = conn.createStatement();
+            statement.execute(
+                    "CREATE TABLE IF NOT EXISTS tb_schema_settings ( schema_version bigint NOT NULL, CONSTRAINT tb_schema_settings_pkey PRIMARY KEY (schema_version));");
+            Thread.sleep(1000);
+            ResultSet resultSet = statement.executeQuery("SELECT schema_version FROM tb_schema_settings;");
+            if (resultSet.next()) {
+                isOldSchema = resultSet.getLong(1) <= fromVersion;
+            } else {
+                resultSet.close();
+                statement.execute("INSERT INTO tb_schema_settings (schema_version) VALUES (" + fromVersion + ")");
+            }
+            statement.close();
+        } catch (InterruptedException | SQLException e) {
+            log.info("Failed to check current PostgreSQL schema due to: {}", e.getMessage());
+        }
+        return isOldSchema;
+    }
+
+    private Queue queueConfigToQueue(TbRuleEngineQueueConfiguration queueSettings) {
+        Queue queue = new Queue();
+        queue.setTenantId(TenantId.SYS_TENANT_ID);
+        queue.setName(queueSettings.getName());
+        queue.setTopic(queueSettings.getTopic());
+        queue.setPollInterval(queueSettings.getPollInterval());
+        queue.setPartitions(queueSettings.getPartitions());
+        queue.setPackProcessingTimeout(queueSettings.getPackProcessingTimeout());
+        SubmitStrategy submitStrategy = new SubmitStrategy();
+        submitStrategy.setBatchSize(queueSettings.getSubmitStrategy().getBatchSize());
+        submitStrategy.setType(SubmitStrategyType.valueOf(queueSettings.getSubmitStrategy().getType()));
+        queue.setSubmitStrategy(submitStrategy);
+        ProcessingStrategy processingStrategy = new ProcessingStrategy();
+        processingStrategy.setType(ProcessingStrategyType.valueOf(queueSettings.getProcessingStrategy().getType()));
+        processingStrategy.setRetries(queueSettings.getProcessingStrategy().getRetries());
+        processingStrategy.setFailurePercentage(queueSettings.getProcessingStrategy().getFailurePercentage());
+        processingStrategy.setPauseBetweenRetries(queueSettings.getProcessingStrategy().getPauseBetweenRetries());
+        processingStrategy.setMaxPauseBetweenRetries(queueSettings.getProcessingStrategy().getMaxPauseBetweenRetries());
+        queue.setProcessingStrategy(processingStrategy);
+        queue.setConsumerPerPartition(queueSettings.isConsumerPerPartition());
+        return queue;
+    }
 }

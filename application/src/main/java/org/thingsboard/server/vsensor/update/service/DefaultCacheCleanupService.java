@@ -28,12 +28,6 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
     private final CacheManager cacheManager;
     private final Optional<RedisTemplate<String, Object>> redisTemplate;
 
-
-    /**
-     * Cleanup caches that can not deserialize anymore due to schema upgrade or data update using sql scripts.
-     * Refer to SqlDatabaseUpgradeService and /data/upgrage/*.sql
-     * to discover which tables were changed
-     */
     @Override
     public void clearCache(String fromVersion) throws Exception {
         switch (fromVersion) {

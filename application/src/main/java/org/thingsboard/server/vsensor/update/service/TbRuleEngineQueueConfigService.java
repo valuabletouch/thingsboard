@@ -33,5 +33,4 @@ public class TbRuleEngineQueueConfigService {
             return new RuntimeException("No \"Main\" queue configured!");
         });
     }
-
 }

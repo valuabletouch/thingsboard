@@ -659,5 +659,4 @@ public class DefaultSystemUpdateDataLoaderService implements SystemDataLoaderSer
         executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
         notificationSettingsService.updateDefaultNotificationConfigs(TenantId.SYS_TENANT_ID);
     }
-
 }
