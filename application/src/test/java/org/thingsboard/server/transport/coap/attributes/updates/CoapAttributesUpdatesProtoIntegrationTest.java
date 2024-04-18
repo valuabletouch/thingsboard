@@ -44,12 +44,10 @@ public class CoapAttributesUpdatesProtoIntegrationTest extends AbstractCoapAttri
     public void afterTest() throws Exception {
         processAfterTest();
     }
-    @Ignore // Uncomment when Californium 3.11 is released with https://github.com/eclipse-californium/californium/pull/2215
     @Test
     public void testSubscribeToAttributesUpdatesFromTheServer() throws Exception {
         processProtoTestSubscribeToAttributesUpdates(false);
     }
-    @Ignore // Uncomment when Californium 3.11 is released with https://github.com/eclipse-californium/californium/pull/2215
     @Test
     public void testSubscribeToAttributesUpdatesFromTheServerWithEmptyCurrentStateNotification() throws Exception {
         processProtoTestSubscribeToAttributesUpdates(true);

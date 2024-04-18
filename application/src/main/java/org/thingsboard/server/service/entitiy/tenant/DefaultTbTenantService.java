@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.server.common.data.Tenant;
 import org.thingsboard.server.common.data.TenantProfile;
 import org.thingsboard.server.common.data.id.TenantId;
-import org.thingsboard.server.dao.eventsourcing.SaveEntityEvent;
 import org.thingsboard.server.dao.tenant.TbTenantProfileCache;
 import org.thingsboard.server.dao.tenant.TenantProfileService;
 import org.thingsboard.server.dao.tenant.TenantService;
@@ -52,17 +51,12 @@ public class DefaultTbTenantService extends AbstractTbEntityService implements T
         boolean created = tenant.getId() == null;
         Tenant oldTenant = !created ? tenantService.findTenantById(tenant.getId()) : null;
 
-        Tenant savedTenant = checkNotNull(tenantService.saveTenant(tenant, !created));
-        if (created) {
-            installScripts.createDefaultRuleChains(savedTenant.getId());
-            installScripts.createDefaultEdgeRuleChains(savedTenant.getId());
-            installScripts.createDefaultTenantDashboards(savedTenant.getId(), null);
-        }
+        Tenant savedTenant = tenantService.saveTenant(tenant, tenantId -> {
+            installScripts.createDefaultRuleChains(tenantId);
+            installScripts.createDefaultEdgeRuleChains(tenantId);
+            installScripts.createDefaultTenantDashboards(tenantId, null);
+        });
         tenantProfileCache.evict(savedTenant.getId());
-
-        if (created) {
-            eventPublisher.publishEvent(SaveEntityEvent.builder().tenantId(TenantId.SYS_TENANT_ID).entityId(savedTenant.getId()).entity(savedTenant).created(true).build());
-        }
 
         TenantProfile oldTenantProfile = oldTenant != null ? tenantProfileService.findTenantProfileById(TenantId.SYS_TENANT_ID, oldTenant.getTenantProfileId()) : null;
         TenantProfile newTenantProfile = tenantProfileService.findTenantProfileById(TenantId.SYS_TENANT_ID, savedTenant.getTenantProfileId());
