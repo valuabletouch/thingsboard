@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.server.common.data.vsensor.TransformationService;
 import org.thingsboard.server.dao.vsensor.models.TransformationDocument;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class TransformationServiceImpl implements TransformationService {
     private static final String CACHE_NAME = "transformations";
@@ -49,13 +52,19 @@ public class TransformationServiceImpl implements TransformationService {
         int count = list.size();
 
         if (count == 0) {
-            throw new RuntimeException("Transformation list is empty.");
+            log.warn("Transformation list is empty for toSystemKey: {}, toEntityKey: {}, toKey: {}, fromSystemKey: {}, fromEntityKey: {}",
+                    toSystemKey, toEntityKey, toKey, fromSystemKey, fromEntityKey);
+
+            return Optional.empty();
         }
 
         TransformationDocument transformation = list.get(count - 1);
 
         if (transformation == null) {
-            throw new RuntimeException("Transformation is null.");
+            log.warn("Transformation is null for toSystemKey: {}, toEntityKey: {}, toKey: {}, fromSystemKey: {}, fromEntityKey: {}",
+                    toSystemKey, toEntityKey, toKey, fromSystemKey, fromEntityKey);
+
+            return Optional.empty();
         }
 
         Optional<UUID> uuid = Optional.of(fromString(transformation.getFromKey()));
@@ -75,7 +84,10 @@ public class TransformationServiceImpl implements TransformationService {
                         fromKey.replace("-", ""), toSystemKey, toEntityKey);
 
         if (!result.isPresent()) {
-            throw new RuntimeException("No transformation found.");
+            log.warn("No transformation found for fromSystemKey: {}, fromEntityKey: {}, fromKey: {}, toSystemKey: {}, toEntityKey: {}",
+                    fromSystemKey, fromEntityKey, fromKey, toSystemKey, toEntityKey);
+
+            return Optional.empty();
         }
 
         List<TransformationDocument> list = result.get();
@@ -83,13 +95,19 @@ public class TransformationServiceImpl implements TransformationService {
         int count = list.size();
 
         if (count == 0) {
-            throw new RuntimeException("Transformation list is empty.");
+            log.warn("Transformation list is empty for fromSystemKey: {}, fromEntityKey: {}, fromKey: {}, toSystemKey: {}, toEntityKey: {}",
+                    fromSystemKey, fromEntityKey, fromKey, toSystemKey, toEntityKey);
+
+            return Optional.empty();
         }
 
         TransformationDocument transformation = list.get(count - 1);
 
         if (transformation == null) {
-            throw new RuntimeException("Transformation is null.");
+            log.warn("Transformation is null for fromSystemKey: {}, fromEntityKey: {}, fromKey: {}, toSystemKey: {}, toEntityKey: {}",
+                    fromSystemKey, fromEntityKey, fromKey, toSystemKey, toEntityKey);
+
+            return Optional.empty();
         }
 
         Optional<UUID> uuid = Optional.of(fromString(transformation.getToKey()));

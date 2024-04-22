@@ -14,7 +14,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 
@@ -26,7 +25,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "\"Readings\"")
 @Getter
-@IdClass(ReadingCompositeKey.class)
 public class ReadingEntity implements ToData<Reading> {
 
     protected static final String SUM = "SUM";
@@ -98,20 +96,6 @@ public class ReadingEntity implements ToData<Reading> {
         this.valueDateTime = valueDateTime;
         this.valueString = valueString;
         this.valueJson = valueJson;
-    }
-
-    public ReadingEntity(Reading reading) {
-        tenantId = reading.getTenantId();
-        dataSourceId = reading.getDataSourceId();
-        readingTypeId = reading.getReadingTypeId();
-        readAt = reading.getReadAt();
-        valueBoolean = reading.getValueBoolean();
-        valueLong = reading.getValueLong();
-        valueDecimal = reading.getValueDecimal();
-        valueDateTime = reading.getValueDatetime();
-        valueString = reading.getValueString();
-        valueJson = reading.getValueJson();
-        dataType = reading.getDataType();
     }
 
     public ReadingEntity(String strValue, OffsetDateTime aggValuesLastTs) {
@@ -192,11 +176,11 @@ public class ReadingEntity implements ToData<Reading> {
         result.setTenantId(TenantId.fromUUID(tenantId).getId());
         result.setDataSourceId(dataSourceId);
         result.setReadingTypeId(readingTypeId);
-        result.setReadAt(readAt);
+        result.setReadAt(readAt.toString());
         result.setValueBoolean(valueBoolean);
         result.setValueLong(valueLong);
         result.setValueDecimal(valueDecimal);
-        result.setValueDatetime(valueDateTime);
+        result.setValueDatetime(valueDateTime.toString());
         result.setValueString(valueString);
         result.setValueJson(valueJson);
         result.setDataType(dataType);

@@ -23,7 +23,7 @@ import javax.sql.DataSource;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = "org.thingsboard.server.vsensor.dao.readings", entityManagerFactoryRef = "readingsEntityManagerFactory", transactionManagerRef = "readingsTransactionManager")
-@EntityScan(basePackages = { "org.thingsboard.server.dao.model.vsensor" })
+@EntityScan(basePackages = { "org.thingsboard.server.dao.vsensor.models" })
 public class ReadingsDatabaseConfig {
 
     @Bean(name = "dataSourceProperties")
@@ -42,7 +42,7 @@ public class ReadingsDatabaseConfig {
             EntityManagerFactoryBuilder builder, @Qualifier("readingsDataSource") DataSource dataSource) {
         return builder
                 .dataSource(dataSource)
-                .packages("org.thingsboard.server.dao.model.vsensor")
+                .packages("org.thingsboard.server.dao.vsensor.models")
                 .persistenceUnit("readings")
                 .build();
     }
@@ -52,4 +52,5 @@ public class ReadingsDatabaseConfig {
             @Qualifier("readingsEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
+
 }
