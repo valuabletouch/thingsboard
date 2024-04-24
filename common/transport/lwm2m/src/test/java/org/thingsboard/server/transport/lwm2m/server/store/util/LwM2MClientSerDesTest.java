@@ -26,7 +26,6 @@ import org.eclipse.leshan.core.peer.IpPeer;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.server.registration.Registration;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.thingsboard.server.common.data.TbResource;
 import org.thingsboard.server.common.data.device.data.PowerMode;
@@ -64,7 +63,6 @@ import static org.mockito.Mockito.when;
 
 public class LwM2MClientSerDesTest {
 
-    @Ignore
     @Test
     public void serializeDeserialize() throws Exception {
         LwM2mClient client = new LwM2mClient("nodeId", "endpoint");

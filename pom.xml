@@ -30,8 +30,6 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
         <main.dir>${basedir}</main.dir>
         <pkg.disabled>true</pkg.disabled>
         <pkg.process-resources.phase>none</pkg.process-resources.phase>
@@ -832,7 +830,6 @@
                             <exclude>src/main/scripts/control/**</exclude>
                             <exclude>src/main/scripts/windows/**</exclude>
                             <exclude>src/main/resources/public/static/rulenode/**</exclude>
-                            <exclude>src/main/java/org/eclipse/leshan/server/observation//**</exclude>
                             <exclude>**/*.proto.js</exclude>
                             <exclude>docker/haproxy/**</exclude>
                             <exclude>docker/tb-node/**</exclude>

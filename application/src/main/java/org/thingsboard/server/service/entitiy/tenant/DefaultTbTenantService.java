@@ -16,7 +16,6 @@
 package org.thingsboard.server.service.entitiy.tenant;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.thingsboard.server.common.data.Tenant;
 import org.thingsboard.server.common.data.TenantProfile;
@@ -44,7 +43,6 @@ public class DefaultTbTenantService extends AbstractTbEntityService implements T
     private final TbQueueService tbQueueService;
     private final TenantProfileService tenantProfileService;
     private final EntitiesVersionControlService versionControlService;
-    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public Tenant save(Tenant tenant) throws Exception {

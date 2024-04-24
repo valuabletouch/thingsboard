@@ -19,7 +19,6 @@ import org.eclipse.leshan.core.endpoint.EndpointUriUtil;
 import org.eclipse.leshan.core.link.Link;
 import org.eclipse.leshan.core.peer.IpPeer;
 import org.eclipse.leshan.server.registration.Registration;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -27,7 +26,6 @@ import java.net.InetSocketAddress;
 
 public class LwM2mClientTest {
 
-    @Ignore
     @Test
     public void setRegistration() {
         LwM2mClient client = new LwM2mClient("nodeId", "testEndpoint");
@@ -35,7 +33,7 @@ public class LwM2mClientTest {
                 .Builder("testId", "testEndpoint", new IpPeer(new InetSocketAddress(1000)),
                         EndpointUriUtil.createUri("coap://localhost:5685"))
                 .objectLinks(new Link[0])
-                .build();*/
+                .build();
 
         Assertions.assertDoesNotThrow(() -> client.setRegistration(registration));
     }
