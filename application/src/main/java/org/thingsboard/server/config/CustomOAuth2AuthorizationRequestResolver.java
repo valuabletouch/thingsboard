@@ -178,6 +178,17 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
 
         String redirectUriStr = expandRedirectUri(request, clientRegistration, redirectUriAction);
 
+        String queryString = request.getQueryString();
+
+        if (!StringUtils.isEmpty(queryString)) {
+            if (redirectUriStr.contains("?")) {
+                redirectUriStr += "&" + queryString;
+            }
+            else {
+                redirectUriStr += "?" + queryString;
+            }
+        }
+
         return builder
                 .clientId(clientRegistration.getClientId())
                 .authorizationUri(clientRegistration.getProviderDetails().getAuthorizationUri())
