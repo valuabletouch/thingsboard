@@ -734,14 +734,13 @@ spring.jpa.properties.hibernate.dialect: "${SPRING_JPA_DIALECT:org.thingsboard.s
 
 # SQL DAO Configuration parameters
 spring:
-  main:
-    allow-bean-definition-overriding: "${SPRING_ALLOW_BEAN_DEFINITION_OVERRIDING:false}"
   autoconfigure:
+    # Exclude Spring Boot auto-configuration classes that you do not want to apply to your application
     exclude: "${SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration}"
   data:
     jpa:
       repositories:
-        enabled: "true"
+        enabled: "true" # Enable JPA repositories
     mongodb:
       readingtype:
         uri: "${READING_TYPE_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}" # MongoDB URI for reading type
