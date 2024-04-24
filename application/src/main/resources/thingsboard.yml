@@ -14,11 +14,15 @@
 # limitations under the License.
 #
 
+# Thingsboard upgrade parameters
 upgrade:
+  # Enable/disable ThingsBoard upgrade
   do_upgrade: "${UPGRADE_THINGSBOARD:false}"
-
+# ThingsBoard installation parameters
 install:
+  # Enable/disable ThingsBoard installation
   upgrade: "${INSTALL_UPGRADE:false}"
+  # ThingsBoard installation directory
   data_dir: "${INSTALL_DATA_DIRECTORY:}"
 # Server common parameters
 server:
@@ -211,9 +215,6 @@ database:
 
 # Cassandra driver configuration parameters
 cassandra:
-  vsensor:
-    enabled: "${CASSANDRA_USE_VSENSOR:false}"
-    keyspace_name: "${CASSANDRA_KEYSPACE_NAME_VSENSOR:readings}"
   # Thingsboard cluster name
   cluster_name: "${CASSANDRA_CLUSTER_NAME:V-Sensor Cluster}"
   # Thingsboard keyspace name
@@ -422,7 +423,7 @@ sql:
     pool_size: "${SQL_RELATIONS_POOL_SIZE:4}" # This value has to be reasonably small to prevent the relation query from blocking all other DB calls
     query_timeout: "${SQL_RELATIONS_QUERY_TIMEOUT_SEC:20}" # This value has to be reasonably small to prevent the relation query from blocking all other DB calls
   vsensor:
-      enabled: "${POSTGRE_USE_VSENSOR:true}"
+      enabled: "${POSTGRE_USE_VSENSOR:true}" # Enable/disable vsensor database
 
 # Actor system parameters
 actors:
@@ -743,9 +744,9 @@ spring:
         enabled: "true"
     mongodb:
       readingtype:
-        uri: "${READING_TYPE_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}"
+        uri: "${READING_TYPE_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}" # MongoDB URI for reading type
       transformation:
-        uri: "${TRANSFORMATION_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}"
+        uri: "${TRANSFORMATION_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}" # MongoDB URI for transformation
   jpa:
     properties:
       jakarta.persistence.query.timeout: "${JAVAX_PERSISTENCE_QUERY_TIMEOUT:30000}" # General timeout for JDBC queries
@@ -1609,9 +1610,9 @@ queue:
       # RabbitMQ properties for Version Control queues
       version-control: "${TB_QUEUE_RABBIT_MQ_VC_QUEUE_PROPERTIES:x-max-length-bytes:1048576000;x-message-ttl:604800000}"
     vsensor:
-      exchange_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_EXCHANGE_NAME:exchange}"
-      routing_key: "${TB_QUEUE_RABBIT_MQ_VSENSOR_ROUTING_KEY:routing_key}"
-      queue_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_QUEUE_NAME:queue}"
+      exchange_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_EXCHANGE_NAME:exchange}" # Exchange name for VSensor
+      routing_key: "${TB_QUEUE_RABBIT_MQ_VSENSOR_ROUTING_KEY:routing_key}" # Routing key for VSensor
+      queue_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_QUEUE_NAME:queue}" # Queue name for VSensor
   partitions:
     hash_function_name: "${TB_QUEUE_PARTITIONS_HASH_FUNCTION_NAME:murmur3_128}" # murmur3_32, murmur3_128 or sha256
   transport_api:
@@ -1815,11 +1816,12 @@ management:
       exposure:
         # Expose metrics endpoint (use value 'prometheus' to enable prometheus metrics).
         include: '${METRICS_ENDPOINTS_EXPOSE:info}'
+# Transport API parameters
 transformation:
   system:
-    thingsboard: "${TRANSFORMATION_SYSTEM_THINGSBOARD:thingsboard}"
-    readingtype: "${TRANSFORMATION_SYSTEM_READING_TYPE:definition}"
+    thingsboard: "${TRANSFORMATION_SYSTEM_THINGSBOARD:thingsboard}" # System name
+    readingtype: "${TRANSFORMATION_SYSTEM_READING_TYPE:definition}" # Reading type
   entity:
-    tenant: "${TRANSFORMATION_ENTITY_TENANT:tenant}"
-    device: "${TRANSFORMATION_ENTITY_DEVICE:device}"
-    datasource: "${TRANSFORMATION_ENTITY_DATA_SOURCE:datasource}"
+    tenant: "${TRANSFORMATION_ENTITY_TENANT:tenant}" # Entity type
+    device: "${TRANSFORMATION_ENTITY_DEVICE:device}" # Entity type
+    datasource: "${TRANSFORMATION_ENTITY_DATA_SOURCE:datasource}" # Entity type
