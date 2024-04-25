@@ -197,7 +197,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
             }
 
             if (readingType.isEmpty()) {
-                log.warn("ReadingType not found for code: " + tsKvEntry.getKey());
+                log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId);
 
                 return Futures.immediateFuture(0);
             }
