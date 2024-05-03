@@ -197,7 +197,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
             }
 
             if (readingType.isEmpty()) {
-                log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId);
+                log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId.get());
 
                 return Futures.immediateFuture(0);
             }
@@ -560,7 +560,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
         switch (kvEntry.getDataType()) {
             case BOOLEAN:
                 Optional<Boolean> booleanValue = kvEntry.getBooleanValue();
-                booleanValue.ifPresent(reading::setValueBoolean);
+                booleanValue.ifPresent(d -> reading.setValueString(d.toString()));
                 break;
             case STRING:
                 Optional<String> stringValue = kvEntry.getStrValue();
@@ -568,7 +568,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 break;
             case LONG:
                 Optional<Long> longValue = kvEntry.getLongValue();
-                longValue.ifPresent(reading::setValueLong);
+                longValue.ifPresent(d -> reading.setValueDecimal(BigDecimal.valueOf(d)));
                 break;
             case DOUBLE:
                 Optional<Double> doubleValue = kvEntry.getDoubleValue();
@@ -576,7 +576,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 break;
             case JSON:
                 Optional<String> jsonValue = kvEntry.getJsonValue();
-                jsonValue.ifPresent(reading::setValueJson);
+                jsonValue.ifPresent(d -> reading.setValueString(d.toString()));
                 break;
         }
     }
@@ -584,13 +584,13 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     private static void addDataType(KvEntry kvEntry, Reading reading) {
         switch (kvEntry.getDataType()) {
             case BOOLEAN:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_BOOLEAN));
+                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_STRING));
                 break;
             case STRING:
                 reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_STRING));
                 break;
             case LONG:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_LONG));
+                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
                 break;
             case DOUBLE:
                 reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
