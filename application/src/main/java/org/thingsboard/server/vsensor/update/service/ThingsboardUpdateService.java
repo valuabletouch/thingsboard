@@ -25,7 +25,7 @@ import java.util.List;
 @Slf4j
 public class ThingsboardUpdateService {
 
-    private final static String INSTALL_UPGRADE_ENV_NAME = "upgrade.do_upgrade";
+    private final static String INSTALL_UPGRADE_ENV_NAME = "upgrade.upgrade";
 
     @Value("${" + INSTALL_UPGRADE_ENV_NAME + ":false}")
     private Boolean isUpgrade;

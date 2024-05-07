@@ -17,7 +17,7 @@
 # Thingsboard upgrade parameters
 upgrade:
   # Enable/disable ThingsBoard upgrade
-  do_upgrade: "${UPGRADE_THINGSBOARD:false}"
+  upgrade: "${UPGRADE_UPGRADE:false}"
 # ThingsBoard installation parameters
 install:
   # Enable/disable ThingsBoard installation
@@ -29,7 +29,7 @@ server:
   # Server bind-address
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # Server bind port
-  port: "${HTTP_BIND_PORT:5100}"
+  port: "${HTTP_BIND_PORT:8080}"
   # Server forward headers strategy
   forward_headers_strategy: "${HTTP_FORWARD_HEADERS_STRATEGY:NONE}"
   # Server SSL configuration
@@ -143,8 +143,8 @@ security:
   jwt: # Since 3.4.2 values are persisted in the database during installation or upgrade. On Install, the key will be generated randomly if no custom value set. You can change it later from Web UI under SYS_ADMIN
     tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}" # Number of seconds (2.5 hours)
     refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}" # Number of seconds (1 week).
-    tokenIssuer: "${JWT_TOKEN_ISSUER:v-sensor}" # User JWT Token issuer
-    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:c2VjcmV0}" # Base64 encoded
+    tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}" # User JWT Token issuer
+    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}" # Base64 encoded
   # Enable/disable access to Tenant Administrators JWT token by System Administrator or Customer Users JWT token by Tenant Administrator
   user_token_access_enabled: "${SECURITY_USER_TOKEN_ACCESS_ENABLED:true}"
   # Enable/disable case-sensitive username login
@@ -216,7 +216,7 @@ database:
 # Cassandra driver configuration parameters
 cassandra:
   # Thingsboard cluster name
-  cluster_name: "${CASSANDRA_CLUSTER_NAME:V-Sensor Cluster}"
+  cluster_name: "${CASSANDRA_CLUSTER_NAME:Thingsboard Cluster}"
   # Thingsboard keyspace name
   keyspace_name: "${CASSANDRA_KEYSPACE_NAME:thingsboard}"
   # Specify node list
@@ -255,11 +255,11 @@ cassandra:
   # Cassandra max remote requests per connection
   max_requests_per_connection_remote: "${CASSANDRA_MAX_REQUESTS_PER_CONNECTION_REMOTE:32768}"
   # Credential parameters
-  credentials: "${CASSANDRA_USE_CREDENTIALS:true}"
+  credentials: "${CASSANDRA_USE_CREDENTIALS:false}"
   # Specify your username
-  username: "${CASSANDRA_USERNAME:root}"
+  username: "${CASSANDRA_USERNAME:}"
   # Specify your password
-  password: "${CASSANDRA_PASSWORD:secret}"
+  password: "${CASSANDRA_PASSWORD:}"
   # Astra DB connect https://astra.datastax.com/
   cloud:
     # /etc/thingsboard/astra/secure-connect-thingsboard.zip
@@ -374,7 +374,7 @@ sql:
   # Threshold of slow SQL queries to log. The value set in milliseconds
   log_queries_threshold: "${SQL_LOG_QUERIES_THRESHOLD:5000}"
   # Enable/Disable logging statistic information about tenants
-  log_tenant_stats: "${SQL_LOG_TENANT_STATS:false}"
+  log_tenant_stats: "${SQL_LOG_TENANT_STATS:true}"
   # Interval in milliseconds for printing the latest statistic information about the tenant
   log_tenant_stats_interval_ms: "${SQL_LOG_TENANT_STATS_INTERVAL_MS:60000}"
   postgres:
@@ -423,7 +423,7 @@ sql:
     pool_size: "${SQL_RELATIONS_POOL_SIZE:4}" # This value has to be reasonably small to prevent the relation query from blocking all other DB calls
     query_timeout: "${SQL_RELATIONS_QUERY_TIMEOUT_SEC:20}" # This value has to be reasonably small to prevent the relation query from blocking all other DB calls
   vsensor:
-      enabled: "${POSTGRE_USE_VSENSOR:true}" # Enable/disable vsensor database
+      enabled: "${SQL_VSENSOR_ENABLED:true}" # Enable/disable vsensor database
 
 # Actor system parameters
 actors:
@@ -496,7 +496,7 @@ actors:
 # Cache settings parameters
 cache:
   # caffeine or redis
-  type: "${CACHE_TYPE:redis}"
+  type: "${CACHE_TYPE:caffeine}"
   maximumPoolSize: "${CACHE_MAXIMUM_POOL_SIZE:16}" # max pool size to process futures that call the external cache
   attributes:
     # make sure that if cache.type is 'redis' and cache.attributes.enabled is 'true' if you change 'maxmemory-policy' Redis config property to 'allkeys-lru', 'allkeys-lfu' or 'allkeys-random'
@@ -656,7 +656,7 @@ redis:
     # if set false will be used pool config build from values of the pool config section
     useDefaultPoolConfig: "${REDIS_USE_DEFAULT_POOL_CONFIG:true}"
   # db index
-  db: "${REDIS_DB:1}"
+  db: "${REDIS_DB:0}"
   # db password
   password: "${REDIS_PASSWORD:}"
   # ssl config
@@ -740,9 +740,6 @@ spring.jpa.properties.hibernate.dialect: "${SPRING_JPA_DIALECT:org.thingsboard.s
 
 # SQL DAO Configuration parameters
 spring:
-  autoconfigure:
-    # Exclude Spring Boot auto-configuration classes that you do not want to apply to your application
-    exclude: "${SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration}"
   data:
     jpa:
       repositories:
@@ -783,12 +780,6 @@ spring:
       username: "${SPRING_DATASOURCE_READINGS_USERNAME:postgres}"
       # Database user password
       password: "${SPRING_DATASOURCE_READINGS_PASSWORD:postgres}"
-      hikari:
-        # This property controls the amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak. A value of 0 means leak detection is disabled
-        leakDetectionThreshold: "${SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD:0}"
-        # This property increases the number of connections in the pool as demand increases. At the same time, the property ensures that the pool doesn't grow to the point of exhausting a system's resources, which ultimately affects an application's performance and availability
-        maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
-        registerMbeans: "${SPRING_DATASOURCE_HIKARI_REGISTER_MBEANS:false}" # true - enable MBean to diagnose pools state via JMX
 
 # Audit log parameters
 audit-log:
@@ -1286,7 +1277,7 @@ device:
       # Host of http transport service. If empty, the base URL will be used.
       host: "${DEVICE_CONNECTIVITY_HTTP_HOST:}"
       # Port of http transport service. If empty, default http port will be used.
-      port: "${DEVICE_CONNECTIVITY_HTTP_PORT:5100}"
+      port: "${DEVICE_CONNECTIVITY_HTTP_PORT:8080}"
     https:
       # If true check-connectivity service will include curl command to the list of all test commands using DEVICE_CONNECTIVITY_HTTPS_HOST and DEVICE_CONNECTIVITY_HTTPS_PORT variables
       enabled: "${DEVICE_CONNECTIVITY_HTTPS_ENABLED:false}"
@@ -1408,7 +1399,7 @@ swagger:
 
 # Queue configuration parameters
 queue:
-  type: "${TB_QUEUE_TYPE:rabbitmq}" # in-memory or kafka (Apache Kafka) or aws-sqs (AWS SQS) or pubsub (PubSub) or service-bus (Azure Service Bus) or rabbitmq (RabbitMQ)
+  type: "${TB_QUEUE_TYPE:in-memory}" # in-memory or kafka (Apache Kafka) or aws-sqs (AWS SQS) or pubsub (PubSub) or service-bus (Azure Service Bus) or rabbitmq (RabbitMQ)
   prefix: "${TB_QUEUE_PREFIX:}" # Global queue prefix. If specified, prefix is added before default topic name: 'prefix.default_topic_name'. Prefix is applied to all topics (and consumer groups for kafka).
   in_memory:
     stats:
@@ -1612,11 +1603,11 @@ queue:
     # Virtual hosts provide logical grouping and separation of resources
     virtual_host: "${TB_QUEUE_RABBIT_MQ_VIRTUAL_HOST:/}"
     # Username for RabbitMQ user account
-    username: "${TB_QUEUE_RABBIT_MQ_USERNAME:root}"
+    username: "${TB_QUEUE_RABBIT_MQ_USERNAME:YOUR_USERNAME}"
     # User password for RabbitMQ user account
-    password: "${TB_QUEUE_RABBIT_MQ_PASSWORD:secret}"
+    password: "${TB_QUEUE_RABBIT_MQ_PASSWORD:YOUR_PASSWORD}"
     # Network connection between clients and RabbitMQ nodes can fail. RabbitMQ Java client supports automatic recovery of connections and topology (queues, exchanges, bindings, and consumers)
-    automatic_recovery_enabled: "${TB_QUEUE_RABBIT_MQ_AUTOMATIC_RECOVERY_ENABLED:true}"
+    automatic_recovery_enabled: "${TB_QUEUE_RABBIT_MQ_AUTOMATIC_RECOVERY_ENABLED:false}"
     # The connection timeout for the RabbitMQ connection factory
     connection_timeout: "${TB_QUEUE_RABBIT_MQ_CONNECTION_TIMEOUT:60000}"
     # RabbitMQ has a timeout for connection handshake. When clients run in heavily constrained environments, it may be necessary to increase the timeout
