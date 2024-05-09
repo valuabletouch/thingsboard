@@ -216,6 +216,7 @@ export class DashboardPageComponent extends PageComponent implements IDashboardC
   prevDashboard: Dashboard;
 
   iframeMode = this.utils.iframeMode;
+  iframe: boolean = null;
   widgetEditMode: boolean;
   singlePageMode: boolean;
   forceFullscreen = this.authState.forceFullscreen;
@@ -409,6 +410,11 @@ export class DashboardPageComponent extends PageComponent implements IDashboardC
           this.updateLayoutSizes();
         }
     ));
+
+    this.store.select('iframe').subscribe(state => {
+      this.iframe = state.value;
+    });
+
     if (this.isMobileApp && this.syncStateWithQueryParam) {
       this.mobileService.registerToggleLayoutFunction(() => {
         setTimeout(() => {
@@ -869,6 +875,15 @@ export class DashboardPageComponent extends PageComponent implements IDashboardC
        }
       }
     });
+  }
+
+  closeIframe($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    if (this.window.parent) {
+      this.window.parent.postMessage('close-iframe', '*');
+    }
   }
 
   public manageDashboardStates($event: Event) {

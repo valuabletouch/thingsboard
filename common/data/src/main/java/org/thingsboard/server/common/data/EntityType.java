@@ -25,6 +25,7 @@ import java.util.List;
  * @author Andrew Shvayka
  */
 public enum EntityType {
+
     TENANT(1),
     CUSTOMER(2),
     USER(3, "tb_user"),

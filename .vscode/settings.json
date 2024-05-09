@@ -1,0 +1,7 @@
+{
+    "maven.view": "hierarchical",
+    "java.dependency.packagePresentation": "hierarchical",
+    "java.dependency.syncWithFolderExplorer": false,
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx3G -Xms100m -Xlog:disable"
+}

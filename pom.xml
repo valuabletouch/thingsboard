@@ -1180,6 +1180,11 @@
                 <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-mongodb</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.projectreactor.netty</groupId>
                 <artifactId>reactor-netty-http</artifactId>
                 <version>${reactor-netty.version}</version>

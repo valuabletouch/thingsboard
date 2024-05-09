@@ -43,7 +43,6 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
 
   maxStartDate: Date;
   minEndDate: Date;
-  maxEndDate: Date;
 
   changePending = false;
 
@@ -110,7 +109,6 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
   updateMinMaxDates() {
     this.maxStartDate = new Date(this.endDate.getTime() - 1000);
     this.minEndDate = new Date(this.startDate.getTime() + 1000);
-    this.maxEndDate = new Date();
   }
 
   onStartDateChange() {
@@ -127,8 +125,6 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
     if (this.endDate) {
       if (this.endDate.getTime() < this.minEndDate.getTime()) {
         this.endDate = new Date(this.minEndDate.getTime());
-      } else if (this.endDate.getTime() > this.maxEndDate.getTime()) {
-        this.endDate = new Date(this.maxEndDate.getTime());
       }
       this.updateMinMaxDates();
     }
