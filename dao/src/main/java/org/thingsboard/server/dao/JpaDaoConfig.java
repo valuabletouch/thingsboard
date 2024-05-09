@@ -42,11 +42,16 @@ import javax.sql.DataSource;
  */
 @Configuration
 @TbAutoConfiguration
-@ComponentScan({ "org.thingsboard.server.dao.sql", "org.thingsboard.server.dao.attributes",
-        "org.thingsboard.server.dao.cache", "org.thingsboard.server.cache" })
+@ComponentScan({
+        "org.thingsboard.server.dao.sql",
+        "org.thingsboard.server.dao.attributes",
+        "org.thingsboard.server.dao.cache",
+        "org.thingsboard.server.cache" })
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = {
-        "org.thingsboard.server.dao.sql" }, entityManagerFactoryRef = "entityManagerFactory", transactionManagerRef = "jpaTransactionManager")
+@EnableJpaRepositories(
+        basePackages = { "org.thingsboard.server.dao.sql" },
+        entityManagerFactoryRef = "entityManagerFactory",
+        transactionManagerRef = "jpaTransactionManager")
 @EntityScan(basePackages = { "org.thingsboard.server.dao.model.sql", "org.thingsboard.server.dao.model.sqlts" })
 public class JpaDaoConfig {
 
@@ -59,14 +64,16 @@ public class JpaDaoConfig {
 
     @Primary
     @Bean(name = "jpaDataSource")
-    public DataSource dataSource(@Qualifier("jpaDataSourceProperties") DataSourceProperties properties) {
+    public DataSource dataSource(
+            @Qualifier("jpaDataSourceProperties") DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
     }
 
     @Primary
     @Bean(name = "entityManagerFactory")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-            EntityManagerFactoryBuilder builder, @Qualifier("jpaDataSource") DataSource dataSource) {
+            EntityManagerFactoryBuilder builder,
+            @Qualifier("jpaDataSource") DataSource dataSource) {
         return builder
                 .dataSource(dataSource)
                 .packages("org.thingsboard.server.dao.model.sql", "org.thingsboard.server.dao.model.sqlts")
