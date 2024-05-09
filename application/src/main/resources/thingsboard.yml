@@ -743,7 +743,7 @@ spring.jpa.properties.hibernate.dialect: "${SPRING_JPA_DIALECT:org.thingsboard.s
 # SQL DAO Configuration parameters
 spring:
   autoconfigure:
-      exclude: "${SPRING_AUTOCONFIGURE_EXCLUDE:org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration}"
+      exclude: "${SPRING_AUTOCONFIGURE_EXCLUDE:org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration}" # Exclude MongoDB auto-configuration
   data:
     jpa:
       repositories:
