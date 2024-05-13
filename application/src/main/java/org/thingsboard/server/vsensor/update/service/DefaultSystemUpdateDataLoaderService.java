@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +47,7 @@ import org.thingsboard.server.common.data.page.PageDataIterable;
 import org.thingsboard.server.common.data.page.PageLink;
 import org.thingsboard.server.common.data.query.*;
 import org.thingsboard.server.common.data.queue.*;
+import org.thingsboard.server.common.data.security.model.JwtSettings;
 import org.thingsboard.server.common.data.rule.RuleChainType;
 import org.thingsboard.server.common.data.security.Authority;
 import org.thingsboard.server.common.data.security.DeviceCredentials;
@@ -76,7 +78,9 @@ import org.thingsboard.server.vsensor.update.configuration.DeviceConnectivityUpd
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
@@ -86,6 +90,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.thingsboard.server.common.data.DataConstants.DEFAULT_DEVICE_TYPE;
+import static org.thingsboard.server.service.security.auth.jwt.settings.DefaultJwtSettingsService.isSigningKeyDefault;
+import static org.thingsboard.server.service.security.auth.jwt.settings.DefaultJwtSettingsService.validateTokenSigningKeyLength;
 
 @Service
 @Profile("update")
@@ -656,22 +662,50 @@ public class DefaultSystemUpdateDataLoaderService implements SystemDataLoaderSer
 
     @Override
     @SneakyThrows
-    public void updateDefaultNotificationConfigs() {
-        PageDataIterable<TenantId> tenants = new PageDataIterable<>(tenantService::findTenantsIds, 500);
-        ExecutorService executor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 4));
-        log.info("Updating default edge failure notification configs for all tenants");
-        AtomicInteger count = new AtomicInteger();
-        for (TenantId tenantId : tenants) {
-            executor.submit(() -> {
-                notificationSettingsService.updateDefaultNotificationConfigs(tenantId);
-                int n = count.incrementAndGet();
-                if (n % 500 == 0) {
-                    log.info("{} tenants processed", n);
-                }
-            });
-        }
-        executor.shutdown();
-        executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+    public void updateDefaultNotificationConfigs(boolean updateTenants) {
+        log.info("Updating notification configs...");
         notificationSettingsService.updateDefaultNotificationConfigs(TenantId.SYS_TENANT_ID);
+
+        if (updateTenants) {
+            PageDataIterable<TenantId> tenants = new PageDataIterable<>(tenantService::findTenantsIds, 500);
+            ExecutorService executor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 4));
+            AtomicInteger count = new AtomicInteger();
+            for (TenantId tenantId : tenants) {
+                executor.submit(() -> {
+                    notificationSettingsService.updateDefaultNotificationConfigs(tenantId);
+                    int n = count.incrementAndGet();
+                    if (n % 500 == 0) {
+                        log.info("{} tenants processed", n);
+                    }
+                });
+            }
+            executor.shutdown();
+            executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+        }
+    }
+
+    @Override
+    public void updateJwtSettings() {
+        JwtSettings jwtSettings = jwtSettingsService.getJwtSettings();
+        boolean invalidSignKey = false;
+        String warningMessage = null;
+
+        if (isSigningKeyDefault(jwtSettings)) {
+            warningMessage = "The platform is using the default JWT Signing Key, which is a security risk.";
+            invalidSignKey = true;
+        } else if (!validateTokenSigningKeyLength(jwtSettings)) {
+            warningMessage = "The JWT Signing Key is shorter than 512 bits, which is a security risk.";
+            invalidSignKey = true;
+        }
+
+        if (invalidSignKey) {
+            log.warn("WARNING: {}. A new JWT Signing Key has been added automatically. " +
+                    "You can change the JWT Signing Key using the Web UI: " +
+                    "Navigate to \"System settings -> Security settings\" while logged in as a System Administrator.", warningMessage);
+
+            jwtSettings.setTokenSigningKey(Base64.getEncoder().encodeToString(
+                    RandomStringUtils.randomAlphanumeric(64).getBytes(StandardCharsets.UTF_8)));
+            jwtSettingsService.saveJwtSettings(jwtSettings);
+        }
     }
 }
