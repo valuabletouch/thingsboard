@@ -40,13 +40,15 @@ public class SqlEntityDatabaseSchemaService extends SqlAbstractDatabaseSchemaSer
     @Override
     public void createDatabaseIndexes() throws Exception {
         super.createDatabaseIndexes();
-        log.info("Installing SQL DataBase schema PostgreSQL specific indexes part: " + SCHEMA_ENTITIES_IDX_PSQL_ADDON_SQL);
+        log.info("Installing SQL DataBase schema PostgreSQL specific indexes part: "
+                + SCHEMA_ENTITIES_IDX_PSQL_ADDON_SQL);
         executeQueryFromFile(SCHEMA_ENTITIES_IDX_PSQL_ADDON_SQL);
     }
 
     @Override
     public void createOrUpdateDeviceInfoView(boolean activityStateInTelemetry) {
-        String sourceViewName = activityStateInTelemetry ? "device_info_active_ts_view" : "device_info_active_attribute_view";
+        String sourceViewName = activityStateInTelemetry ? "device_info_active_ts_view"
+                : "device_info_active_attribute_view";
         executeQuery("DROP VIEW IF EXISTS device_info_view CASCADE;");
         executeQuery("CREATE OR REPLACE VIEW device_info_view AS SELECT * FROM " + sourceViewName + ";");
     }
@@ -55,5 +57,14 @@ public class SqlEntityDatabaseSchemaService extends SqlAbstractDatabaseSchemaSer
     public void createOrUpdateViewsAndFunctions() throws Exception {
         log.info("Installing SQL DataBase schema views and functions: " + SCHEMA_VIEWS_AND_FUNCTIONS_SQL);
         executeQueryFromFile(SCHEMA_VIEWS_AND_FUNCTIONS_SQL);
+    }
+
+    @Override
+    public void createCustomerTitleUniqueConstraintIfNotExists() {
+        executeQuery(
+                "DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'customer_title_unq_key') THEN "
+                        +
+                        "ALTER TABLE customer ADD CONSTRAINT customer_title_unq_key UNIQUE(tenant_id, title); END IF; END; $$;",
+                "create 'customer_title_unq_key' constraint if it doesn't already exist!");
     }
 }

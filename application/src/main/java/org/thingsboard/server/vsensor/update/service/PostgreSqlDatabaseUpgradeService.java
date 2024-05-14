@@ -53,6 +53,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+@SuppressWarnings("deprecation")
 @Service
 @Profile("update")
 @Slf4j

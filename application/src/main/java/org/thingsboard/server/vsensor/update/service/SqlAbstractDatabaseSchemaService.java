@@ -99,4 +99,15 @@ public abstract class SqlAbstractDatabaseSchemaService implements DatabaseSchema
             throw new ThingsboardUpdateException("Failed to execute query: " + query, e);
         }
     }
+
+    protected void executeQuery(String query, String logQuery) {
+        logQuery = logQuery != null ? logQuery : query;
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
+            conn.createStatement().execute(query); //NOSONAR, ignoring because method used to execute thingsboard database upgrade script
+            log.info("Successfully executed query: {}", logQuery);
+            Thread.sleep(5000);
+        } catch (InterruptedException | SQLException e) {
+            throw new RuntimeException("Failed to execute query: " + logQuery, e);
+        }
+    }
 }

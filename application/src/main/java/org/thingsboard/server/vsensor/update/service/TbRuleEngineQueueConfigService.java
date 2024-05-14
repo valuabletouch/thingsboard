@@ -30,6 +30,7 @@ import org.thingsboard.server.vsensor.update.configuration.TbRuleEngineQueueConf
 import javax.annotation.PostConstruct;
 import java.util.List;
 
+@SuppressWarnings("deprecation")
 @Slf4j
 @Data
 @EnableAutoConfiguration

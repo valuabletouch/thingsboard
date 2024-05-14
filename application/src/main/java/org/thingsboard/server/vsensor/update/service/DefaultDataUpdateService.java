@@ -147,7 +147,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
     DeviceConnectivityConfiguration connectivityConfiguration;
 
     @Autowired
-    private JwtSettingsService jwtSettingsService;
+    private LegacyJwtSettingsService jwtSettingsService;
 
     @Override
     public void updateData(String fromVersion) throws Exception {
