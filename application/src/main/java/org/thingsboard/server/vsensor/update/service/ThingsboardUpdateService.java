@@ -174,25 +174,26 @@ public class ThingsboardUpdateService {
                         if (!getEnv("SKIP_IMAGES_MIGRATION", false)) {
                             installScripts.setUpdateImages(true);
                         } else {
-                            log.info(
-                                    "Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
+                            log.info("Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
                         }
                         break;
                     case "3.6.2":
                         log.info("Upgrading ThingsBoard from version 3.6.2 to 3.6.3 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.2");
                         systemDataLoaderService.updateDefaultNotificationConfigs(true);
-                        installScripts.updateImages();
                         break;
                     case "3.6.3":
                         log.info("Upgrading ThingsBoard from version 3.6.3 to 3.6.4 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.3");
-                        // TODO DON'T FORGET to update switch statement in the CacheCleanupService if
-                        // you need to clear the cache
                         break;
                     case "3.6.4":
                         log.info("Upgrading ThingsBoard from version 3.6.4 to 3.7.0 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.4");
+                        dataUpdateService.updateData("3.6.4");
+                        entityDatabaseSchemaService.createCustomerTitleUniqueConstraintIfNotExists();
+                        systemDataLoaderService.updateDefaultNotificationConfigs(false);
+                        systemDataLoaderService.updateJwtSettings();
+                        //TODO DON'T FORGET to update switch statement in the CacheCleanupService if you need to clear the cache
                         break;
                     default:
                         throw new ThingsboardUpdateException(
