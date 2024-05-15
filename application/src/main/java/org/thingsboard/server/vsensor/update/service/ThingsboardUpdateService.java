@@ -145,7 +145,7 @@ public class ThingsboardUpdateService {
                         dataUpdateService.updateData("3.4.0");
                         break;
                     case "3.4.1":
-                        log.info("Upgrading ThingsBoard from version 3.4.1 to 3.4.2 ...");
+                        log.info("Upgrading ThingsBoard from version 3.4.1 to 3.4.4 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.4.1");
                         dataUpdateService.updateData("3.4.1");
                         break;
@@ -161,7 +161,7 @@ public class ThingsboardUpdateService {
                         log.info("Upgrading ThingsBoard from version 3.5.1 to 3.6.0 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.5.1");
                         dataUpdateService.updateData("3.5.1");
-                        systemDataLoaderService.updateDefaultNotificationConfigs();
+                        systemDataLoaderService.updateDefaultNotificationConfigs(true);
                         break;
                     case "3.6.0":
                         log.info("Upgrading ThingsBoard from version 3.6.0 to 3.6.1 ...");
@@ -174,25 +174,26 @@ public class ThingsboardUpdateService {
                         if (!getEnv("SKIP_IMAGES_MIGRATION", false)) {
                             installScripts.setUpdateImages(true);
                         } else {
-                            log.info(
-                                    "Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
+                            log.info("Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
                         }
                         break;
                     case "3.6.2":
                         log.info("Upgrading ThingsBoard from version 3.6.2 to 3.6.3 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.2");
-                        systemDataLoaderService.updateDefaultNotificationConfigs();
-                        installScripts.updateImages();
+                        systemDataLoaderService.updateDefaultNotificationConfigs(true);
                         break;
                     case "3.6.3":
                         log.info("Upgrading ThingsBoard from version 3.6.3 to 3.6.4 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.3");
-                        // TODO DON'T FORGET to update switch statement in the CacheCleanupService if
-                        // you need to clear the cache
                         break;
                     case "3.6.4":
                         log.info("Upgrading ThingsBoard from version 3.6.4 to 3.7.0 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("3.6.4");
+                        dataUpdateService.updateData("3.6.4");
+                        entityDatabaseSchemaService.createCustomerTitleUniqueConstraintIfNotExists();
+                        systemDataLoaderService.updateDefaultNotificationConfigs(false);
+                        systemDataLoaderService.updateJwtSettings();
+                        //TODO DON'T FORGET to update switch statement in the CacheCleanupService if you need to clear the cache
                         break;
                     default:
                         throw new ThingsboardUpdateException(

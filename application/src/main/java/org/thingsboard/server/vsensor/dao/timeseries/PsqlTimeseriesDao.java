@@ -305,11 +305,6 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     }
 
     @Override
-    public List<TsKvEntry> findLatestSync(TenantId tenantId, EntityId entityId, Collection<String> keys) {
-        return new ArrayList<>();
-    }
-
-    @Override
     public ListenableFuture<List<TsKvEntry>> findAllLatest(TenantId tenantId, EntityId entityId) {
         return Futures.immediateFuture(new ArrayList<>());
     }

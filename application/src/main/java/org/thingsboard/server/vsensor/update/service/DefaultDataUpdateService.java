@@ -32,6 +32,7 @@ import org.thingsboard.common.util.JacksonUtil;
 import org.thingsboard.rule.engine.flow.TbRuleChainInputNode;
 import org.thingsboard.rule.engine.flow.TbRuleChainInputNodeConfiguration;
 import org.thingsboard.server.common.data.AdminSettings;
+import org.thingsboard.server.common.data.Customer;
 import org.thingsboard.server.common.data.DataConstants;
 import org.thingsboard.server.common.data.Tenant;
 import org.thingsboard.server.common.data.TenantProfile;
@@ -57,6 +58,8 @@ import org.thingsboard.server.common.data.rule.RuleNode;
 import org.thingsboard.server.common.data.tenant.profile.TenantProfileQueueConfiguration;
 import org.thingsboard.server.dao.DaoUtil;
 import org.thingsboard.server.dao.alarm.AlarmDao;
+import org.thingsboard.server.dao.customer.CustomerDao;
+import org.thingsboard.server.dao.customer.CustomerService;
 import org.thingsboard.server.dao.edge.EdgeEventDao;
 import org.thingsboard.server.dao.entity.EntityService;
 import org.thingsboard.server.dao.model.sql.DeviceProfileEntity;
@@ -73,7 +76,6 @@ import org.thingsboard.server.service.component.RuleNodeClassInfo;
 import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.update.DataUpdateService;
 import org.thingsboard.server.service.install.update.PaginatedUpdater;
-import org.thingsboard.server.service.security.auth.jwt.settings.JwtSettingsService;
 import org.thingsboard.server.utils.TbNodeUpgradeUtils;
 import org.thingsboard.server.vsensor.update.component.RateLimitsUpdater;
 import org.thingsboard.server.vsensor.update.configuration.DeviceConnectivityConfiguration;
@@ -83,6 +85,7 @@ import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateExceptio
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -119,6 +122,12 @@ public class DefaultDataUpdateService implements DataUpdateService {
     private RateLimitsUpdater rateLimitsUpdater;
 
     @Autowired
+    private CustomerDao customerDao;
+
+    @Autowired
+    private CustomerService customerService;
+
+    @Autowired
     private TenantProfileService tenantProfileService;
 
     @Lazy
@@ -147,7 +156,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
     DeviceConnectivityConfiguration connectivityConfiguration;
 
     @Autowired
-    private JwtSettingsService jwtSettingsService;
+    private LegacyJwtSettingsService jwtSettingsService;
 
     @Override
     public void updateData(String fromVersion) throws Exception {
@@ -195,9 +204,77 @@ public class DefaultDataUpdateService implements DataUpdateService {
                 log.info("Updating data from version 3.6.0 to 3.6.1 ...");
                 migrateDeviceConnectivity();
                 break;
+            case "3.6.4":
+                log.info("Updating data from version 3.6.4 to 3.7.0 ...");
+                updateCustomersWithTheSameTitle();
+                updateMaxRuleNodeExecsPerMessage();
+                break;
             default:
                 Throwable e = new Throwable("Unsupported version " + fromVersion);
                 throw new ThingsboardUpdateException("Unable to update data, unsupported fromVersion: " + fromVersion, e);
+        }
+    }
+
+    private void updateMaxRuleNodeExecsPerMessage() {
+        var tenantProfiles = new PageDataIterable<>(
+                link -> tenantProfileService.findTenantProfiles(TenantId.SYS_TENANT_ID, link), DEFAULT_PAGE_SIZE);
+        tenantProfiles.forEach(tenantProfile -> {
+            var configurationOpt = tenantProfile.getProfileConfiguration();
+            configurationOpt.ifPresent(configuration -> {
+                if (configuration.getMaxRuleNodeExecsPerMessage() == 0) {
+                    configuration.setMaxRuleNodeExecutionsPerMessage(1000);
+                    try {
+                        tenantProfileService.saveTenantProfile(TenantId.SYS_TENANT_ID, tenantProfile);
+                    } catch (Exception e) {
+                        log.error("Failed to update tenant profile with id: {} due to: ", tenantProfile.getId(), e);
+                    }
+                }
+            });
+        });
+    }
+
+    private void updateCustomersWithTheSameTitle() {
+        var customers = new ArrayList<Customer>();
+            new PageDataIterable<>(pageLink ->
+                    customerDao.findCustomersWithTheSameTitle(pageLink), DEFAULT_PAGE_SIZE
+            ).forEach(customers::add);
+        if (customers.isEmpty()) {
+            return;
+        }
+        var firstCustomer = customers.get(0);
+        var titleToDeduplicate = firstCustomer.getTitle();
+        var tenantIdToDeduplicate = firstCustomer.getTenantId();
+        int duplicateCounter = 1;
+
+        for (int i = 1; i < customers.size(); i++) {
+            var currentCustomer = customers.get(i);
+            if (currentCustomer.getTitle().equals(titleToDeduplicate) && currentCustomer.getTenantId().equals(tenantIdToDeduplicate)) {
+                duplicateCounter++;
+                String currentTitle = currentCustomer.getTitle();
+                String newTitle = currentTitle + " " + duplicateCounter;
+                try {
+                    Optional<Customer> customerOpt = customerService.findCustomerByTenantIdAndTitle(tenantIdToDeduplicate, newTitle);
+                    if (customerOpt.isPresent()) {
+                        // fallback logic: customer with title 'currentTitle + " " + duplicateCounter;' might be another duplicate.
+                        newTitle = currentTitle + "_" + currentCustomer.getId();
+                    }
+                } catch (Exception e) {
+                    log.trace("Failed to find customer with title due to: ", e);
+                    // fallback logic: customer with title 'currentTitle + " " + duplicateCounter;' might be another duplicate.
+                    newTitle = currentTitle + "_" + currentCustomer.getId();
+                }
+                currentCustomer.setTitle(newTitle);
+                try {
+                    customerService.saveCustomer(currentCustomer);
+                } catch (Exception e) {
+                    log.error("[{}] Failed to update customer with id and title: {}, oldTitle: {}, due to: ",
+                            currentCustomer.getTenantId(), newTitle, currentTitle, e);
+                }
+                continue;
+            }
+            titleToDeduplicate = currentCustomer.getTitle();
+            tenantIdToDeduplicate = currentCustomer.getTenantId();
+            duplicateCounter = 1;
         }
     }
 
