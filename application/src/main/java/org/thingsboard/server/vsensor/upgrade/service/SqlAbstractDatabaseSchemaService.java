@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.thingsboard.server.service.install.DatabaseSchemaService;
 import org.thingsboard.server.service.install.InstallScripts;
-import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpgradeException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -96,7 +96,7 @@ public abstract class SqlAbstractDatabaseSchemaService implements DatabaseSchema
             Thread.sleep(5000);
         } catch (InterruptedException | SQLException e) {
             log.error("Failed to execute query: {} due to: {}", query, e.getMessage());
-            throw new ThingsboardUpdateException("Failed to execute query: " + query, e);
+            throw new ThingsboardUpgradeException("Failed to execute query: " + query, e);
         }
     }
 
