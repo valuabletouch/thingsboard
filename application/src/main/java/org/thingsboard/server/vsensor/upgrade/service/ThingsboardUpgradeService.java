@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.server.service.install.*;
 import org.thingsboard.server.service.install.update.CacheCleanupService;
 import org.thingsboard.server.service.install.update.DataUpdateService;
-import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpgradeException;
 
 import static org.thingsboard.server.vsensor.upgrade.service.DefaultDataUpdateService.getEnv;
 
@@ -79,7 +79,7 @@ public class ThingsboardUpgradeService {
         try {
             if (!isUpgrade) {
                 Throwable e = new Throwable("Value of " + INSTALL_UPGRADE_ENV_NAME + " is " + isUpgrade);
-                throw new ThingsboardUpdateException("Value of " + INSTALL_UPGRADE_ENV_NAME + " is not set to true", e);
+                throw new ThingsboardUpgradeException("Value of " + INSTALL_UPGRADE_ENV_NAME + " is not set to true", e);
             }
 
             upgradeFromVersion = databaseEntitiesUpgradeService.getCurrentSchemeVersion();
@@ -92,7 +92,7 @@ public class ThingsboardUpgradeService {
 
             if (index == -1) {
                 Throwable e = new Throwable("Supported versions are " + versions);
-                throw new ThingsboardUpdateException("Current version is " + upgradeFromVersion + " and not supported",
+                throw new ThingsboardUpgradeException("Current version is " + upgradeFromVersion + " and not supported",
                         e);
             }
 
@@ -196,7 +196,7 @@ public class ThingsboardUpgradeService {
                         //TODO DON'T FORGET to update switch statement in the CacheCleanupService if you need to clear the cache
                         break;
                     default:
-                        throw new ThingsboardUpdateException(
+                        throw new ThingsboardUpgradeException(
                                 "Unable to upgrade ThingsBoard, unsupported fromVersion: " + upgradeFromVersion);
                 }
             }
@@ -215,7 +215,7 @@ public class ThingsboardUpgradeService {
 
         } catch (Exception e) {
             log.error("Unexpected error during ThingsBoard installation!", e);
-            throw new ThingsboardUpdateException("Unexpected error during ThingsBoard installation!", e);
+            throw new ThingsboardUpgradeException("Unexpected error during ThingsBoard installation!", e);
         } finally {
             SpringApplication.exit(context);
         }

@@ -80,7 +80,7 @@ import org.thingsboard.server.utils.TbNodeUpgradeUtils;
 import org.thingsboard.server.vsensor.upgrade.component.RateLimitsUpdater;
 import org.thingsboard.server.vsensor.upgrade.configuration.DeviceConnectivityConfiguration;
 import org.thingsboard.server.vsensor.upgrade.dao.AuditLogDao;
-import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpgradeException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -211,7 +211,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
                 break;
             default:
                 Throwable e = new Throwable("Unsupported version " + fromVersion);
-                throw new ThingsboardUpdateException("Unable to update data, unsupported fromVersion: " + fromVersion, e);
+                throw new ThingsboardUpgradeException("Unable to update data, unsupported fromVersion: " + fromVersion, e);
         }
     }
 
@@ -354,7 +354,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
         try {
             return Futures.allAsList(saveFutures).get().size();
         } catch (ExecutionException | InterruptedException e) {
-            throw new ThingsboardUpdateException("Failed to process save rule nodes requests due to: ", e);
+            throw new ThingsboardUpgradeException("Failed to process save rule nodes requests due to: ", e);
         }
     }
 

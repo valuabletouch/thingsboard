@@ -40,7 +40,7 @@ import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.SystemDataLoaderService;
 import org.thingsboard.server.service.install.update.DefaultDataUpdateService;
 import org.thingsboard.server.vsensor.upgrade.configuration.TbRuleEngineQueueConfiguration;
-import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpgradeException;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -547,7 +547,7 @@ public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService 
                 updateSchema("3.6.4", 3006004, "3.7.0", 3007000, null);
                 break;
             default:
-                throw new ThingsboardUpdateException(
+                throw new ThingsboardUpgradeException(
                         "Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
         }
     }

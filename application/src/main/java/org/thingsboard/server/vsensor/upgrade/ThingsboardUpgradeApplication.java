@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.thingsboard.server.vsensor.upgrade.service.ThingsboardUpdateService;
+import org.thingsboard.server.vsensor.upgrade.service.ThingsboardUpgradeService;
 
 import java.util.Arrays;
 
@@ -48,7 +48,7 @@ public class ThingsboardUpgradeApplication {
             SpringApplication application = new SpringApplication(ThingsboardUpgradeApplication.class);
             application.setAdditionalProfiles("upgrade");
             ConfigurableApplicationContext context = application.run(updateArguments(args));
-            context.getBean(ThingsboardUpdateService.class).performInstall();
+            context.getBean(ThingsboardUpgradeService.class).performInstall();
             log.info("Finished updating!");
         } catch (Exception e) {
             log.error(e.getMessage());
