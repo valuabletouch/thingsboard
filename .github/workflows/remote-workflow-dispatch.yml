@@ -1,0 +1,23 @@
+name: Remote Workflow Dispatch
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  REMOTE_REPOSITORY: valuabletouch/thingsboard-docker
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Dispatch Request
+        run: |
+          curl \
+            --request POST https://api.github.com/repos/$REMOTE_REPOSITORY/dispatches \
+            --header 'Content-Type: application/json' \
+            --header 'Accept: application/vnd.github.v3+json' \
+            --header 'Authorization: token ${{ secrets.REMOTE_TRIGGER_PAT }}' \
+            --data '{ "event_type": "remote-dispatch", "client_payload": { "repository": "$GITHUB_REPOSITORY" }}'
