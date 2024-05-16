@@ -16,13 +16,15 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.dao;
+package org.thingsboard.server.vsensor.upgrade.configuration;
 
-import org.thingsboard.server.common.data.audit.AuditLog;
-import org.thingsboard.server.dao.Dao;
+import lombok.Data;
 
-public interface AuditLogDao extends Dao<AuditLog> {
+@Data
+@Deprecated
+public class TbRuleEngineQueueSubmitStrategyConfiguration {
 
-    void migrateAuditLogs();
+    private String type;
+    private int batchSize;
 
 }

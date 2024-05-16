@@ -16,10 +16,22 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
-public interface DatabaseUpgradeService {
-    void upgradeDatabase(String fromVersion) throws Exception;
+import org.thingsboard.server.common.data.security.model.JwtSettings;
 
-    String getCurrentSchemeVersion() throws Exception;
+public interface LegacyJwtSettingsService {
+
+    String ADMIN_SETTINGS_JWT_KEY = "jwt";
+    String TOKEN_SIGNING_KEY_DEFAULT = "thingsboardDefaultSigningKey";
+
+    void createRandomJwtSettings();
+
+    void saveLegacyYmlSettings();
+
+    JwtSettings getJwtSettings();
+
+    JwtSettings reloadJwtSettings();
+
+    JwtSettings saveJwtSettings(JwtSettings jwtSettings);
 }

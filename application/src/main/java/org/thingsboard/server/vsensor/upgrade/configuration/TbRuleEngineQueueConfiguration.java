@@ -16,21 +16,21 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.exception;
+package org.thingsboard.server.vsensor.upgrade.configuration;
 
-import org.springframework.boot.ExitCodeGenerator;
+import lombok.Data;
 
-public class ThingsboardUpdateException extends RuntimeException implements ExitCodeGenerator {
+@Data
+@Deprecated
+public class TbRuleEngineQueueConfiguration {
 
-    public ThingsboardUpdateException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    private String name;
+    private String topic;
+    private int pollInterval;
+    private int partitions;
+    private boolean consumerPerPartition;
+    private long packProcessingTimeout;
+    private TbRuleEngineQueueSubmitStrategyConfiguration submitStrategy;
+    private TbRuleEngineQueueAckStrategyConfiguration processingStrategy;
 
-    public ThingsboardUpdateException(String message) {
-        super(message);
-    }
-
-    public int getExitCode() {
-        return 1;
-    }
 }

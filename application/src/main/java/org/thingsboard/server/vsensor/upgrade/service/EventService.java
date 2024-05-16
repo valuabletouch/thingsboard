@@ -16,18 +16,15 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.configuration;
+package org.thingsboard.server.vsensor.upgrade.service;
 
-import lombok.Data;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.thingsboard.server.common.data.event.Event;
 
-@Data
-@Deprecated
-public class TbRuleEngineQueueAckStrategyConfiguration {
+public interface EventService {
 
-    private String type;
-    private int retries;
-    private double failurePercentage;
-    private long pauseBetweenRetries;
-    private long maxPauseBetweenRetries;
+    ListenableFuture<Void> saveAsync(Event event);
+
+    void migrateEvents();
 
 }

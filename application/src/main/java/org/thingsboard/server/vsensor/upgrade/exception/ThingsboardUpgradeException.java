@@ -16,15 +16,21 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.configuration;
+package org.thingsboard.server.vsensor.upgrade.exception;
 
-import lombok.Data;
+import org.springframework.boot.ExitCodeGenerator;
 
-@Data
-@Deprecated
-public class TbRuleEngineQueueSubmitStrategyConfiguration {
+public class ThingsboardUpgradeException extends RuntimeException implements ExitCodeGenerator {
 
-    private String type;
-    private int batchSize;
+    public ThingsboardUpgradeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
+    public ThingsboardUpgradeException(String message) {
+        super(message);
+    }
+
+    public int getExitCode() {
+        return 1;
+    }
 }

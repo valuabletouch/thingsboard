@@ -16,14 +16,26 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.configuration;
 
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-import org.thingsboard.server.service.executors.DbCallbackExecutorService;
+import org.thingsboard.server.dao.device.DeviceConnectivityInfo;
 
-@Component
-@Profile("update")
-public class DbUpgradeExecutorService extends DbCallbackExecutorService {
+import java.util.HashMap;
+import java.util.Map;
 
+@Profile("upgrade")
+@Configuration
+@ConfigurationProperties(prefix = "device")
+@Data
+public class DeviceConnectivityConfiguration {
+    private Map<String, DeviceConnectivityInfo> connectivity = new HashMap<>();
+
+    public boolean isEnabled(String protocol) {
+        var info = connectivity.get(protocol);
+        return info != null && info.isEnabled();
+    }
 }
