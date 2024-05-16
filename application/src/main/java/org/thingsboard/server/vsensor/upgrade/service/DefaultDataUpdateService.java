@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -77,10 +77,10 @@ import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.update.DataUpdateService;
 import org.thingsboard.server.service.install.update.PaginatedUpdater;
 import org.thingsboard.server.utils.TbNodeUpgradeUtils;
-import org.thingsboard.server.vsensor.update.component.RateLimitsUpdater;
-import org.thingsboard.server.vsensor.update.configuration.DeviceConnectivityConfiguration;
-import org.thingsboard.server.vsensor.update.dao.AuditLogDao;
-import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.component.RateLimitsUpdater;
+import org.thingsboard.server.vsensor.upgrade.configuration.DeviceConnectivityConfiguration;
+import org.thingsboard.server.vsensor.upgrade.dao.AuditLogDao;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,7 +90,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
-@Profile("update")
+@Profile("upgrade")
 @Slf4j
 public class DefaultDataUpdateService implements DataUpdateService {
 

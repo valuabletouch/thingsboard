@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.dao;
+package org.thingsboard.server.vsensor.upgrade.dao;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.server.service.install.EntityDatabaseSchemaService;
 
 @Service
-@Profile("update")
+@Profile("upgrade")
 @Slf4j
 public class SqlEntityDatabaseSchemaService extends SqlAbstractDatabaseSchemaService
         implements EntityDatabaseSchemaService {

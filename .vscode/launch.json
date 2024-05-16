@@ -60,9 +60,9 @@
         },
         {
             "type": "java",
-            "name": "ThingsboardUpdateApplication",
+            "name": "ThingsboardUpgradeApplication",
             "request": "launch",
-            "mainClass": "org.thingsboard.server.vsensor.update.ThingsboardUpdateApplication",
+            "mainClass": "org.thingsboard.server.vsensor.upgrade.ThingsboardUpgradeApplication",
             "projectName": "org.thingsboard-application",
             "shortenCommandLine": "jarmanifest",
             "vmArgs": [
@@ -95,7 +95,7 @@
                 "-Dspring.jpa.hibernate.ddl-auto=none",
             ],
             "args": [
-                "--spring.profiles.active=update",
+                "--spring.profiles.active=upgrade",
                 "org.springframework.boot.loader.PropertiesLauncher"
             ],
             "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env"

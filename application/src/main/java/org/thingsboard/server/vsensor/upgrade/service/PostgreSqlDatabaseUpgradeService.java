@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -39,8 +39,8 @@ import org.thingsboard.server.dao.tenant.TenantService;
 import org.thingsboard.server.service.install.InstallScripts;
 import org.thingsboard.server.service.install.SystemDataLoaderService;
 import org.thingsboard.server.service.install.update.DefaultDataUpdateService;
-import org.thingsboard.server.vsensor.update.configuration.TbRuleEngineQueueConfiguration;
-import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.configuration.TbRuleEngineQueueConfiguration;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -55,7 +55,7 @@ import java.util.function.Consumer;
 
 @SuppressWarnings("deprecation")
 @Service
-@Profile("update")
+@Profile("upgrade")
 @Slf4j
 public class PostgreSqlDatabaseUpgradeService implements DatabaseUpgradeService {
 

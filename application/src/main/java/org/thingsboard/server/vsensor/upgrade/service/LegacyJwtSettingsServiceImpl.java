@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

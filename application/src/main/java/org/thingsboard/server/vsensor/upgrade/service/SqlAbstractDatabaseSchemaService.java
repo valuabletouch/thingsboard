@@ -16,14 +16,14 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.thingsboard.server.service.install.DatabaseSchemaService;
 import org.thingsboard.server.service.install.InstallScripts;
-import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
 
 import java.io.IOException;
 import java.nio.file.Files;

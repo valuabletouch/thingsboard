@@ -16,18 +16,18 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update;
+package org.thingsboard.server.vsensor.upgrade;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.thingsboard.server.vsensor.update.service.ThingsboardUpdateService;
+import org.thingsboard.server.vsensor.upgrade.service.ThingsboardUpdateService;
 
 import java.util.Arrays;
 
 @Slf4j
-@ComponentScan({"org.thingsboard.server.vsensor.update",
+@ComponentScan({"org.thingsboard.server.vsensor.upgrade",
         "org.thingsboard.server.install",
         "org.thingsboard.server.service.component",
         "org.thingsboard.server.service.install",
@@ -38,15 +38,15 @@ import java.util.Arrays;
         "org.thingsboard.server.cache",
         "org.thingsboard.server.springfox"
 })
-public class ThingsboardUpdateApplication {
+public class ThingsboardUpgradeApplication {
 
     private static final String SPRING_CONFIG_NAME_KEY = "--spring.config.name";
     private static final String DEFAULT_SPRING_CONFIG_PARAM = SPRING_CONFIG_NAME_KEY + "=" + "thingsboard";
 
     public static void main(String[] args) {
         try {
-            SpringApplication application = new SpringApplication(ThingsboardUpdateApplication.class);
-            application.setAdditionalProfiles("update");
+            SpringApplication application = new SpringApplication(ThingsboardUpgradeApplication.class);
+            application.setAdditionalProfiles("upgrade");
             ConfigurableApplicationContext context = application.run(updateArguments(args));
             context.getBean(ThingsboardUpdateService.class).performInstall();
             log.info("Finished updating!");

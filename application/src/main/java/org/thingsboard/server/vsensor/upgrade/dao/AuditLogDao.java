@@ -16,21 +16,13 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.configuration;
+package org.thingsboard.server.vsensor.upgrade.dao;
 
-import lombok.Data;
+import org.thingsboard.server.common.data.audit.AuditLog;
+import org.thingsboard.server.dao.Dao;
 
-@Data
-@Deprecated
-public class TbRuleEngineQueueConfiguration {
+public interface AuditLogDao extends Dao<AuditLog> {
 
-    private String name;
-    private String topic;
-    private int pollInterval;
-    private int partitions;
-    private boolean consumerPerPartition;
-    private long packProcessingTimeout;
-    private TbRuleEngineQueueSubmitStrategyConfiguration submitStrategy;
-    private TbRuleEngineQueueAckStrategyConfiguration processingStrategy;
+    void migrateAuditLogs();
 
 }

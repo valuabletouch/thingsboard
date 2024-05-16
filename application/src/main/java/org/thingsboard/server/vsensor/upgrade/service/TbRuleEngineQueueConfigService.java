@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.thingsboard.server.common.data.DataConstants;
-import org.thingsboard.server.vsensor.update.configuration.TbRuleEngineQueueConfiguration;
+import org.thingsboard.server.vsensor.upgrade.configuration.TbRuleEngineQueueConfiguration;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -36,7 +36,7 @@ import java.util.List;
 @EnableAutoConfiguration
 @Configuration
 @ConfigurationProperties(prefix = "queue.rule-engine")
-@Profile("update")
+@Profile("upgrade")
 public class TbRuleEngineQueueConfigService {
 
     private String topic;

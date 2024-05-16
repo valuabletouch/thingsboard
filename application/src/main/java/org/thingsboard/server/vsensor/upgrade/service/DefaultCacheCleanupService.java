@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ import static org.thingsboard.server.common.data.CacheConstants.SECURITY_SETTING
 
 @RequiredArgsConstructor
 @Service
-@Profile("update")
+@Profile("upgrade")
 @Slf4j
 public class DefaultCacheCleanupService implements CacheCleanupService {
 

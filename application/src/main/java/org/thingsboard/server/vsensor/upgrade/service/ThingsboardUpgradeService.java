@@ -16,7 +16,7 @@
 /*
 * Ahmet Ertuğrul KAYA
 */
-package org.thingsboard.server.vsensor.update.service;
+package org.thingsboard.server.vsensor.upgrade.service;
 
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
@@ -29,16 +29,16 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.server.service.install.*;
 import org.thingsboard.server.service.install.update.CacheCleanupService;
 import org.thingsboard.server.service.install.update.DataUpdateService;
-import org.thingsboard.server.vsensor.update.exception.ThingsboardUpdateException;
+import org.thingsboard.server.vsensor.upgrade.exception.ThingsboardUpdateException;
 
-import static org.thingsboard.server.vsensor.update.service.DefaultDataUpdateService.getEnv;
+import static org.thingsboard.server.vsensor.upgrade.service.DefaultDataUpdateService.getEnv;
 
 import java.util.List;
 
 @Service
-@Profile("update")
+@Profile("upgrade")
 @Slf4j
-public class ThingsboardUpdateService {
+public class ThingsboardUpgradeService {
 
     private final static String INSTALL_UPGRADE_ENV_NAME = "upgrade.upgrade";
 
