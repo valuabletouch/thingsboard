@@ -172,23 +172,26 @@ public class ReadingRabbitMqConsumer {
                 @Override
                 public void handleDelivery(String tag, Envelope env, AMQP.BasicProperties props, byte[] body) {
                     try {
-                        MessageContext messageContext = gson.fromJson(
-                                props.getHeaders().get("message_context").toString(),
-                                MessageContext.class);
+                        if (props.getHeaders() != null && props.getHeaders().get("message_context") != null)
+                        {
+                            MessageContext messageContext = gson.fromJson(
+                                    props.getHeaders().get("message_context").toString(),
+                                    MessageContext.class);
 
-                        CorrelationContext correlationContext = gson.fromJson(messageContext.getIdentity().toString(),
-                                CorrelationContext.class);
+                            CorrelationContext correlationContext = gson.fromJson(messageContext.getIdentity().toString(),
+                                    CorrelationContext.class);
 
-                        List<String> scopes = Arrays.asList(correlationContext.getScopes());
+                            List<String> scopes = Arrays.asList(correlationContext.getScopes());
 
-                        if (scopes != null && !scopes.contains("thingsboard")) {
-                            String message = new String(body, StandardCharsets.UTF_8);
-                            Reading reading = gson.fromJson(message, Reading.class);
-                            TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
-                            TenantId tenantId = getTenantId(reading.getTenantId());
-                            DeviceId deviceId = getDeviceId(reading.getDataSourceId());
+                            if (scopes != null && !scopes.contains("thingsboard")) {
+                                String message = new String(body, StandardCharsets.UTF_8);
+                                Reading reading = gson.fromJson(message, Reading.class);
+                                TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
+                                TenantId tenantId = getTenantId(reading.getTenantId());
+                                DeviceId deviceId = getDeviceId(reading.getDataSourceId());
 
-                            sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                            }
                         }
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
