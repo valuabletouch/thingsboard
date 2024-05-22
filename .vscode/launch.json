@@ -54,7 +54,7 @@
                 "-Dspring.jpa.hibernate.ddl-auto=none"
             ],
             "args": [
-                "org.springframework.boot.loader.PropertiesLauncher"
+                "org.springframework.boot.loader.launch.PropertiesLauncher"
             ],
             "envFile": "${workspaceFolder}/.vscode/ThingsboardServerApplication/.env"
         },
@@ -96,7 +96,7 @@
             ],
             "args": [
                 "--spring.profiles.active=upgrade",
-                "org.springframework.boot.loader.PropertiesLauncher"
+                "org.springframework.boot.loader.launch.PropertiesLauncher"
             ],
             "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env"
         },
