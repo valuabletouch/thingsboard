@@ -35,7 +35,7 @@
   </mat-sidenav>
   <mat-sidenav-content>
     <div fxLayout="column" role="main" style="height: 100%;">
-      <mat-toolbar *ngIf="!iframe" fxLayout="row" color="primary" class="tb-primary-toolbar">
+      <mat-toolbar [fxShow]="!iframe" fxLayout="row" color="primary" class="tb-primary-toolbar">
         <button [fxShow]="!forceFullscreen" mat-icon-button id="main"
                 [ngClass]="{'tb-invisible': displaySearchMode()}"
                 fxHide.gt-sm (click)="sidenav.toggle()">
