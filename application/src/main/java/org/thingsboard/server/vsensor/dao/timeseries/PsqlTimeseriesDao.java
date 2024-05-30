@@ -41,6 +41,7 @@ import org.thingsboard.server.common.data.vsensor.TransformationService;
 import org.thingsboard.server.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.sqlts.ts.TsKvEntity;
+import org.thingsboard.server.dao.vsensor.models.LastReadingEntity;
 import org.thingsboard.server.dao.vsensor.models.ReadingAggregationDto;
 import org.thingsboard.server.dao.vsensor.models.ReadingEntity;
 import org.thingsboard.server.dao.vsensor.models.VModelConstants;
@@ -51,6 +52,7 @@ import org.thingsboard.server.dao.util.SqlTsDao;
 import org.thingsboard.server.dao.util.TimeUtils;
 import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationEntity;
 import org.thingsboard.server.dao.vsensor.mongo.configurations.TransformationSystem;
+import org.thingsboard.server.vsensor.dao.readings.LastReadingRepository;
 import org.thingsboard.server.vsensor.dao.readings.ReadingRepository;
 import org.thingsboard.server.vsensor.queue.rabbitmq.ReadingRabbitMqProducer;
 
@@ -82,6 +84,9 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Autowired
     private ReadingRepository readingRepository;
+
+    @Autowired
+    private LastReadingRepository lastReadingRepository;
 
     @Autowired
     private ReadingTypeService readingTypeService;
@@ -138,18 +143,15 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 return Futures.immediateFuture(null);
             }
 
-            if (transformationTenantId.isPresent() && transformationDataSourceId.isPresent()
-                    && readingType.isPresent()) {
-                List<ReadingEntity> readings = readingRepository
-                        .findByTenantIdAndDataSourceIdAndReadingTypeIdAndReadAtBetween(
-                                transformationTenantId.get(), transformationDataSourceId.get(),
-                                UUID.fromString(readingType.get().getId()),
-                                longToOffsetDateTime(query.getStartTs()), longToOffsetDateTime(query.getEndTs()));
+            List<ReadingEntity> readings = readingRepository
+                .findByTenantIdAndDataSourceIdAndReadingTypeIdAndReadAtBetween(
+                        transformationTenantId.get(), transformationDataSourceId.get(),
+                        UUID.fromString(readingType.get().getId()),
+                        longToOffsetDateTime(query.getStartTs()), longToOffsetDateTime(query.getEndTs()));
 
-                for (ReadingEntity reading : readings) {
-                    TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
-                    tsKvEntries.add(tsKvEntry);
-                }
+            for (ReadingEntity reading : readings) {
+                TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
+                tsKvEntries.add(tsKvEntry);
             }
 
             long lastTs = tsKvEntries.stream().map(TsKvEntry::getTs).max(Long::compare).orElse(query.getStartTs());
@@ -190,12 +192,12 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
         if (entityId.getEntityType() == EntityType.DEVICE) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
-                    transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
-                    transformationSystem.getReadingType(), transformationEntity.getTenant());
+                transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getTenant());
 
             Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
-                    transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
-                    transformationSystem.getReadingType(), transformationEntity.getDataSource());
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
 
             Optional<ReadingType> readingType = readingTypeService.findByCode(tsKvEntry.getKey());
 
@@ -296,16 +298,139 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public ListenableFuture<Optional<TsKvEntry>> findLatest(TenantId tenantId, EntityId entityId, String keys) {
+        if (entityId.getEntityType() == EntityType.DEVICE) {
+            Optional<UUID> transformationTenantId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(),
+                transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(),
+                transformationEntity.getTenant());
+
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
+            Optional<ReadingType> readingType = readingTypeService.findByCode(keys);
+
+            if (transformationTenantId.isEmpty()) {
+                log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
+
+                return Futures.immediateFuture(null);
+            }
+
+            if (transformationDataSourceId.isEmpty()) {
+                log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
+
+                return Futures.immediateFuture(null);
+            }
+
+            if (readingType.isEmpty()) {
+                log.warn("ReadingType not found for code: " + keys);
+
+                return Futures.immediateFuture(null);
+            }
+
+            LastReadingEntity lastReading = lastReadingRepository
+                .findByTenantIdAndDataSourceIdAndReadingTypeId(
+                    transformationTenantId.get(), transformationDataSourceId.get(),
+                    UUID.fromString(readingType.get().getId()));
+
+            TsKvEntry tsKvEntry = convertResultToTsKvEntry(lastReading);
+
+            return Futures.immediateFuture(Optional.of(tsKvEntry));
+        }
+
         return Futures.immediateFuture(Optional.empty());
     }
 
     @Override
     public ListenableFuture<List<TsKvEntry>> findLatest(TenantId tenantId, EntityId entityId, Collection<String> keys) {
+        if (entityId.getEntityType() == EntityType.DEVICE) {
+            List<TsKvEntry> tsKvEntries = new ArrayList<>();
+
+            Optional<UUID> transformationTenantId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(),
+                transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(),
+                transformationEntity.getTenant());
+
+            if (transformationTenantId.isEmpty()) {
+                log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
+
+                return Futures.immediateFuture(null);
+            }
+
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
+            if (transformationDataSourceId.isEmpty()) {
+                log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
+
+                return Futures.immediateFuture(null);
+            }
+
+            Optional<List<ReadingType>> readingTypes = readingTypeService.findByCodeIn(new ArrayList<>(keys));
+
+            if (readingTypes.isEmpty()) {
+                log.warn("ReadingTypes not found for codes: " + keys);
+
+                return Futures.immediateFuture(null);
+            }
+
+            List<UUID> readingTypeIds = readingTypes.get().stream().map(readingType -> UUID.fromString(readingType.getId()))
+                .collect(Collectors.toList());
+
+            List<LastReadingEntity> lastReadings = lastReadingRepository
+                .findAllByTenantIdAndDataSourceIdAndReadingTypeIdIn(
+                    transformationTenantId.get(), transformationDataSourceId.get(), readingTypeIds);
+
+            for (LastReadingEntity lastReading : lastReadings) {
+                TsKvEntry tsKvEntry = convertResultToTsKvEntry(lastReading);
+                tsKvEntries.add(tsKvEntry);
+            }
+
+            return Futures.immediateFuture(tsKvEntries);
+        }
+
         return Futures.immediateFuture(new ArrayList<>());
     }
 
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllLatest(TenantId tenantId, EntityId entityId) {
+        if (entityId.getEntityType() == EntityType.DEVICE) {
+            List<TsKvEntry> tsKvEntries = new ArrayList<>();
+
+            Optional<UUID> transformationTenantId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(),
+                transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(),
+                transformationEntity.getTenant());
+
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
+            if (transformationTenantId.isEmpty()) {
+                log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
+
+                return Futures.immediateFuture(null);
+            }
+
+            if (transformationDataSourceId.isEmpty()) {
+                log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
+
+                return Futures.immediateFuture(null);
+            }
+
+            List<LastReadingEntity> lastReadings = lastReadingRepository
+                .findAllByTenantIdAndDataSourceId(
+                    transformationTenantId.get(), transformationDataSourceId.get());
+
+            for (LastReadingEntity lastReading : lastReadings) {
+                TsKvEntry tsKvEntry = convertResultToTsKvEntry(lastReading);
+                tsKvEntries.add(tsKvEntry);
+            }
+
+            return Futures.immediateFuture(tsKvEntries);
+        }
+
         return Futures.immediateFuture(new ArrayList<>());
     }
 
@@ -358,7 +483,54 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public List<String> findAllKeysByEntityIds(TenantId tenantId, List<EntityId> entityIds) {
-        return null;
+        List<String> keys = new ArrayList<>();
+
+        Optional<UUID> transformationTenantId = transformationService.getFromKey(
+            transformationSystem.getThingsboard(),
+            transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(),
+            transformationEntity.getTenant());
+
+        if (transformationTenantId.isEmpty()) {
+            log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
+
+            return keys;
+        }
+
+        List<UUID> dataSourceIds = new ArrayList<>();
+
+        for (EntityId entityId : entityIds) {
+            validate(entityId);
+            
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
+            if (transformationDataSourceId.isPresent())
+            {
+                dataSourceIds.add(transformationDataSourceId.get());
+            }
+        }
+
+        List<LastReadingEntity> lastReadings = lastReadingRepository
+            .findAllByTenantIdAndDataSourceIdIn(transformationTenantId.get(), dataSourceIds);
+
+        if (lastReadings.isEmpty()) {
+            return keys;
+        }
+
+        List<String> readingTypeIds = lastReadings.stream().map(lastReading -> lastReading.getReadingTypeId().toString())
+            .collect(Collectors.toList());
+
+
+        Optional<List<ReadingType>> readingTypes = readingTypeService.findByIdIn(readingTypeIds);
+
+        if (readingTypes.isEmpty()) {
+            return keys;
+        }
+
+        keys = readingTypes.get().stream().map(readingType -> readingType.getCode()).collect(Collectors.toList());
+
+        return keys;
     }
 
     private ReadingEntity switchReadingAggregation(EntityId entityId, String key, long startTs, long endTs,
@@ -489,6 +661,23 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
         }
     }
 
+    private TsKvEntry convertResultToTsKvEntry(LastReadingEntity lastReading) {
+        Instant readAt = lastReading.getReadAt().toInstant();
+        long readAtTs = readAt.toEpochMilli();
+        String key = lastReading.getReadingTypeId().toString();
+        Optional<ReadingType> readingType = readingTypeService.findById(key);
+
+        if (readingType.isPresent()) {
+            String code = readingType.get().getCode();
+
+            return new BasicTsKvEntry(readAtTs, toKvEntry(lastReading, code));
+        } else {
+            log.warn("ReadingType not found for id: " + key);
+
+            return new BasicTsKvEntry(readAtTs, toKvEntry(lastReading, key));
+        }
+    }
+
     private ListenableFuture<Optional<TsKvEntity>> convertReadingEntityAndAggregationTypeToTsKvEntry(
             ListenableFuture<Optional<ReadingEntity>> readingEntity, String aggregation) {
         return Futures.transform(readingEntity, new Function<>() {
@@ -551,6 +740,34 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
             kvEntry = new JsonDataEntry(key, jsonV);
         } else if (reading.getValueDateTime() != null) {
             Instant instantV = reading.getValueDateTime().toInstant();
+            kvEntry = new LongDataEntry(key, instantV.toEpochMilli());
+        } else {
+            log.warn("Reading value is null for key: " + key);
+        }
+
+        return kvEntry;
+    }
+
+    private static KvEntry toKvEntry(LastReadingEntity lastReading, String key) {
+        KvEntry kvEntry = null;
+
+        if (lastReading.getValueDecimal() != null) {
+            BigDecimal decimalV = lastReading.getValueDecimal();
+            kvEntry = new DoubleDataEntry(key, decimalV.doubleValue());
+        } else if (lastReading.getValueLong() != null) {
+            Long longV = lastReading.getValueLong();
+            kvEntry = new LongDataEntry(key, longV);
+        } else if (lastReading.getValueBoolean() != null) {
+            Boolean booleanV = lastReading.getValueBoolean();
+            kvEntry = new BooleanDataEntry(key, booleanV);
+        } else if (lastReading.getValueString() != null) {
+            String stringV = lastReading.getValueString();
+            kvEntry = new StringDataEntry(key, stringV);
+        } else if (lastReading.getValueJson() != null) {
+            String jsonV = lastReading.getValueJson();
+            kvEntry = new JsonDataEntry(key, jsonV);
+        } else if (lastReading.getValueDateTime() != null) {
+            Instant instantV = lastReading.getValueDateTime().toInstant();
             kvEntry = new LongDataEntry(key, instantV.toEpochMilli());
         } else {
             log.warn("Reading value is null for key: " + key);

@@ -18,6 +18,7 @@
 */
 package org.thingsboard.server.dao.vsensor.mongo.repository.readingtype;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -28,4 +29,6 @@ import org.thingsboard.server.dao.vsensor.models.ReadingTypeDocument;
 public interface ReadingTypeRepository extends MongoRepository<ReadingTypeDocument, String> {
     public Optional<ReadingTypeDocument> findByCode(String code);
     public Optional<ReadingTypeDocument> findById(String id);
+    public Optional<List<ReadingTypeDocument>> findAllByCodeIn(List<String> codes);
+    public Optional<List<ReadingTypeDocument>> findAllByIdIn(List<String> ids);
 }

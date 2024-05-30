@@ -18,6 +18,7 @@
  */
 package org.thingsboard.server.common.data.vsensor;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ReadingTypeService {
@@ -25,5 +26,9 @@ public interface ReadingTypeService {
     Optional<ReadingType> findById(String id);
 
     Optional<ReadingType> findByCode(String code);
+
+    Optional<List<ReadingType>> findByCodeIn(List<String> codes);
+
+    Optional<List<ReadingType>> findByIdIn(List<String> ids);
 
 }

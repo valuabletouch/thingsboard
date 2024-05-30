@@ -83,14 +83,55 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
         }
     }
 
+    public Optional<List<ReadingType>> findByCodeIn(List<String> codes) {
+        cacheExpireList.add(new Pair<>(codes.toString(), LocalDateTime.now().plusSeconds(CACHE_TTL)));
+
+        Optional<List<ReadingTypeDocument>> result = repository.findAllByCodeIn(codes);
+
+        if (result.isPresent()) {
+            List<ReadingType> readingTypes = new ArrayList<>();
+
+            for (ReadingTypeDocument readingTypeDocument : result.get()) {
+                readingTypes.add(new ReadingType(readingTypeDocument.getId(), readingTypeDocument.getCode()));
+            }
+
+            return Optional.of(readingTypes);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<List<ReadingType>> findByIdIn(List<String> ids) {
+        cacheExpireList.add(new Pair<>(ids.toString(), LocalDateTime.now().plusSeconds(CACHE_TTL)));
+
+        Optional<List<ReadingTypeDocument>> result = repository.findAllByIdIn(ids);
+
+        if (result.isPresent()) {
+            List<ReadingType> readingTypes = new ArrayList<>();
+
+            for (ReadingTypeDocument readingTypeDocument : result.get()) {
+                readingTypes.add(new ReadingType(readingTypeDocument.getId(), readingTypeDocument.getCode()));
+            }
+
+            return Optional.of(readingTypes);
+        } else {
+            return Optional.empty();
+        }
+    }
+
     @Scheduled(fixedRate = CACHE_EVICT_PERIOD)
     public void evictExpired() {
+        List<Pair<String, LocalDateTime>> expiredEntries = new ArrayList<>();
+
         for (Pair<String, LocalDateTime> pair : cacheExpireList) {
             if (pair.getValue1().isBefore(LocalDateTime.now())) {
-                Objects.requireNonNull(cacheManager.getCache(CACHE_NAME)).evict(pair.getValue0());
-
-                cacheExpireList.remove(pair);
+                expiredEntries.add(pair);
             }
+        }
+
+        for (Pair<String, LocalDateTime> pair : expiredEntries) {
+            Objects.requireNonNull(cacheManager.getCache(CACHE_NAME)).evict(pair.getValue0());
+            cacheExpireList.remove(pair);
         }
     }
 }
