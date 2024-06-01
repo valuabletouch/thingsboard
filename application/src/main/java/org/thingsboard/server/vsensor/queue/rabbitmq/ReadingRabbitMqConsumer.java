@@ -181,16 +181,19 @@ public class ReadingRabbitMqConsumer {
                             CorrelationContext correlationContext = gson.fromJson(messageContext.getIdentity().toString(),
                                     CorrelationContext.class);
 
-                            List<String> scopes = Arrays.asList(correlationContext.getScopes());
+                            if (correlationContext != null && correlationContext.getScopes() != null)
+                            {
+                                List<String> scopes = Arrays.asList(correlationContext.getScopes());
 
-                            if (scopes != null && !scopes.contains("thingsboard")) {
-                                String message = new String(body, StandardCharsets.UTF_8);
-                                Reading reading = gson.fromJson(message, Reading.class);
-                                TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
-                                TenantId tenantId = getTenantId(reading.getTenantId());
-                                DeviceId deviceId = getDeviceId(reading.getDataSourceId());
+                                if (scopes != null && !scopes.contains("thingsboard")) {
+                                    String message = new String(body, StandardCharsets.UTF_8);
+                                    Reading reading = gson.fromJson(message, Reading.class);
+                                    TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
+                                    TenantId tenantId = getTenantId(reading.getTenantId());
+                                    DeviceId deviceId = getDeviceId(reading.getDataSourceId());
 
-                                sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                    sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                }
                             }
                         }
                     } catch (Exception e) {
