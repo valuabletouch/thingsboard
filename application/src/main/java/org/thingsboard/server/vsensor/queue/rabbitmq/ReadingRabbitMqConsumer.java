@@ -181,11 +181,14 @@ public class ReadingRabbitMqConsumer {
                             CorrelationContext correlationContext = gson.fromJson(messageContext.getIdentity().toString(),
                                     CorrelationContext.class);
 
-                            if (correlationContext != null && correlationContext.getScopes() != null)
+                            if (correlationContext != null)
                             {
-                                List<String> scopes = Arrays.asList(correlationContext.getScopes());
+                                List<String> scopes =
+                                    correlationContext.getScopes() == null
+                                        ? new ArrayList<>()
+                                        : Arrays.asList(correlationContext.getScopes());
 
-                                if (scopes != null && !scopes.contains("thingsboard")) {
+                                if (!scopes.contains("thingsboard")) {
                                     String message = new String(body, StandardCharsets.UTF_8);
                                     Reading reading = gson.fromJson(message, Reading.class);
                                     TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
