@@ -52,7 +52,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     @Autowired
     private ReadingTypeRepository repository;
 
-    @Cacheable(value = CACHE_NAME)
+    @Cacheable(value = CACHE_NAME, key = "#id")
     public Optional<ReadingType> findById(String id) {
         cacheExpireList.add(new Pair<>(id, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
@@ -66,7 +66,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
         }
     }
 
-    @Cacheable(value = CACHE_NAME)
+    @Cacheable(value = CACHE_NAME, key = "#code")
     public Optional<ReadingType> findByCode(String code) {
         cacheExpireList.add(new Pair<>(code, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
