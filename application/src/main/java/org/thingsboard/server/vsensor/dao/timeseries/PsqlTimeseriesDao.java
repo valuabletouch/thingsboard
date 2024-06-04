@@ -144,10 +144,11 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
             }
 
             List<ReadingEntity> readings = readingRepository
-                .findByTenantIdAndDataSourceIdAndReadingTypeIdAndReadAtBetween(
-                        transformationTenantId.get(), transformationDataSourceId.get(),
-                        UUID.fromString(readingType.get().getId()),
-                        longToOffsetDateTime(query.getStartTs()), longToOffsetDateTime(query.getEndTs()));
+                .findAllWithLimit(
+                    transformationDataSourceId.get(), 
+                    UUID.fromString(readingType.get().getId()), 
+                    longToOffsetDateTime(query.getStartTs()), 
+                    longToOffsetDateTime(query.getEndTs()));
 
             for (ReadingEntity reading : readings) {
                 TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
@@ -369,7 +370,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
             Optional<List<ReadingType>> readingTypes = readingTypeService.findByCodeIn(new ArrayList<>(keys));
 
-            if (readingTypes.isEmpty()) {
+            if (readingTypes.isEmpty() || readingTypes.get().isEmpty()) {
                 log.warn("ReadingTypes not found for codes: " + keys);
 
                 return Futures.immediateFuture(null);
@@ -687,8 +688,11 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 if (readingEntity.isPresent()) {
                     ReadingEntity entity = readingEntity.get();
                     if (entity.isNotEmpty()) {
-                        if (entity.getValueDecimal().doubleValue() > MAX_CHARP_DECIMAL_VALUE.doubleValue()) {
-                            log.warn("Value is too big for key: " + entity.getReadingTypeId().toString());
+                        BigDecimal valueDecimal = entity.getValueDecimal();
+                        if (valueDecimal != null && valueDecimal.doubleValue() > MAX_CHARP_DECIMAL_VALUE.doubleValue()) {
+                            log.warn("Aggregated value is too big: {}", valueDecimal);
+                            return Optional.empty();
+                        }else if (entity.getValueLong() == null) {
                             return Optional.empty();
                         }
                         return Optional.of(convertToTsKvEntity(entity, aggregation));
@@ -714,7 +718,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
         tsKvEntity.setBooleanValue(entity.getValueBoolean());
         tsKvEntity.setStrValue(entity.getValueString());
         tsKvEntity.setLongValue(entity.getValueLong());
-        tsKvEntity.setDoubleValue(entity.getValueDecimal().doubleValue());
+        tsKvEntity.setDoubleValue(entity.getValueDecimal() != null ? entity.getValueDecimal().doubleValue() : null);
         tsKvEntity.setJsonValue(entity.getValueJson());
 
         return tsKvEntity;

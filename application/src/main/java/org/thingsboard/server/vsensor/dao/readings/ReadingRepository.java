@@ -40,8 +40,7 @@ public interface ReadingRepository extends JpaRepository<ReadingEntity, UUID> {
         List<ReadingEntity> findAllWithLimit(@Param("datasourceId") UUID datasourceId,
                                           @Param("readingTypeId") UUID readingTypeId,
                                           @Param("dateFrom") OffsetDateTime dateFrom,
-                                          @Param("dateTo") OffsetDateTime dateTo,
-                                          Pageable pageable);
+                                          @Param("dateTo") OffsetDateTime dateTo);
 
         @Query(value = "SELECT " +
                 "MAX(\"ValueString\") as strValue, " +
