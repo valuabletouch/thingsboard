@@ -192,10 +192,13 @@ public class ReadingRabbitMqConsumer {
                                     String message = new String(body, StandardCharsets.UTF_8);
                                     Reading reading = gson.fromJson(message, Reading.class);
                                     TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
-                                    TenantId tenantId = getTenantId(reading.getTenantId());
-                                    DeviceId deviceId = getDeviceId(reading.getDataSourceId());
 
-                                    sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                    if (tsKvEntry != null) {
+                                        TenantId tenantId = getTenantId(reading.getTenantId());
+                                        DeviceId deviceId = getDeviceId(reading.getDataSourceId());
+
+                                        sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                    }
                                 }
                             }
                         }
@@ -296,7 +299,7 @@ public class ReadingRabbitMqConsumer {
             String code = readingType.get().getCode();
             return new BasicTsKvEntry(readAtTs, toKvEntry(reading, code));
         } else {
-            return new BasicTsKvEntry(readAtTs, toKvEntry(reading, key));
+            return null;
         }
     }
 

@@ -109,21 +109,11 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     @Override
     public ListenableFuture<ReadTsKvQueryResult> findAllAsync(TenantId tenantId, EntityId entityId,
             ReadTsKvQuery query) {
-        var aggParams = query.getAggParameters();
-
         if (query.getAggregation() == Aggregation.NONE) {
-            List<TsKvEntry> tsKvEntries = new ArrayList<>();
-
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
-                    transformationSystem.getThingsboard(),
-                    transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(),
-                    transformationEntity.getTenant());
-
-            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
-                    transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
-                    transformationSystem.getReadingType(), transformationEntity.getDataSource());
-
-            Optional<ReadingType> readingType = readingTypeService.findByCode(query.getKey());
+                transformationSystem.getThingsboard(),
+                transformationEntity.getTenant(), tenantId.toString(), transformationSystem.getReadingType(),
+                transformationEntity.getTenant());
 
             if (transformationTenantId.isEmpty()) {
                 log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
@@ -131,11 +121,17 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 return Futures.immediateFuture(null);
             }
 
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
             if (transformationDataSourceId.isEmpty()) {
                 log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
 
                 return Futures.immediateFuture(null);
             }
+
+            Optional<ReadingType> readingType = readingTypeService.findByCode(query.getKey());
 
             if (readingType.isEmpty()) {
                 log.warn("ReadingType not found for code: " + query.getKey());
@@ -150,6 +146,12 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                     longToOffsetDateTime(query.getStartTs()), 
                     longToOffsetDateTime(query.getEndTs()));
 
+            if (readings.isEmpty()) {
+                return Futures.immediateFuture(null);
+            }
+
+            List<TsKvEntry> tsKvEntries = new ArrayList<>();
+
             for (ReadingEntity reading : readings) {
                 TsKvEntry tsKvEntry = convertResultToTsKvEntry(reading);
                 tsKvEntries.add(tsKvEntry);
@@ -161,6 +163,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
             return Futures.immediateFuture(result);
         } else {
+            var aggParams = query.getAggParameters();
             List<ListenableFuture<Optional<TsKvEntity>>> futures = new ArrayList<>();
             var intervalType = aggParams.getIntervalType();
             long startPeriod = query.getStartTs();
@@ -180,7 +183,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 startPeriod = endTs;
 
                 ListenableFuture<Optional<TsKvEntity>> aggregateTsKvEntry = convertReadingEntityAndAggregationTypeToTsKvEntry(
-                        aggregateReadingEntry, query.getAggregation().toString());
+                        aggregateReadingEntry, query.getAggregation().toString(), query.getKey());
 
                 futures.add(aggregateTsKvEntry);
             }
@@ -191,7 +194,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
-        if (entityId.getEntityType() == EntityType.DEVICE) {
+        if (entityId.getEntityType() == EntityType.DEVICE && !tsKvEntry.getKey().equals("$is_already_saved")) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
                 transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
                 transformationSystem.getReadingType(), transformationEntity.getTenant());
@@ -680,7 +683,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     }
 
     private ListenableFuture<Optional<TsKvEntity>> convertReadingEntityAndAggregationTypeToTsKvEntry(
-            ListenableFuture<Optional<ReadingEntity>> readingEntity, String aggregation) {
+            ListenableFuture<Optional<ReadingEntity>> readingEntity, String aggregation, String readingTypeCode) {
         return Futures.transform(readingEntity, new Function<>() {
             @Nullable
             @Override
@@ -695,7 +698,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                         }else if (entity.getValueLong() == null) {
                             return Optional.empty();
                         }
-                        return Optional.of(convertToTsKvEntity(entity, aggregation));
+                        return Optional.of(convertToTsKvEntity(entity, aggregation, readingTypeCode));
                     } else {
                         return Optional.empty();
                     }
@@ -706,11 +709,11 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
         }, service);
     }
 
-    private TsKvEntity convertToTsKvEntity(ReadingEntity entity, String aggregation) {
+    private TsKvEntity convertToTsKvEntity(ReadingEntity entity, String aggregation, String readingTypeCode) {
         TsKvEntity tsKvEntity = new TsKvEntity();
         tsKvEntity.setEntityId(entity.getDataSourceId());
         tsKvEntity.setKey(
-            keyDictionaryDao.getOrSaveKeyId(readingTypeService.findById(entity.getReadingTypeId().toString()).get().getCode()));
+            keyDictionaryDao.getOrSaveKeyId(readingTypeCode));
         tsKvEntity.setTs(entity.getReadAt().toInstant().toEpochMilli());
         tsKvEntity.setStrKey(entity.getReadingTypeId().toString());
         tsKvEntity.setAggValuesCount(entity.getAggValuesCount());
