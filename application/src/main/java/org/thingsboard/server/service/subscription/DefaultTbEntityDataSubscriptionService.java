@@ -709,6 +709,18 @@ public class DefaultTbEntityDataSubscriptionService implements TbEntityDataSubsc
                     .filter(key -> key.getType().equals(EntityKeyType.TIME_SERIES))
                     .map(EntityKey::getKey).collect(Collectors.toList());
 
+            if (allTsKeys.isEmpty()) {
+                ctx.getWsLock().lock();
+                try {
+                    ctx.createLatestValuesSubscriptions(latestCmd.getKeys());
+                    checkAndSendInitialData(ctx);
+                } finally {
+                    ctx.getWsLock().unlock();
+                }
+
+                return;
+            }
+
             Map<EntityData, ListenableFuture<Map<String, TsValue>>> missingTelemetryFutures = new HashMap<>();
             for (EntityData entityData : ctx.getData().getData()) {
                 ListenableFuture<List<TsKvEntry>> missingTsData = tsService.findLatest(ctx.getTenantId(), entityData.getEntityId(), allTsKeys);

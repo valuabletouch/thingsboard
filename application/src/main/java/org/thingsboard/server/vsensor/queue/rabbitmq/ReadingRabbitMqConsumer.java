@@ -197,7 +197,9 @@ public class ReadingRabbitMqConsumer {
                                         TenantId tenantId = getTenantId(reading.getTenantId());
                                         DeviceId deviceId = getDeviceId(reading.getDataSourceId());
 
-                                        sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                        if (tenantId != null && deviceId != null) {
+                                            sendToRuleEngine(tenantId, deviceId, tsKvEntry);
+                                        }
                                     }
                                 }
                             }
@@ -312,7 +314,7 @@ public class ReadingRabbitMqConsumer {
             return new TenantId(result.get());
         }
 
-        log.warn("Failed to read Tenant from MongoDB.");
+        log.warn("Failed to read Tenant from MongoDB by TenantId: {}", tenantId);
 
         return null;
     }
@@ -326,7 +328,7 @@ public class ReadingRabbitMqConsumer {
             return new DeviceId(result.get());
         }
 
-        log.warn("Failed to read DeviceId from MongoDB.");
+        log.warn("Failed to read Device from MongoDB by DataSourceId: {}", dataSourceId);
 
         return null;
     }
@@ -371,21 +373,21 @@ public class ReadingRabbitMqConsumer {
 
     @Scheduled(fixedRate = CACHE_EVICT_PERIOD)
     protected void evictExpired() {
-        for (Pair<DeviceId, LocalDateTime> pair : deviceCacheExpireList) {
+        deviceCacheExpireList.removeIf(pair -> {
             if (pair.getValue1().isBefore(LocalDateTime.now())) {
                 Objects.requireNonNull(cacheManager.getCache(DEVICE_CACHE_NAME)).evict(pair.getValue0());
-
-                deviceCacheExpireList.remove(pair);
+                return true;
             }
-        }
+            return false;
+        });
 
-        for (Pair<DeviceProfileId, LocalDateTime> pair : deviceProfileCacheExpireList) {
+        deviceProfileCacheExpireList.removeIf(pair -> {
             if (pair.getValue1().isBefore(LocalDateTime.now())) {
                 cacheManager.getCache(DEVICE_PROFILE_CACHE_NAME).evict(pair.getValue0());
-
-                deviceProfileCacheExpireList.remove(pair);
+                return true;
             }
-        }
+            return false;
+        });
     }
 
     private static boolean isNullOrEmpty(String name) {
