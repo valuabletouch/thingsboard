@@ -33,6 +33,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -134,18 +135,14 @@ public class ReadingEntity implements ToData<Reading> {
                     }
                     long totalCount = longCountValue + doubleCountValue;
                     if (totalCount > 0) {
-                        this.valueDecimal = sum.divide(BigDecimal.valueOf(totalCount));
+                        this.valueDecimal = sum.divide(BigDecimal.valueOf(totalCount), RoundingMode.HALF_UP);
                     } else {
                         this.valueDecimal = new BigDecimal(0);
                     }
                     this.aggValuesCount = totalCount;
                     break;
                 case SUM:
-                    if (doubleCountValue > 0) {
-                        this.valueDecimal = doubleValue.add((longValue != null ? BigDecimal.valueOf(longValue) : new BigDecimal(0)));
-                    } else {
-                        this.valueLong = longValue;
-                    }
+                    this.valueDecimal = doubleValue.add((longValue != null ? BigDecimal.valueOf(longValue) : new BigDecimal(0)));
                     break;
                 case MIN:
                 case MAX:
