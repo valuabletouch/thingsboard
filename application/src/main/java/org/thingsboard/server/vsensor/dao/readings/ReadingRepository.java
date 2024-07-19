@@ -18,7 +18,6 @@
 */
 package org.thingsboard.server.vsensor.dao.readings;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -126,8 +125,8 @@ public interface ReadingRepository extends JpaRepository<ReadingEntity, UUID> {
                 "SUM(COALESCE(\"ValueDecimal\", 0.0)) AS doubleValue, " +
                 "COUNT(CASE WHEN \"ValueLong\" IS NULL THEN 1 ELSE NULL END) AS longCountValue, " +
                 "COUNT(CASE WHEN \"ValueDecimal\" IS NULL THEN 1 ELSE NULL END) AS doubleCountValue, " +
-                "'AVG' AS avg, " +
-                "MAX(\"ReadAt\") AS maxTs " +
+                "'AVG' AS aggType, " +
+                "MAX(\"ReadAt\") AS aggValuesLastTs " +
                 "FROM \"Readings\" " +
                 "WHERE \"DataSourceId\" = :dataSourceId " +
                 "AND \"ReadingTypeId\" = :readingTypeId " +

@@ -554,7 +554,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
         OffsetDateTime dateTo = longToOffsetDateTime(endTs);
         switch (aggregation) {
             case AVG:
-                ReadingAggregationDto avgDto = readingRepository.findNumericMax(dataSourceId, readingTypeId, dateFrom,
+                ReadingAggregationDto avgDto = readingRepository.findAvg(dataSourceId, readingTypeId, dateFrom,
                         dateTo);
                 if (!isAggregationNull(avgDto)) {
                     return new ReadingEntity(avgDto.getLongValue(), avgDto.getDoubleValue(), avgDto.getLongCountValue(),
@@ -633,7 +633,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     private boolean isAggregationNull(ReadingAggregationDto aggregation) {
         return aggregation.getLongValue() == null && aggregation.getDoubleValue() == null
-                && aggregation.getLongCountValue() == null && aggregation.getDoubleCountValue() == null;
+                && aggregation.getLongCountValue() == 0 && aggregation.getDoubleCountValue() == 0;
     }
 
     private Optional<UUID> convertEntityIdToDataSourceId(EntityId entityId) {
@@ -695,7 +695,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                         if (valueDecimal != null && valueDecimal.doubleValue() > MAX_CHARP_DECIMAL_VALUE.doubleValue()) {
                             log.warn("Aggregated value is too big: {}", valueDecimal);
                             return Optional.empty();
-                        }else if (entity.getValueLong() == null) {
+                        }else if (valueDecimal == null && entity.getValueLong() == null) {
                             return Optional.empty();
                         }
                         return Optional.of(convertToTsKvEntity(entity, aggregation, readingTypeCode));
