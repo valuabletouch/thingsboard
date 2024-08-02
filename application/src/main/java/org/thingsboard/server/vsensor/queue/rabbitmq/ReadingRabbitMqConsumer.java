@@ -60,6 +60,7 @@ import org.thingsboard.server.queue.TbQueueProducer;
 import org.thingsboard.server.queue.common.TbProtoQueueMsg;
 import org.thingsboard.server.queue.discovery.PartitionService;
 import org.thingsboard.server.queue.provider.TbQueueProducerProvider;
+import org.thingsboard.server.queue.rabbitmq.TbRabbitMqQueueArguments;
 import org.thingsboard.server.queue.rabbitmq.TbRabbitMqSettings;
 
 import javax.annotation.PostConstruct;
@@ -98,6 +99,9 @@ public class ReadingRabbitMqConsumer {
 
     @Value("${queue.rabbitmq.vsensor.queue_name:}")
     private String queueName;
+
+    @Value("${queue.rabbitmq.vsensor.queue_properties:}")
+    private String queueProperties;
 
     private final CacheManager cacheManager;
 
@@ -163,7 +167,9 @@ public class ReadingRabbitMqConsumer {
 
             Channel channel = connection.createChannel();
 
-            channel.queueDeclare(queueName, true, false, false, null);
+            Map<String, Object> args = TbRabbitMqQueueArguments.getArgs(queueProperties);
+
+            channel.queueDeclare(queueName, true, false, true, args);
 
             channel.queueBind(queueName, exchangeName, routingKey);
 
@@ -409,7 +415,7 @@ public class ReadingRabbitMqConsumer {
     }
 
     @Getter
-    private static class MessageContext {
+    private class MessageContext {
         private String correlationId;
         private String initiator;
         private String connectionId;
@@ -420,7 +426,7 @@ public class ReadingRabbitMqConsumer {
     }
 
     @Getter
-    private static class CorrelationContext {
+    private class CorrelationContext {
         private String id;
         private String isAdmin;
         private String isSystem;

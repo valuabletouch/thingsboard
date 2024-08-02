@@ -1633,6 +1633,7 @@ queue:
       exchange_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_EXCHANGE_NAME:exchange}" # Exchange name for VSensor
       routing_key: "${TB_QUEUE_RABBIT_MQ_VSENSOR_ROUTING_KEY:routing_key}" # Routing key for VSensor
       queue_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_QUEUE_NAME:queue}" # Queue name for VSensor
+      queue_properties: "${TB_QUEUE_RABBIT_MQ_VSENSOR_QUEUE_PROPERTIES:x-message-ttl:60000}" # Queue properties for VSensor
   partitions:
     hash_function_name: "${TB_QUEUE_PARTITIONS_HASH_FUNCTION_NAME:murmur3_128}" # murmur3_32, murmur3_128 or sha256
   transport_api:
