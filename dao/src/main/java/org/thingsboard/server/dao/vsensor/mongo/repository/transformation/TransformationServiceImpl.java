@@ -19,10 +19,10 @@
 package org.thingsboard.server.dao.vsensor.mongo.repository.transformation;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.javatuples.Pair;
 
@@ -43,7 +43,7 @@ public class TransformationServiceImpl implements TransformationService {
     private static final long CACHE_TTL = 24 * 60 * 60l;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000l;
 
-    private static List<Pair<String, LocalDateTime>> cacheExpireList = new ArrayList<>();
+    private static List<Pair<String, LocalDateTime>> cacheExpireList = new CopyOnWriteArrayList<>();
 
     @Autowired
     private TransformationRepository repository;
