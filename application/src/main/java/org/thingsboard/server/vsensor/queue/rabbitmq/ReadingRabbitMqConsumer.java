@@ -71,6 +71,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -84,8 +85,8 @@ public class ReadingRabbitMqConsumer {
     private static final long CACHE_TTL = 15 * 60L;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000L;
 
-    private static final List<Pair<DeviceId, LocalDateTime>> deviceCacheExpireList = new ArrayList<>();
-    private static final List<Pair<DeviceProfileId, LocalDateTime>> deviceProfileCacheExpireList = new ArrayList<>();
+    private static final List<Pair<DeviceId, LocalDateTime>> deviceCacheExpireList = new CopyOnWriteArrayList<>();
+    private static final List<Pair<DeviceProfileId, LocalDateTime>> deviceProfileCacheExpireList = new CopyOnWriteArrayList<>();
 
     private static final Gson gson = new Gson();
 

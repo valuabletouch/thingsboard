@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.javatuples.Pair;
 
@@ -44,7 +45,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     private static final long CACHE_TTL = 15 * 60;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000L;
 
-    private static final List<Pair<String, LocalDateTime>> cacheExpireList = new ArrayList<>();
+    private static final List<Pair<String, LocalDateTime>> cacheExpireList = new CopyOnWriteArrayList<>();
 
     @Autowired
     private CacheManager cacheManager;
