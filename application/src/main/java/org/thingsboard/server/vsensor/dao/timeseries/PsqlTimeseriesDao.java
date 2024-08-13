@@ -194,7 +194,7 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
-        if (entityId.getEntityType() == EntityType.DEVICE && !tsKvEntry.getKey().equals("$is_already_saved")) {
+        if (entityId.getEntityType() == EntityType.DEVICE) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
                 transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
                 transformationSystem.getReadingType(), transformationEntity.getTenant());
@@ -447,8 +447,14 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, List<TsKvEntry> tsKvEntryList,
             long ttl) {
         for (TsKvEntry tsKvEntry : tsKvEntryList) {
-            save(tenantId, entityId, tsKvEntry, ttl);
+            if (tsKvEntry.getKey().equals("$is_already_saved") && tsKvEntry.getValue().toString().equals("1")) {
+                return Futures.immediateFuture(0);
+            }
         }
+
+        for (TsKvEntry tsKvEntry : tsKvEntryList) {
+            save(tenantId, entityId, tsKvEntry, ttl);
+        } 
         return Futures.immediateFuture(null);
     }
 
