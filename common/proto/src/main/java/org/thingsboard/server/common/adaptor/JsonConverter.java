@@ -228,20 +228,30 @@ public class JsonConverter {
         String valueAsString = value.getAsString();
         KeyValueProto.Builder builder = KeyValueProto.newBuilder().setKey(key);
         var bd = new BigDecimal(valueAsString);
-        if (bd.stripTrailingZeros().scale() <= 0 && !isSimpleDouble(valueAsString)) {
-            try {
-                return builder.setType(KeyValueType.LONG_V).setLongV(bd.longValueExact()).build();
-            } catch (ArithmeticException e) {
-                if (isTypeCastEnabled) {
-                    return builder.setType(KeyValueType.STRING_V).setStringV(bd.toPlainString()).build();
-                } else {
-                    throw new JsonSyntaxException("Big integer values are not supported!");
-                }
-            }
-        } else {
-            if (bd.scale() <= 16) {
-                return builder.setType(KeyValueType.DOUBLE_V).setDoubleV(bd.doubleValue()).build();
-            } else if (isTypeCastEnabled) {
+        // if (bd.stripTrailingZeros().scale() <= 0 && !isSimpleDouble(valueAsString)) {
+        //     try {
+        //         return builder.setType(KeyValueType.LONG_V).setLongV(bd.longValueExact()).build();
+        //     } catch (ArithmeticException e) {
+        //         if (isTypeCastEnabled) {
+        //             return builder.setType(KeyValueType.STRING_V).setStringV(bd.toPlainString()).build();
+        //         } else {
+        //             throw new JsonSyntaxException("Big integer values are not supported!");
+        //         }
+        //     }
+        // } else {
+        //     if (bd.scale() <= 16) {
+        //         return builder.setType(KeyValueType.DOUBLE_V).setDoubleV(bd.doubleValue()).build();
+        //     } else if (isTypeCastEnabled) {
+        //         return builder.setType(KeyValueType.STRING_V).setStringV(bd.toPlainString()).build();
+        //     } else {
+        //         throw new JsonSyntaxException("Big integer values are not supported!");
+        //     }
+        // }
+
+        try {
+            return builder.setType(KeyValueType.DOUBLE_V).setDoubleV(bd.doubleValue()).build();
+        } catch (ArithmeticException e) {
+            if (isTypeCastEnabled) {
                 return builder.setType(KeyValueType.STRING_V).setStringV(bd.toPlainString()).build();
             } else {
                 throw new JsonSyntaxException("Big integer values are not supported!");
@@ -263,20 +273,30 @@ public class JsonConverter {
         String valueAsString = value.getAsString();
         String key = valueEntry.getKey();
         var bd = new BigDecimal(valueAsString);
-        if (bd.stripTrailingZeros().scale() <= 0 && !isSimpleDouble(valueAsString)) {
-            try {
-                result.add(new LongDataEntry(key, bd.longValueExact()));
-            } catch (ArithmeticException e) {
-                if (isTypeCastEnabled) {
-                    result.add(new StringDataEntry(key, bd.toPlainString()));
-                } else {
-                    throw new JsonSyntaxException("Big integer values are not supported!");
-                }
-            }
-        } else {
-            if (bd.scale() <= 16) {
-                result.add(new DoubleDataEntry(key, bd.doubleValue()));
-            } else if (isTypeCastEnabled) {
+        // if (bd.stripTrailingZeros().scale() <= 0 && !isSimpleDouble(valueAsString)) {
+        //     try {
+        //         result.add(new LongDataEntry(key, bd.longValueExact()));
+        //     } catch (ArithmeticException e) {
+        //         if (isTypeCastEnabled) {
+        //             result.add(new StringDataEntry(key, bd.toPlainString()));
+        //         } else {
+        //             throw new JsonSyntaxException("Big integer values are not supported!");
+        //         }
+        //     }
+        // } else {
+        //     if (bd.scale() <= 16) {
+        //         result.add(new DoubleDataEntry(key, bd.doubleValue()));
+        //     } else if (isTypeCastEnabled) {
+        //         result.add(new StringDataEntry(key, bd.toPlainString()));
+        //     } else {
+        //         throw new JsonSyntaxException("Big integer values are not supported!");
+        //     }
+        // }
+
+        try {
+            result.add(new DoubleDataEntry(key, bd.doubleValue()));
+        } catch (ArithmeticException e) {
+            if (isTypeCastEnabled) {
                 result.add(new StringDataEntry(key, bd.toPlainString()));
             } else {
                 throw new JsonSyntaxException("Big integer values are not supported!");
