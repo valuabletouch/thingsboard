@@ -15,7 +15,8 @@
 ///
 
 export const environment = {
-  appTitle: 'ThingsBoard',
+  appTitle: 'V-Sensor',
+  appUrl: 'https://vgen.vtcenerji.com/vsensor',
   production: true,
 // @ts-ignore
   tbVersion: TB_VERSION,

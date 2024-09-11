@@ -15,6 +15,7 @@
 ///
 
 import { Component } from '@angular/core';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'tb-logo',
@@ -26,7 +27,7 @@ export class LogoComponent {
   logo = 'assets/logo_title_white.svg';
 
   gotoThingsboard(): void {
-    window.open('https://thingsboard.io', '_blank');
+    window.open(environment.appUrl, '_blank');
   }
 
 }
