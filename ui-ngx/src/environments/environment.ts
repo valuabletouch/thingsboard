@@ -19,7 +19,8 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  appTitle: 'ThingsBoard',
+  appTitle: 'V-Sensor',
+  appUrl: 'https://vgen.test.vtcenerji.com/vsensor',
   production: false,
 // @ts-ignore
   tbVersion: TB_VERSION,
