@@ -59,6 +59,7 @@ import org.thingsboard.server.vsensor.queue.rabbitmq.ReadingRabbitMqProducer;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -194,7 +195,8 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
-        if (entityId.getEntityType() == EntityType.DEVICE) {
+        if (entityId.getEntityType() == EntityType.DEVICE &&
+            (tsKvEntry.getDataType() != DataType.DOUBLE || tsKvEntry.getDataType() != DataType.LONG)) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
                 transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
                 transformationSystem.getReadingType(), transformationEntity.getTenant());
@@ -227,10 +229,10 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
             reading.setDataSourceId(transformationDataSourceId.get());
             reading.setReadingTypeId(UUID.fromString(readingType.get().getId()));
+            reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
 
             addDateTime(tsKvEntry.getTs(), reading);
             addValue(tsKvEntry, reading);
-            addDataType(tsKvEntry, reading);
 
             try {
                 readingRabbitMqProducer.sendToQueue(reading);
@@ -797,48 +799,32 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     }
 
     private static void addValue(KvEntry kvEntry, Reading reading) {
+        BigDecimal valueDecimal = BigDecimal.ZERO;
+
         switch (kvEntry.getDataType()) {
-            case BOOLEAN:
-                Optional<Boolean> booleanValue = kvEntry.getBooleanValue();
-                booleanValue.ifPresent(d -> reading.setValueString(d.toString()));
-                break;
-            case STRING:
-                Optional<String> stringValue = kvEntry.getStrValue();
-                stringValue.ifPresent(reading::setValueString);
-                break;
             case LONG:
                 Optional<Long> longValue = kvEntry.getLongValue();
-                longValue.ifPresent(d -> reading.setValueDecimal(BigDecimal.valueOf(d)));
+                if (longValue.isPresent()) {
+                    valueDecimal = BigDecimal.valueOf(longValue.get());
+                }
                 break;
             case DOUBLE:
                 Optional<Double> doubleValue = kvEntry.getDoubleValue();
-                doubleValue.ifPresent(d -> reading.setValueDecimal(BigDecimal.valueOf(d)));
+                if (doubleValue.isPresent()) {
+                    valueDecimal = BigDecimal.valueOf(doubleValue.get());
+                }
                 break;
-            case JSON:
-                Optional<String> jsonValue = kvEntry.getJsonValue();
-                jsonValue.ifPresent(d -> reading.setValueString(d.toString()));
+            default:
                 break;
         }
-    }
 
-    private static void addDataType(KvEntry kvEntry, Reading reading) {
-        switch (kvEntry.getDataType()) {
-            case BOOLEAN:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_STRING));
-                break;
-            case STRING:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_STRING));
-                break;
-            case LONG:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
-                break;
-            case DOUBLE:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
-                break;
-            case JSON:
-                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_STRING));
-                break;
+        valueDecimal = valueDecimal.setScale(5, RoundingMode.HALF_UP);
+
+        if (valueDecimal.compareTo(MAX_CHARP_DECIMAL_VALUE) > 0) {
+            throw new IllegalArgumentException("Value exceeds the maximum allowed decimal value!");
         }
+
+        reading.setValueDecimal(valueDecimal);
     }
 
     private OffsetDateTime longToOffsetDateTime(long ts) {
