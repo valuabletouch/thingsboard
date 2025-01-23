@@ -34,6 +34,7 @@ import org.thingsboard.server.common.data.id.DeviceProfileId;
 import org.thingsboard.server.common.data.id.EntityId;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.kv.*;
+import org.thingsboard.server.common.data.vsensor.DeviceEvent;
 import org.thingsboard.server.common.data.vsensor.Reading;
 import org.thingsboard.server.common.data.vsensor.ReadingType;
 import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
@@ -79,6 +80,7 @@ import static org.thingsboard.server.common.data.StringUtils.isBlank;
 public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao implements TimeseriesService {
 
     static final BigDecimal MAX_CHARP_DECIMAL_VALUE = new BigDecimal("79228162514264337593543950335");
+    static final String VALID_NUMBER_REGEX = "^[+-]?\\d+(\\.\\d+)?([eE][+-]?\\d+)?$";
 
     @Value("${database.ts_max_intervals}")
     private long maxTsIntervals;
@@ -196,16 +198,10 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
         if (entityId.getEntityType() == EntityType.DEVICE &&
-            (tsKvEntry.getDataType() != DataType.DOUBLE || tsKvEntry.getDataType() != DataType.LONG)) {
+            (tsKvEntry.getDataType() != DataType.DOUBLE || tsKvEntry.getDataType() != DataType.LONG || tsKvEntry.getDataType() != DataType.STRING)) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
                 transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
                 transformationSystem.getReadingType(), transformationEntity.getTenant());
-
-            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
-                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
-                transformationSystem.getReadingType(), transformationEntity.getDataSource());
-
-            Optional<ReadingType> readingType = readingTypeService.findByCode(tsKvEntry.getKey());
 
             if (transformationTenantId.isEmpty()) {
                 log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
@@ -213,31 +209,58 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 return Futures.immediateFuture(0);
             }
 
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
             if (transformationDataSourceId.isEmpty()) {
                 log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
 
                 return Futures.immediateFuture(0);
             }
 
-            if (readingType.isEmpty()) {
-                log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId.get());
+            if (tsKvEntry.getDataType() == DataType.DOUBLE || tsKvEntry.getDataType() == DataType.LONG) {
+                Optional<ReadingType> readingType = readingTypeService.findByCode(tsKvEntry.getKey());
 
-                return Futures.immediateFuture(0);
-            }
+                if (readingType.isEmpty()) {
+                    log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId.get());
 
-            Reading reading = new Reading();
+                    return Futures.immediateFuture(0);
+                }
 
-            reading.setDataSourceId(transformationDataSourceId.get());
-            reading.setReadingTypeId(UUID.fromString(readingType.get().getId()));
-            reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
+                Reading reading = new Reading();
 
-            addDateTime(tsKvEntry.getTs(), reading);
-            addValue(tsKvEntry, reading);
+                reading.setDataSourceId(transformationDataSourceId.get());
+                reading.setReadingTypeId(UUID.fromString(readingType.get().getId()));
+                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
 
-            try {
-                readingRabbitMqProducer.sendToQueue(reading);
-            } catch (IOException e) {
-                e.printStackTrace();
+                addDateTime(tsKvEntry.getTs(), reading);
+                addValue(tsKvEntry, reading);
+
+                try {
+                    readingRabbitMqProducer.sendToQueue(reading);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                String value = tsKvEntry.getValueAsString();
+
+                if (isBlank(value) || value.matches(VALID_NUMBER_REGEX)) {
+                    return Futures.immediateFuture(0);
+                }
+
+                DeviceEvent deviceEvent = new DeviceEvent();
+
+                deviceEvent.setId(UUID.randomUUID());
+                deviceEvent.setTenantId(transformationTenantId.get());
+                deviceEvent.setDataSourceId(transformationDataSourceId.get());
+                deviceEvent.setMessage(tsKvEntry.getValueAsString());
+
+                try {
+                    readingRabbitMqProducer.sendToQueue(deviceEvent);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             return Futures.immediateFuture(0);
