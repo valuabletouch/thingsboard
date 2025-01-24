@@ -197,8 +197,14 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
-        if (entityId.getEntityType() == EntityType.DEVICE &&
-            (tsKvEntry.getDataType() != DataType.DOUBLE || tsKvEntry.getDataType() != DataType.LONG || tsKvEntry.getDataType() != DataType.STRING)) {
+        if (entityId.getEntityType() != EntityType.DEVICE)
+        {
+            return Futures.immediateFuture(0);
+        }
+
+        var dataType = tsKvEntry.getDataType();
+
+        if (dataType == DataType.DOUBLE || dataType == DataType.LONG || dataType == DataType.STRING) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
                 transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
                 transformationSystem.getReadingType(), transformationEntity.getTenant());
@@ -219,11 +225,20 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 return Futures.immediateFuture(0);
             }
 
-            if (tsKvEntry.getDataType() == DataType.DOUBLE || tsKvEntry.getDataType() == DataType.LONG) {
-                Optional<ReadingType> readingType = readingTypeService.findByCode(tsKvEntry.getKey());
+            String key = tsKvEntry.getKey();
+
+            if (isBlank(key))
+            {
+                log.warn("Key is empty for EntityId: " + entityId.toString());
+
+                return Futures.immediateFuture(0);
+            }
+
+            if (dataType == DataType.DOUBLE || dataType == DataType.LONG) {
+                Optional<ReadingType> readingType = readingTypeService.findByCode(key);
 
                 if (readingType.isEmpty()) {
-                    log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId.get());
+                    log.warn("ReadingType not found for code: {}, DataSourceId: {}", key, transformationDataSourceId.get());
 
                     return Futures.immediateFuture(0);
                 }
@@ -242,13 +257,9 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else {
-                String value = tsKvEntry.getValueAsString();
-
-                if (isBlank(value) || value.matches(VALID_NUMBER_REGEX)) {
-                    return Futures.immediateFuture(0);
-                }
-
+            }
+            else if (key.toLowerCase().contains("status"))
+            {
                 DeviceEvent deviceEvent = new DeviceEvent();
 
                 deviceEvent.setId(UUID.randomUUID());
@@ -264,9 +275,9 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
             }
 
             return Futures.immediateFuture(0);
-        } else {
-            return Futures.immediateFuture(0);
         }
+
+        return Futures.immediateFuture(0);
     }
 
     ListenableFuture<Optional<ReadingEntity>> findAndAggregateAsync(EntityId entityId, String key, long startTs,
@@ -875,5 +886,5 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                         "Please increase 'interval' parameter for your query or reduce the time range of the query.");
             }
         }
-    }
+    }    
 }
