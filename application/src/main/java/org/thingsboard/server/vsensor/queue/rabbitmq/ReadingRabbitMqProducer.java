@@ -20,6 +20,7 @@ package org.thingsboard.server.vsensor.queue.rabbitmq;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Service;
+import org.thingsboard.server.common.data.vsensor.DeviceEvent;
 import org.thingsboard.server.common.data.vsensor.Reading;
 
 import java.io.IOException;
@@ -69,7 +70,8 @@ public class ReadingRabbitMqProducer {
     @Value("${queue.rabbitmq.vsensor.exchange_name:}")
     private String exchangeName;
 
-    private String routingKey = "add_reading";
+    private String readingRoutingKey = "add_reading";
+    private String messageRoutingKey = "add_device_event";
 
     private Connection connection;
 
@@ -99,7 +101,13 @@ public class ReadingRabbitMqProducer {
     public void sendToQueue(Reading reading) throws IOException {
         AMQP.BasicProperties properties = getProperties();
 
-        channel.basicPublish(exchangeName, routingKey, true, properties, gson.toJson(reading).getBytes());
+        channel.basicPublish(exchangeName, readingRoutingKey, true, properties, gson.toJson(reading).getBytes());
+    }
+
+    public void sendToQueue(DeviceEvent deviceEvent) throws IOException {
+        AMQP.BasicProperties properties = getProperties();
+
+        channel.basicPublish(exchangeName, messageRoutingKey, true, properties, gson.toJson(deviceEvent).getBytes());
     }
 
     public BasicProperties getProperties() {

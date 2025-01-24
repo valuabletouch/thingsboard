@@ -34,6 +34,7 @@ import org.thingsboard.server.common.data.id.DeviceProfileId;
 import org.thingsboard.server.common.data.id.EntityId;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.kv.*;
+import org.thingsboard.server.common.data.vsensor.DeviceEvent;
 import org.thingsboard.server.common.data.vsensor.Reading;
 import org.thingsboard.server.common.data.vsensor.ReadingType;
 import org.thingsboard.server.common.data.vsensor.ReadingTypeService;
@@ -195,17 +196,17 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
 
     @Override
     public ListenableFuture<Integer> save(TenantId tenantId, EntityId entityId, TsKvEntry tsKvEntry, long ttl) {
-        if (entityId.getEntityType() == EntityType.DEVICE &&
-            (tsKvEntry.getDataType() != DataType.DOUBLE || tsKvEntry.getDataType() != DataType.LONG)) {
+        if (entityId.getEntityType() != EntityType.DEVICE)
+        {
+            return Futures.immediateFuture(0);
+        }
+
+        var dataType = tsKvEntry.getDataType();
+
+        if (dataType == DataType.DOUBLE || dataType == DataType.LONG || dataType == DataType.STRING) {
             Optional<UUID> transformationTenantId = transformationService.getFromKey(
                 transformationSystem.getThingsboard(), transformationEntity.getTenant(), tenantId.toString(),
                 transformationSystem.getReadingType(), transformationEntity.getTenant());
-
-            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
-                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
-                transformationSystem.getReadingType(), transformationEntity.getDataSource());
-
-            Optional<ReadingType> readingType = readingTypeService.findByCode(tsKvEntry.getKey());
 
             if (transformationTenantId.isEmpty()) {
                 log.warn("TenantId not found for ThingsBoard TenantId: " + tenantId.toString());
@@ -213,37 +214,69 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                 return Futures.immediateFuture(0);
             }
 
+            Optional<UUID> transformationDataSourceId = transformationService.getFromKey(
+                transformationSystem.getThingsboard(), transformationEntity.getDevice(), entityId.toString(),
+                transformationSystem.getReadingType(), transformationEntity.getDataSource());
+
             if (transformationDataSourceId.isEmpty()) {
                 log.warn("DataSourceId not found for ThingsBoard EntityId: " + entityId.toString());
 
                 return Futures.immediateFuture(0);
             }
 
-            if (readingType.isEmpty()) {
-                log.warn("ReadingType not found for code: {}, DataSourceId: {}", tsKvEntry.getKey(), transformationDataSourceId.get());
+            String key = tsKvEntry.getKey();
+
+            if (isBlank(key))
+            {
+                log.warn("Key is empty for EntityId: " + entityId.toString());
 
                 return Futures.immediateFuture(0);
             }
 
-            Reading reading = new Reading();
+            if (dataType == DataType.DOUBLE || dataType == DataType.LONG) {
+                Optional<ReadingType> readingType = readingTypeService.findByCode(key);
 
-            reading.setDataSourceId(transformationDataSourceId.get());
-            reading.setReadingTypeId(UUID.fromString(readingType.get().getId()));
-            reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
+                if (readingType.isEmpty()) {
+                    log.warn("ReadingType not found for code: {}, DataSourceId: {}", key, transformationDataSourceId.get());
 
-            addDateTime(tsKvEntry.getTs(), reading);
-            addValue(tsKvEntry, reading);
+                    return Futures.immediateFuture(0);
+                }
 
-            try {
-                readingRabbitMqProducer.sendToQueue(reading);
-            } catch (IOException e) {
-                e.printStackTrace();
+                Reading reading = new Reading();
+
+                reading.setDataSourceId(transformationDataSourceId.get());
+                reading.setReadingTypeId(UUID.fromString(readingType.get().getId()));
+                reading.setDataType(String.valueOf(VModelConstants.DATA_TYPE_DECIMAL));
+
+                addDateTime(tsKvEntry.getTs(), reading);
+                addValue(tsKvEntry, reading);
+
+                try {
+                    readingRabbitMqProducer.sendToQueue(reading);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (key.toLowerCase().contains("status"))
+            {
+                DeviceEvent deviceEvent = new DeviceEvent();
+
+                deviceEvent.setId(UUID.randomUUID());
+                deviceEvent.setTenantId(transformationTenantId.get());
+                deviceEvent.setDataSourceId(transformationDataSourceId.get());
+                deviceEvent.setMessage(tsKvEntry.getValueAsString());
+
+                try {
+                    readingRabbitMqProducer.sendToQueue(deviceEvent);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             return Futures.immediateFuture(0);
-        } else {
-            return Futures.immediateFuture(0);
         }
+
+        return Futures.immediateFuture(0);
     }
 
     ListenableFuture<Optional<ReadingEntity>> findAndAggregateAsync(EntityId entityId, String key, long startTs,
@@ -852,5 +885,5 @@ public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao i
                         "Please increase 'interval' parameter for your query or reduce the time range of the query.");
             }
         }
-    }
+    }    
 }
