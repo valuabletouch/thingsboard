@@ -80,7 +80,6 @@ import static org.thingsboard.server.common.data.StringUtils.isBlank;
 public class PsqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao implements TimeseriesService {
 
     static final BigDecimal MAX_CHARP_DECIMAL_VALUE = new BigDecimal("79228162514264337593543950335");
-    static final String VALID_NUMBER_REGEX = "^[+-]?\\d+(\\.\\d+)?([eE][+-]?\\d+)?$";
 
     @Value("${database.ts_max_intervals}")
     private long maxTsIntervals;
