@@ -52,7 +52,7 @@ export class AwsSqsTemplate implements IQueue {
     private queueAttributes: { [n: string]: string } = {
         FifoQueue: 'true'
     };
-    private timer: NodeJS.Timer;
+    private timer: ReturnType<typeof setTimeout> | undefined;
 
     name = 'AWS SQS';
 
@@ -180,7 +180,9 @@ export class AwsSqsTemplate implements IQueue {
 
     async destroy(): Promise<void> {
         this.logger.info('Stopping AWS SQS resources...');
-        clearTimeout(this.timer);
+        if (this.timer) {
+            clearTimeout(this.timer);
+        }
         if (this.sqsClient) {
             this.logger.info('Stopping AWS SQS client...');
             try {

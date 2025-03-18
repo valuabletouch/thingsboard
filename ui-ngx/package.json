@@ -110,7 +110,7 @@
     "zone.js": "~0.13.0"
   },
   "devDependencies": {
-    "@angular-builders/custom-webpack": "~15.0.0",
+    "@angular-builders/custom-webpack": "17.0.2",
     "@angular-devkit/build-angular": "^15.2.10",
     "@angular-eslint/builder": "15.2.1",
     "@angular-eslint/eslint-plugin": "15.2.1",
@@ -120,7 +120,7 @@
     "@angular/cli": "^15.2.10",
     "@angular/compiler-cli": "^15.2.10",
     "@angular/language-service": "^15.2.10",
-    "@ngtools/webpack": "15.2.10",
+    "@ngtools/webpack": "17.3.8",
     "@types/ace-diff": "^2.1.1",
     "@types/canvas-gauges": "^2.1.4",
     "@types/flot": "^0.0.32",

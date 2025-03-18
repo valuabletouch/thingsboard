@@ -67,7 +67,7 @@ module.exports = (config, options) => {
   config.module.rules[2].use[0].options.aot = false;
   const index = config.plugins.findIndex(p => p instanceof ngWebpack.AngularWebpackPlugin);
   let angularWebpackPlugin = config.plugins[index];
-  if (config.mode === 'production') {
+  if (config.mode === 'production' && angularWebpackPlugin?.pluginOptions) {
     const angularCompilerOptions = angularWebpackPlugin.pluginOptions;
     angularCompilerOptions.emitClassMetadata = true;
     angularCompilerOptions.emitNgModuleScope = true;
@@ -86,6 +86,9 @@ module.exports = (config, options) => {
 };
 
 function addTransformerToAngularWebpackPlugin(plugin, transformer) {
+  if (!plugin?.createFileEmitter) {
+    return;
+  }
   const originalCreateFileEmitter = plugin.createFileEmitter; // private method
   plugin.createFileEmitter = function (program, transformers, getExtraDependencies, onAfterEmit) {
     if (!transformers) {

@@ -52,7 +52,7 @@ export class KafkaTemplate implements IQueue {
     private producer: Producer;
     private configEntries: any[] = [];
     private batchMessages: TopicMessages[] = [];
-    private sendLoopInstance: NodeJS.Timeout;
+    private sendLoopInstance: ReturnType<typeof setTimeout> | undefined;
 
     name = 'Kafka';
 
@@ -268,7 +268,9 @@ export class KafkaTemplate implements IQueue {
             this.logger.info('Stopping Kafka Producer...');
             try {
                 this.logger.info('Stopping loop...');
-                clearTimeout(this.sendLoopInstance);
+                if (this.sendLoopInstance) {
+                    clearTimeout(this.sendLoopInstance);
+                }
                 await this.sendMessagesAsBatch();
                 const _producer = this.producer;
                 // @ts-ignore
