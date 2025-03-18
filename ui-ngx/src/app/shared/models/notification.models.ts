@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -290,6 +290,7 @@ export interface SlackNotificationTargetConfig {
 export interface MicrosoftTeamsNotificationTargetConfig {
   webhookUrl: string;
   channelName: string;
+  useOldApi?: boolean;
 }
 export enum NotificationTargetType {
   PLATFORM_USERS = 'PLATFORM_USERS',
@@ -365,6 +366,7 @@ interface SlackDeliveryMethodNotificationTemplate {
 interface MicrosoftTeamsDeliveryMethodNotificationTemplate {
   subject?: string;
   button: NotificationButtonConfig;
+  themeColor?: string;
 }
 
 interface MobileDeliveryMethodNotificationTemplate {

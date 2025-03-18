@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ public class LifeCycleEventFilter implements EventFilter {
     protected String server;
     @Schema(description = "String value representing the lifecycle event type", example = "STARTED")
     protected String event;
-    @Schema(description = "String value representing status of the lifecycle event", allowableValues = "Success, Failure")
+    @Schema(description = "String value representing status of the lifecycle event", allowableValues = {"Success", "Failure"})
     protected String status;
     @Schema(description = "The case insensitive 'contains' filter based on error message", example = "not present in the DB")
     protected String errorStr;

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,10 +89,12 @@ public class EntityKeyMapping {
     public static final String OWNER_TYPE_SELECT_QUERY = "case when e.customer_id = '" + NULL_UUID + "' " +
             "then 'TENANT' " +
             "else 'CUSTOMER' end";
+    public static final String QUEUE_STATS_NAME_QUERY = "concat(e.queue_name, '_', e.service_id)";
     public static final Map<String, String> ownerPropertiesFunctions = Map.of(
             OWNER_NAME, OWNER_NAME_SELECT_QUERY,
             OWNER_TYPE, OWNER_TYPE_SELECT_QUERY
     );
+    public static final Map<String, String> queueStatsPropertiesFunctions = Map.of(NAME, QUEUE_STATS_NAME_QUERY);
 
     public static final List<String> typedEntityFields = Arrays.asList(CREATED_TIME, ENTITY_TYPE, NAME, TYPE, ADDITIONAL_INFO);
     public static final List<String> widgetEntityFields = Arrays.asList(CREATED_TIME, ENTITY_TYPE, NAME);
@@ -101,7 +103,7 @@ public class EntityKeyMapping {
     public static final List<String> labeledEntityFields = Arrays.asList(CREATED_TIME, ENTITY_TYPE, NAME, TYPE, LABEL, ADDITIONAL_INFO);
     public static final List<String> contactBasedEntityFields = Arrays.asList(CREATED_TIME, ENTITY_TYPE, EMAIL, TITLE, COUNTRY, STATE, CITY, ADDRESS, ADDRESS_2, ZIP, PHONE, ADDITIONAL_INFO);
 
-    public static final Set<String> apiUsageStateEntityFields =  new HashSet<>(Arrays.asList(CREATED_TIME, ENTITY_TYPE, NAME));
+    public static final Set<String> apiUsageStateEntityFields = new HashSet<>(Arrays.asList(CREATED_TIME, ENTITY_TYPE, NAME));
     public static final Set<String> commonEntityFieldsSet = new HashSet<>(commonEntityFields);
     public static final Set<String> relationQueryEntityFieldsSet = new HashSet<>(Arrays.asList(CREATED_TIME, ENTITY_TYPE, NAME, TYPE, LABEL, FIRST_NAME, LAST_NAME, EMAIL, REGION, TITLE, COUNTRY, STATE, CITY, ADDRESS, ADDRESS_2, ZIP, PHONE, ADDITIONAL_INFO, RELATED_PARENT_ID));
 
@@ -166,6 +168,7 @@ public class EntityKeyMapping {
         propertiesFunctions.put(EntityType.ENTITY_VIEW, ownerPropertiesFunctions);
         propertiesFunctions.put(EntityType.USER, ownerPropertiesFunctions);
         propertiesFunctions.put(EntityType.DASHBOARD, ownerPropertiesFunctions);
+        propertiesFunctions.put(EntityType.QUEUE_STATS, queueStatsPropertiesFunctions);
 
         Map<String, String> userEntityAliases = new HashMap<>();
         userEntityAliases.put(TITLE, EMAIL);
@@ -262,7 +265,7 @@ public class EntityKeyMapping {
         return alias;
     }
 
-    public Stream<String> toQueries(QueryContext ctx, EntityFilterType filterType) {
+    public Stream<String> toQueries(SqlQueryContext ctx, EntityFilterType filterType) {
         if (hasFilter()) {
             String keyAlias = (entityKey.getType().equals(EntityKeyType.ENTITY_FIELD) && getEntityKeyColumn() != null) ? "e" : alias;
             return keyFilters.stream().map(keyFilter ->
@@ -272,7 +275,7 @@ public class EntityKeyMapping {
         }
     }
 
-    public String toLatestJoin(QueryContext ctx, EntityFilter entityFilter, EntityType entityType) {
+    public String toLatestJoin(SqlQueryContext ctx, EntityFilter entityFilter, EntityType entityType) {
         String entityTypeStr;
         if (entityFilter.getType().equals(EntityFilterType.RELATIONS_QUERY)) {
             entityTypeStr = "entities.entity_type";
@@ -300,9 +303,9 @@ public class EntityKeyMapping {
                 if (entityKey.getType().equals(EntityKeyType.CLIENT_ATTRIBUTE)) {
                     scope = AttributeScope.CLIENT_SCOPE.getId();
                 } else if (entityKey.getType().equals(EntityKeyType.SHARED_ATTRIBUTE)) {
-                    scope = AttributeScope.SHARED_SCOPE.getId();;
+                    scope = AttributeScope.SHARED_SCOPE.getId(); ;
                 } else {
-                    scope = AttributeScope.SERVER_SCOPE.getId();;
+                    scope = AttributeScope.SERVER_SCOPE.getId(); ;
                 }
                 query = String.format("%s AND %s.attribute_type=%s %s", query, alias, scope, filterQuery);
             } else {
@@ -315,7 +318,7 @@ public class EntityKeyMapping {
         }
     }
 
-    private boolean hasFilterValues(QueryContext ctx) {
+    private boolean hasFilterValues(SqlQueryContext ctx) {
         return Arrays.stream(ctx.getParameterNames()).anyMatch(parameterName -> {
             return !parameterName.equals(getKeyId()) && parameterName.startsWith(alias);
         });
@@ -330,14 +333,14 @@ public class EntityKeyMapping {
                 Collectors.joining(", "));
     }
 
-    public static String buildLatestJoins(QueryContext ctx, EntityFilter entityFilter, EntityType entityType, List<EntityKeyMapping> latestMappings, boolean countQuery) {
+    public static String buildLatestJoins(SqlQueryContext ctx, EntityFilter entityFilter, EntityType entityType, List<EntityKeyMapping> latestMappings, boolean countQuery) {
         return latestMappings.stream()
                 .filter(mapping -> !countQuery || mapping.hasFilter())
                 .map(mapping -> mapping.toLatestJoin(ctx, entityFilter, entityType))
                 .collect(Collectors.joining(" "));
     }
 
-    public static String buildQuery(QueryContext ctx, List<EntityKeyMapping> mappings, EntityFilterType filterType) {
+    public static String buildQuery(SqlQueryContext ctx, List<EntityKeyMapping> mappings, EntityFilterType filterType) {
         return mappings.stream()
                 .flatMap(mapping -> mapping.toQueries(ctx, filterType))
                 .filter(StringUtils::isNotEmpty)
@@ -507,12 +510,12 @@ public class EntityKeyMapping {
         return getValueAlias() + "_so_num";
     }
 
-    private String buildKeyQuery(QueryContext ctx, String alias, KeyFilter keyFilter,
+    private String buildKeyQuery(SqlQueryContext ctx, String alias, KeyFilter keyFilter,
                                  EntityFilterType filterType) {
         return this.buildPredicateQuery(ctx, alias, keyFilter.getKey(), keyFilter.getPredicate(), filterType);
     }
 
-    private String buildPredicateQuery(QueryContext ctx, String alias, EntityKey key,
+    private String buildPredicateQuery(SqlQueryContext ctx, String alias, EntityKey key,
                                        KeyFilterPredicate predicate, EntityFilterType filterType) {
         if (predicate.getType().equals(FilterPredicateType.COMPLEX)) {
             return this.buildComplexPredicateQuery(ctx, alias, key, (ComplexFilterPredicate) predicate, filterType);
@@ -521,7 +524,7 @@ public class EntityKeyMapping {
         }
     }
 
-    private String buildComplexPredicateQuery(QueryContext ctx, String alias, EntityKey key,
+    private String buildComplexPredicateQuery(SqlQueryContext ctx, String alias, EntityKey key,
                                               ComplexFilterPredicate predicate, EntityFilterType filterType) {
         String result = predicate.getPredicates().stream()
                 .map(keyFilterPredicate -> this.buildPredicateQuery(ctx, alias, key, keyFilterPredicate, filterType))
@@ -533,7 +536,7 @@ public class EntityKeyMapping {
         return result;
     }
 
-    private String buildSimplePredicateQuery(QueryContext ctx, String alias, EntityKey key,
+    private String buildSimplePredicateQuery(SqlQueryContext ctx, String alias, EntityKey key,
                                              KeyFilterPredicate predicate, EntityFilterType filterType) {
         if (key.getType().equals(EntityKeyType.ENTITY_FIELD)) {
             String field = (getEntityKeyColumn() != null) ? alias + "." + getEntityKeyColumn() : alias;
@@ -568,7 +571,7 @@ public class EntityKeyMapping {
         }
     }
 
-    private String buildStringPredicateQuery(QueryContext ctx, String field, StringFilterPredicate stringFilterPredicate) {
+    private String buildStringPredicateQuery(SqlQueryContext ctx, String field, StringFilterPredicate stringFilterPredicate) {
         String operationField = field;
         String paramName = getNextParameterName(field);
         String value = stringFilterPredicate.getValue().getValue();
@@ -621,7 +624,7 @@ public class EntityKeyMapping {
         return String.format("((%s is not null and %s)", field, stringOperationQuery);
     }
 
-     private String buildNumericPredicateQuery(QueryContext ctx, String field, NumericFilterPredicate numericFilterPredicate) {
+    private String buildNumericPredicateQuery(SqlQueryContext ctx, String field, NumericFilterPredicate numericFilterPredicate) {
         String paramName = getNextParameterName(field);
         ctx.addDoubleParameter(paramName, numericFilterPredicate.getValue().getValue());
         String numericOperationQuery = "";
@@ -648,7 +651,7 @@ public class EntityKeyMapping {
         return String.format("(%s is not null and %s)", field, numericOperationQuery);
     }
 
-    private String buildBooleanPredicateQuery(QueryContext ctx, String field,
+    private String buildBooleanPredicateQuery(SqlQueryContext ctx, String field,
                                               BooleanFilterPredicate booleanFilterPredicate) {
         String paramName = getNextParameterName(field);
         ctx.addBooleanParameter(paramName, booleanFilterPredicate.getValue().getValue());

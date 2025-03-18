@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,8 +106,6 @@ public class NotificationController extends BaseController {
     private final NotificationCenter notificationCenter;
     private final NotificationSettingsService notificationSettingsService;
 
-    private static final String DELIVERY_METHOD_ALLOWABLE_VALUES = "WEB,MOBILE_APP";
-
     @ApiOperation(value = "Get notifications (getNotifications)",
             notes = "Returns the page of notifications for current user." + NEW_LINE +
                     PAGE_DATA_PARAMETERS +
@@ -175,7 +173,7 @@ public class NotificationController extends BaseController {
                                                    @RequestParam(required = false) String sortOrder,
                                                    @Parameter(description = "To search for unread notifications only")
                                                    @RequestParam(defaultValue = "false") boolean unreadOnly,
-                                                   @Parameter(description = "Delivery method", schema = @Schema(allowableValues = {DELIVERY_METHOD_ALLOWABLE_VALUES}))
+                                                   @Parameter(description = "Delivery method", schema = @Schema(allowableValues = {"WEB", "MOBILE_APP"}))
                                                    @RequestParam(defaultValue = "WEB") NotificationDeliveryMethod deliveryMethod,
                                                    @AuthenticationPrincipal SecurityUser user) throws ThingsboardException {
         // no permissions
@@ -188,7 +186,7 @@ public class NotificationController extends BaseController {
                     AVAILABLE_FOR_ANY_AUTHORIZED_USER)
     @GetMapping("/notifications/unread/count")
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN', 'TENANT_ADMIN', 'CUSTOMER_USER')")
-    public Integer getUnreadNotificationsCount(@Parameter(description = "Delivery method", schema = @Schema(allowableValues = {DELIVERY_METHOD_ALLOWABLE_VALUES}))
+    public Integer getUnreadNotificationsCount(@Parameter(description = "Delivery method", schema = @Schema(allowableValues = {"WEB", "MOBILE_APP"}))
                                                @RequestParam(defaultValue = "MOBILE_APP") NotificationDeliveryMethod deliveryMethod,
                                                @AuthenticationPrincipal SecurityUser user) {
         return notificationService.countUnreadNotificationsByRecipientId(user.getTenantId(), deliveryMethod, user.getId());
@@ -211,7 +209,7 @@ public class NotificationController extends BaseController {
                     AVAILABLE_FOR_ANY_AUTHORIZED_USER)
     @PutMapping("/notifications/read")
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN', 'TENANT_ADMIN', 'CUSTOMER_USER')")
-    public void markAllNotificationsAsRead(@Parameter(description = "Delivery method", schema = @Schema(allowableValues = {DELIVERY_METHOD_ALLOWABLE_VALUES}))
+    public void markAllNotificationsAsRead(@Parameter(description = "Delivery method", schema = @Schema(allowableValues = {"WEB", "MOBILE_APP"}))
                                            @RequestParam(defaultValue = "WEB") NotificationDeliveryMethod deliveryMethod,
                                            @AuthenticationPrincipal SecurityUser user) {
         // no permissions
@@ -268,6 +266,12 @@ public class NotificationController extends BaseController {
         }
         notificationRequest.setTenantId(user.getTenantId());
         checkEntity(notificationRequest.getId(), notificationRequest, NOTIFICATION);
+        List<NotificationTargetId> targets = notificationRequest.getTargets().stream()
+                .map(NotificationTargetId::new)
+                .toList();
+        for (NotificationTargetId targetId : targets) {
+            checkNotificationTargetId(targetId, Operation.READ);
+        }
 
         notificationRequest.setOriginatorEntityId(user.getId());
         notificationRequest.setInfo(null);
@@ -302,9 +306,15 @@ public class NotificationController extends BaseController {
         request.setOriginatorEntityId(user.getId());
         List<NotificationTarget> targets = request.getTargets().stream()
                 .map(NotificationTargetId::new)
-                .map(targetId -> notificationTargetService.findNotificationTargetById(user.getTenantId(), targetId))
+                .map(targetId -> {
+                    NotificationTarget target = notificationTargetService.findNotificationTargetById(user.getTenantId(), targetId);
+                    if (target == null) {
+                        throw new IllegalArgumentException("Notification target for id " + targetId + " not found");
+                    }
+                    return target;
+                })
                 .sorted(Comparator.comparing(target -> target.getConfiguration().getType()))
-                .collect(Collectors.toList());
+                .toList();
 
         NotificationRequestPreview preview = new NotificationRequestPreview();
 
@@ -312,6 +322,8 @@ public class NotificationController extends BaseController {
         Map<String, Integer> recipientsCountByTarget = new LinkedHashMap<>();
         Map<NotificationTargetType, NotificationRecipient> firstRecipient = new HashMap<>();
         for (NotificationTarget target : targets) {
+            checkEntity(getCurrentUser(), target, Operation.READ);
+
             int recipientsCount;
             List<NotificationRecipient> recipientsPart;
             NotificationTargetType targetType = target.getConfiguration().getType();
@@ -465,7 +477,7 @@ public class NotificationController extends BaseController {
                     SYSTEM_OR_TENANT_AUTHORITY_PARAGRAPH)
     @GetMapping("/notification/deliveryMethods")
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN', 'TENANT_ADMIN', 'CUSTOMER_USER')")
-    public Set<NotificationDeliveryMethod> getAvailableDeliveryMethods(@AuthenticationPrincipal SecurityUser user) throws ThingsboardException {
+    public List<NotificationDeliveryMethod> getAvailableDeliveryMethods(@AuthenticationPrincipal SecurityUser user) throws ThingsboardException {
         return notificationCenter.getAvailableDeliveryMethods(user.getTenantId());
     }
 
