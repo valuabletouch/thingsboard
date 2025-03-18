@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import {
   Component,
   ElementRef,
   forwardRef,
-  Input,
+  Input, NgZone,
   OnDestroy,
   OnInit,
   ViewChild
@@ -46,13 +46,12 @@ import {
   WidgetActionsDatasource
 } from '@home/components/widget/action/manage-widget-actions.component.models';
 import { UtilsService } from '@core/services/utils.service';
-import { WidgetActionDescriptor, WidgetActionSource, widgetType } from '@shared/models/widget.models';
+import { WidgetActionDescriptor, WidgetActionSource, WidgetActionType, widgetType } from '@shared/models/widget.models';
 import {
   WidgetActionDialogComponent,
   WidgetActionDialogData
 } from '@home/components/widget/action/widget-action-dialog.component';
 import { deepClone } from '@core/utils';
-import { ResizeObserver } from '@juggle/resize-observer';
 import { hidePageSizePixelValue } from '@shared/models/constants';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
@@ -77,6 +76,8 @@ export class ManageWidgetActionsComponent extends PageComponent implements OnIni
   @Input() callbacks: WidgetActionCallbacks;
 
   @Input() actionSources: {[actionSourceId: string]: WidgetActionSource};
+
+  @Input() additionalWidgetActionTypes: WidgetActionType[];
 
   innerValue: WidgetActionsData;
 
@@ -106,7 +107,8 @@ export class ManageWidgetActionsComponent extends PageComponent implements OnIni
               private dialog: MatDialog,
               private dialogs: DialogService,
               private cd: ChangeDetectorRef,
-              private elementRef: ElementRef) {
+              private elementRef: ElementRef,
+              private zone: NgZone) {
     super(store);
     const sortOrder: SortOrder = { property: 'actionSourceName', direction: Direction.ASC };
     this.pageLink = new PageLink(10, 0, null, sortOrder);
@@ -116,11 +118,13 @@ export class ManageWidgetActionsComponent extends PageComponent implements OnIni
 
   ngOnInit(): void {
     this.widgetResize$ = new ResizeObserver(() => {
-      const showHidePageSize = this.elementRef.nativeElement.offsetWidth < hidePageSizePixelValue;
-      if (showHidePageSize !== this.hidePageSize) {
-        this.hidePageSize = showHidePageSize;
-        this.cd.markForCheck();
-      }
+      this.zone.run(() => {
+        const showHidePageSize = this.elementRef.nativeElement.offsetWidth < hidePageSizePixelValue;
+        if (showHidePageSize !== this.hidePageSize) {
+          this.hidePageSize = showHidePageSize;
+          this.cd.markForCheck();
+        }
+      });
     });
     this.widgetResize$.observe(this.elementRef.nativeElement);
   }
@@ -234,7 +238,8 @@ export class ManageWidgetActionsComponent extends PageComponent implements OnIni
         callbacks: this.callbacks,
         actionsData,
         action: deepClone(action),
-        widgetType: this.widgetType
+        widgetType: this.widgetType,
+        additionalWidgetActionTypes: this.additionalWidgetActionTypes
       }
     }).afterClosed().subscribe(
       (res) => {

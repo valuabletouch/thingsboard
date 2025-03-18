@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import org.eclipse.leshan.core.LwM2m;
 import org.eclipse.leshan.core.LwM2m.Version;
 import org.eclipse.leshan.core.link.Link;
 import org.eclipse.leshan.core.link.attributes.Attribute;
+import org.eclipse.leshan.core.link.lwm2m.MixedLwM2mLink;
+import org.eclipse.leshan.core.link.lwm2m.attributes.LwM2mAttribute;
+import org.eclipse.leshan.core.link.lwm2m.attributes.LwM2mAttributes;
 import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.model.ResourceModel;
 import org.eclipse.leshan.core.node.LwM2mMultipleResource;
@@ -61,7 +64,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.thingsboard.server.common.data.lwm2m.LwM2mConstants.LWM2M_SEPARATOR_PATH;
 import static org.thingsboard.server.transport.lwm2m.utils.LwM2MTransportUtil.LWM2M_OBJECT_VERSION_DEFAULT;
@@ -417,14 +419,14 @@ public class LwM2mClient {
 
     private static Set<ContentFormat> clientSupportContentFormat(Registration registration) {
         Set<ContentFormat> contentFormats = new HashSet<>();
-        contentFormats.add(ContentFormat.DEFAULT);
         Attribute ct = Arrays.stream(registration.getObjectLinks())
                 .filter(link -> link.getUriReference().equals("/"))
                 .findFirst()
                 .map(link -> link.getAttributes().get("ct")).orElse(null);
-        if (ct != null) {
-            Set codes = Stream.of(ct.getValue()).collect(Collectors.toSet());
-            contentFormats.addAll(codes);
+        if (ct != null && ct.getValue() instanceof Collection<?>) {
+            contentFormats.addAll((Collection<? extends ContentFormat>) ct.getValue());
+        } else {
+            contentFormats.add(ContentFormat.DEFAULT);
         }
         return contentFormats;
     }
@@ -450,26 +452,37 @@ public class LwM2mClient {
     }
 
     public LwM2m.Version getSupportedObjectVersion(Integer objectid) {
-        return this.supportedClientObjects.get(objectid);
+        return this.supportedClientObjects != null ? this.supportedClientObjects.get(objectid) : null;
     }
 
     private void setSupportedClientObjects(){
-        this.supportedClientObjects = new ConcurrentHashMap<>();
-        for (Link link: this.registration.getSortedObjectLinks()) {
-            LwM2mPath lwM2mPath = new LwM2mPath(link.getUriReference());
-            if (lwM2mPath.isObject()) {
-                LwM2m.Version ver;
-                if (link.getAttributes().get("ver")!= null) {
-                    ver = (Version) link.getAttributes().get("ver").getValue();
-                } else {
-                    ver = getDefaultObjectIDVer();
+        if (this.registration.getSupportedObject() != null && this.registration.getSupportedObject().size() > 0) {
+            this.supportedClientObjects = this.registration.getSupportedObject();
+        } else {
+            this.supportedClientObjects = new ConcurrentHashMap<>();
+            for (Link link :  this.registration.getSortedObjectLinks()) {
+                if (link instanceof MixedLwM2mLink) {
+                    LwM2mPath path = ((MixedLwM2mLink) link).getPath();
+                    // add supported objects
+                    if (path.isObject() || path.isObjectInstance()) {
+                        int objectId = path.getObjectId();
+                        LwM2mAttribute<Version> versionParamValue = link.getAttributes().get(LwM2mAttributes.OBJECT_VERSION);
+                        if (versionParamValue != null) {
+                            // if there is a version attribute then use it as version for this object
+                            this.supportedClientObjects.put(objectId, versionParamValue.getValue());
+                        } else {
+                            // there is no version attribute attached.
+                            // In this case we use the DEFAULT_VERSION only if this object stored as supported object.
+                            Version currentVersion = this.supportedClientObjects.get(objectId);
+                            if (currentVersion == null) {
+                                this.supportedClientObjects.put(objectId, getDefaultObjectIDVer());
+                            }
+                        }
+                    }
                 }
-                this.supportedClientObjects.put(lwM2mPath.getObjectId(), ver);
-            } else if (lwM2mPath.getObjectId() != null && this.supportedClientObjects.get(lwM2mPath.getObjectId()) == null){
-                this.supportedClientObjects.put(lwM2mPath.getObjectId(), getDefaultObjectIDVer());
             }
         }
     }
-
 }
+
 

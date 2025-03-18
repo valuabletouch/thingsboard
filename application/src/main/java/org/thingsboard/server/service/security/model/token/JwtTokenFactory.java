@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,11 +210,12 @@ public class JwtTokenFactory {
 
         ZonedDateTime currentTime = ZonedDateTime.now();
 
+        claimsBuilder.expiration(Date.from(currentTime.plusSeconds(expirationTime).toInstant()));
+
         return Jwts.builder()
                 .claims(claimsBuilder.build())
                 .issuer(jwtSettingsService.getJwtSettings().getTokenIssuer())
                 .issuedAt(Date.from(currentTime.toInstant()))
-                .expiration(Date.from(currentTime.plusSeconds(expirationTime).toInstant()))
                 .signWith(getSecretKey(false), Jwts.SIG.HS512);
     }
 
@@ -231,6 +232,7 @@ public class JwtTokenFactory {
     }
 
     public JwtPair createTokenPair(SecurityUser securityUser) {
+        securityUser.setSessionId(UUID.randomUUID().toString());
         JwtToken accessToken = createAccessJwtToken(securityUser);
         JwtToken refreshToken = createRefreshToken(securityUser);
         return new JwtPair(accessToken.getToken(), refreshToken.getToken());

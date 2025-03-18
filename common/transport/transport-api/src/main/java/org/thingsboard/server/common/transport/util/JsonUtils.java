@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package org.thingsboard.server.common.transport.util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.thingsboard.server.gen.transport.TransportProtos.KeyValueProto;
 
 import java.util.List;
+import java.util.Map;
 
 public class JsonUtils {
 
@@ -48,8 +50,31 @@ public class JsonUtils {
         return json;
     }
 
-    public static JsonElement parse(String params) {
-        return JsonParser.parseString(params);
+    public static JsonElement parse(Object value) {
+        if (value instanceof Integer) {
+            return new JsonPrimitive((Integer) value);
+        } else if (value instanceof Long) {
+            return new JsonPrimitive((Long) value);
+        } else if (value instanceof String) {
+            return JsonParser.parseString((String) value);
+        } else if (value instanceof Boolean) {
+            return new JsonPrimitive((Boolean) value);
+        } else if (value instanceof Double) {
+            return new JsonPrimitive((Double) value);
+        } else if (value instanceof Float) {
+            return new JsonPrimitive((Float) value);
+        } else {
+            throw new IllegalArgumentException("Unsupported type: " + value.getClass().getSimpleName());
+        }
+    }
+
+    public static JsonObject convertToJsonObject(Map<String, ?> map) {
+        JsonObject jsonObject = new JsonObject();
+        for (Map.Entry<String, ?> entry : map.entrySet()) {
+            jsonObject.add(entry.getKey(), parse(entry.getValue()));
+        }
+
+        return jsonObject;
     }
 
 }

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -15,16 +15,22 @@
 ///
 
 import _ from 'lodash';
-import { from, Observable, Subject } from 'rxjs';
-import { finalize, share } from 'rxjs/operators';
-import { Datasource, DatasourceData, FormattedData, ReplaceInfo } from '@app/shared/models/widget.models';
+import { from, isObservable, Observable, of, ReplaySubject, Subject } from 'rxjs';
+import { catchError, finalize, share } from 'rxjs/operators';
+import { DataKey, Datasource, DatasourceData, FormattedData, ReplaceInfo } from '@app/shared/models/widget.models';
 import { EntityId } from '@shared/models/id/entity-id';
 import { NULL_UUID } from '@shared/models/id/has-uuid';
 import { baseDetailsPageByEntityType, EntityType } from '@shared/models/entity-type.models';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { TranslateService } from '@ngx-translate/core';
 import { serverErrorCodesTranslations } from '@shared/models/constants';
 import { SubscriptionEntityInfo } from '@core/api/widget-api.models';
+import {
+  CompiledTbFunction,
+  compileTbFunction, GenericFunction,
+  isNotEmptyTbFunction,
+  TbFunction
+} from '@shared/models/js-function.models';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -133,16 +139,16 @@ export function isLiteralObject(value: any) {
 
 export const formatValue = (value: any, dec?: number, units?: string, showZeroDecimals?: boolean): string | undefined => {
   if (isDefinedAndNotNull(value) && isNumeric(value) &&
-    (isDefinedAndNotNull(dec) || isDefinedAndNotNull(units) || Number(value).toString() === value)) {
-    let formatted: string | number = Number(value);
+    (isDefinedAndNotNull(dec) || isNotEmptyStr(units) || Number(value).toString() === value)) {
+    let formatted = value;
     if (isDefinedAndNotNull(dec)) {
-      formatted = formatted.toFixed(dec);
+      formatted = Number(formatted).toFixed(dec);
     }
     if (!showZeroDecimals) {
       formatted = (Number(formatted));
     }
     formatted = formatted.toString();
-    if (isDefinedAndNotNull(units) && units.length > 0) {
+    if (isNotEmptyStr(units)) {
       formatted += ' ' + units;
     }
     return formatted;
@@ -216,6 +222,23 @@ export const blobToBase64 = (blob: Blob): Observable<string> => from(new Promise
       reader.readAsDataURL(blob);
     }
   ));
+
+export const blobToText = (blob: Blob): Observable<string> => from(new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsText(blob);
+  }
+));
+
+export const updateFileContent = (file: File, newContent: string): File => {
+  const blob = new Blob([newContent], { type: file.type });
+  return new File([blob], file.name, {type: file.type});
+};
+
+export const createFileFromContent = (content: string, name: string, type: string): File => {
+  const blob = new Blob([content], { type });
+  return new File([blob], name, { type });
+};
 
 const scrollRegex = /(auto|scroll)/;
 
@@ -308,6 +331,10 @@ export function deepClone<T>(target: T, ignoreFields?: string[]): T {
   if (target === null) {
     return target;
   }
+  // Observables can't be cloned using the spread operator, because they have non-enumerable methods (like .pipe).
+  if (isObservable(target)) {
+    return target;
+  }
   if (target instanceof Date) {
     return new Date(target.getTime()) as any;
   }
@@ -362,6 +389,16 @@ export const isArraysEqualIgnoreUndefined = (a: any[], b: any[]): boolean => {
 
 export function mergeDeep<T>(target: T, ...sources: T[]): T {
   return _.merge(target, ...sources);
+}
+
+function ignoreArrayMergeFunc(target: any, sources: any) {
+  if (_.isArray(target)) {
+    return sources;
+  }
+}
+
+export function mergeDeepIgnoreArray<T>(target: T, ...sources: T[]): T {
+  return _.mergeWith(target, ...sources, ignoreArrayMergeFunc);
 }
 
 export function guid(): string {
@@ -458,11 +495,12 @@ export const createLabelFromSubscriptionEntityInfo = (entityInfo: SubscriptionEn
 
 export const hasDatasourceLabelsVariables = (pattern: string): boolean => varsRegex.test(pattern) !== null;
 
-export function formattedDataFormDatasourceData(input: DatasourceData[], dataIndex?: number, ts?: number): FormattedData[] {
-  return _(input).groupBy(el => el.datasource.entityName + el.datasource.entityType)
+export function formattedDataFormDatasourceData<D extends Datasource = Datasource>(input: DatasourceData[], dataIndex?: number, ts?: number,
+                                                groupFunction: (el: DatasourceData) => any = (el) => el.datasource.entityName + el.datasource.entityType): FormattedData<D>[] {
+  return _(input).groupBy(groupFunction)
     .values().value().map((entityArray, i) => {
-      const datasource = entityArray[0].datasource;
-      const obj = formattedDataFromDatasource(datasource, i);
+      const datasource = entityArray[0].datasource as D;
+      const obj = formattedDataFromDatasource<D>(datasource, i);
       entityArray.filter(el => el.data.length).forEach(el => {
         const index = isDefined(dataIndex) ? dataIndex : el.data.length - 1;
         const dataSet = isDefined(ts) ? el.data.find(data => data[0] === ts) : el.data[index];
@@ -478,18 +516,20 @@ export function formattedDataFormDatasourceData(input: DatasourceData[], dataInd
     });
 }
 
-export function formattedDataArrayFromDatasourceData(input: DatasourceData[]): FormattedData[][] {
-  return _(input).groupBy(el => el.datasource.entityName)
+export function formattedDataArrayFromDatasourceData<D extends Datasource = Datasource>(input: DatasourceData[],
+                                                                                        groupFunction: (el: DatasourceData) => any =
+                                                                                        (el) => el.datasource.entityName + el.datasource.entityType): FormattedData<D>[][] {
+  return _(input).groupBy(groupFunction)
     .values().value().map((entityArray, dsIndex) => {
-      const timeDataMap: {[time: number]: FormattedData} = {};
+      const timeDataMap: {[time: number]: FormattedData<D>} = {};
       entityArray.filter(e => e.data.length).forEach(entity => {
         entity.data.forEach(tsData => {
           const time = tsData[0];
           const value = tsData[1];
           let data = timeDataMap[time];
           if (!data) {
-            const datasource = entity.datasource;
-            data = formattedDataFromDatasource(datasource, dsIndex);
+            const datasource = entity.datasource as D;
+            data = formattedDataFromDatasource<D>(datasource, dsIndex);
             data.time = time;
             timeDataMap[time] = data;
           }
@@ -504,7 +544,7 @@ export function formattedDataArrayFromDatasourceData(input: DatasourceData[]): F
     });
 }
 
-export function formattedDataFromDatasource(datasource: Datasource, dsIndex: number): FormattedData {
+export function formattedDataFromDatasource<D extends Datasource = Datasource>(datasource: D, dsIndex: number): FormattedData<D> {
   return {
     entityName: datasource.entityName,
     deviceName: datasource.entityName,
@@ -646,11 +686,29 @@ export function parseFunction(source: any, params: string[] = ['def']): (...args
   return res;
 }
 
-export function safeExecute(func: (...args: any[]) => any, params = []) {
+export function parseTbFunction<T extends GenericFunction>(http: HttpClient, source: TbFunction, params: string[] = ['def']): Observable<CompiledTbFunction<T>> {
+  if (isNotEmptyTbFunction(source)) {
+    return compileTbFunction<T>(http, source, ...params).pipe(
+      catchError(() => {
+        return of(null);
+      }),
+      share({
+        connector: () => new ReplaySubject(1),
+        resetOnError: false,
+        resetOnComplete: false,
+        resetOnRefCountZero: false
+      })
+    );
+  } else {
+    return of(null);
+  }
+}
+
+export function safeExecuteTbFunction<T extends GenericFunction>(func: CompiledTbFunction<T>, params = []) {
   let res = null;
-  if (func && typeof (func) === 'function') {
+  if (func) {
     try {
-      res = func(...params);
+      res = func.execute(...params);
     }
     catch (err) {
       console.log('error in external function:', err);
@@ -794,7 +852,7 @@ function prepareMessageFromData(data): string {
   }
 }
 
-export function genNextLabel(name: string, datasources: Datasource[]): string {
+export const genNextLabel = (name: string, datasources: Datasource[]): string => {
   let label = name;
   let i = 1;
   let matches = false;
@@ -828,6 +886,25 @@ export function genNextLabel(name: string, datasources: Datasource[]): string {
   return label;
 }
 
+export const genNextLabelForDataKeys = (name: string, dataKeys: DataKey[]): string => {
+  let label = name;
+  let i = 1;
+  let matches = false;
+  if (dataKeys) {
+    do {
+      matches = false;
+      dataKeys.forEach((dataKey) => {
+        if (dataKey?.label === label) {
+          i++;
+          label = name + ' ' + i;
+          matches = true;
+        }
+      });
+    } while (matches)
+  }
+  return label;
+}
+
 export const getOS = (): string => {
   const userAgent = window.navigator.userAgent.toLowerCase();
   const macosPlatforms = /(macintosh|macintel|macppc|mac68k|macos|mac_powerpc)/i;
@@ -850,6 +927,15 @@ export const getOS = (): string => {
   return os;
 };
 
+export const isSafari = (): boolean => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /^((?!chrome|android).)*safari/i.test(userAgent);
+};
+
+export const isFirefox = (): boolean => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /^((?!seamonkey).)*firefox/i.test(userAgent);
+};
 
 export const camelCase = (str: string): string => {
   return _.camelCase(str);
@@ -857,4 +943,12 @@ export const camelCase = (str: string): string => {
 
 export const convertKeysToCamelCase = (obj: Record<string, any>): Record<string, any> => {
   return _.mapKeys(obj, (value, key) => _.camelCase(key));
+};
+
+export const unwrapModule = (module: any) : any => {
+  if ('default' in module && Object.keys(module).length === 1) {
+    return module.default;
+  } else {
+    return module;
+  }
 };

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import { SETTINGS_KEY } from '@core/settings/settings.effects';
 import { ActionSetIframe } from '@core/iframe/iframe.actions';
 import { UtilsService } from '@core/services/utils.service';
 import { Router } from '@angular/router';
+import { initCustomJQueryEvents } from '@shared/models/jquery-event.models';
 
 @Component({
   selector: 'tb-root',
@@ -101,6 +102,8 @@ export class AppComponent implements OnInit {
         this.router.navigateByUrl(url, { replaceUrl: true });
       }
     }
+
+    initCustomJQueryEvents();
   }
 
   setupTranslate() {

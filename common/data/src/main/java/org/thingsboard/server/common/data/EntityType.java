@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,13 @@ public enum EntityType {
     NOTIFICATION_REQUEST(31),
     NOTIFICATION(32),
     NOTIFICATION_RULE(33),
-    QUEUE_STATS(34);
+    QUEUE_STATS(34),
+    OAUTH2_CLIENT(35),
+    DOMAIN(36),
+    MOBILE_APP(37),
+    MOBILE_APP_BUNDLE(38),
+    CALCULATED_FIELD(39),
+    CALCULATED_FIELD_LINK(40);
 
     @Getter
     private final int protoNumber; // Corresponds to EntityTypeProto

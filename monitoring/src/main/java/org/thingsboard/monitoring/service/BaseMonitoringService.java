@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.thingsboard.monitoring.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,6 @@ import org.thingsboard.monitoring.data.MonitoredServiceKey;
 import org.thingsboard.monitoring.service.transport.TransportHealthChecker;
 import org.thingsboard.monitoring.util.TbStopWatch;
 
-import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -100,7 +100,10 @@ public abstract class BaseMonitoringService<C extends MonitoringConfig<T>, T ext
             reporter.reportLatency(Latencies.LOG_IN, stopWatch.getTime());
 
             try (WsClient wsClient = wsClientFactory.createClient(accessToken)) {
+                stopWatch.start();
                 wsClient.subscribeForTelemetry(devices, TransportHealthChecker.TEST_TELEMETRY_KEY).waitForReply();
+                reporter.reportLatency(Latencies.WS_SUBSCRIBE, stopWatch.getTime());
+
                 for (BaseHealthChecker<C, T> healthChecker : healthCheckers) {
                     check(healthChecker, wsClient);
                 }

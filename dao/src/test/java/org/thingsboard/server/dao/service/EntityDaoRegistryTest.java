@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.thingsboard.server.common.data.EntityType;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.dao.Dao;
 import org.thingsboard.server.dao.entity.EntityDaoRegistry;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +38,9 @@ public class EntityDaoRegistryTest extends AbstractServiceTest {
 
     @Autowired
     EntityDaoRegistry entityDaoRegistry;
+
+    @Autowired
+    List<JpaRepository<?, ?>> repositories;
 
     @Test
     public void givenAllEntityTypes_whenGetDao_thenAllPresent() {
@@ -70,6 +75,16 @@ public class EntityDaoRegistryTest extends AbstractServiceTest {
                     fail("findIdsByTenantIdAndIdOffset for " + entityType + " dao threw error: " + error);
                 }
             }
+        }
+    }
+
+    /*
+     * Verifying that all the repositories are successfully bootstrapped, when using Lazy Jpa bootstrap mode
+     * */
+    @Test
+    public void testJpaRepositories() {
+        for (var repository : repositories) {
+            repository.count();
         }
     }
 
