@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ public class SmppSmsProviderConfiguration implements SmsProviderConfiguration {
     @Schema(description = "Address range", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String addressRange;
 
-    @Schema(allowableValues = "0-10,13-14",
+    @Schema(allowableValues = {"0-10" ,"13-14"},
             description = "0 - SMSC Default Alphabet (ASCII for short and long code and to GSM for toll-free, used as default)\n" +
                     "1 - IA5 (ASCII for short and long code, Latin 9 for toll-free (ISO-8859-9))\n" +
                     "2 - Octet Unspecified (8-bit binary)\n" +

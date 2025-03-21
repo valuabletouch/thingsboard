@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import {
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { formatValue, mergeDeep } from '@core/utils';
+import { formatValue, mergeDeepIgnoreArray } from '@core/utils';
 import {
   rangeChartDefaultSettings,
   RangeChartWidgetSettings
@@ -99,7 +99,7 @@ export class RangeChartWidgetSettingsComponent extends WidgetSettingsComponent {
   }
 
   protected defaultSettings(): WidgetSettings {
-    return mergeDeep<RangeChartWidgetSettings>({} as RangeChartWidgetSettings, rangeChartDefaultSettings);
+    return mergeDeepIgnoreArray<RangeChartWidgetSettings>({} as RangeChartWidgetSettings, rangeChartDefaultSettings);
   }
 
   protected onSettingsSet(settings: WidgetSettings) {

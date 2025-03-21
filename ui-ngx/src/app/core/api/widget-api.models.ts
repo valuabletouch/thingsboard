@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import {
   DatasourceType,
   KeyInfo,
   LegendConfig,
-  LegendData, TargetDevice,
+  LegendData, TargetDevice, WidgetAction,
   WidgetActionDescriptor,
   widgetType
 } from '@shared/models/widget.models';
@@ -42,7 +42,6 @@ import { RafService } from '@core/services/raf.service';
 import { EntityAliases } from '@shared/models/alias.models';
 import { EntityInfo } from '@app/shared/models/entity.models';
 import { IDashboardComponent } from '@home/models/dashboard-component.models';
-import moment_ from 'moment';
 import {
   AlarmData,
   AlarmDataPageLink,
@@ -63,6 +62,7 @@ import { PopoverPlacement } from '@shared/components/popover.models';
 import { PersistentRpc } from '@shared/models/rpc.models';
 import { EventEmitter } from '@angular/core';
 import { DashboardUtilsService } from '@core/services/dashboard-utils.service';
+import { MatDialogRef } from '@angular/material/dialog';
 
 export interface TimewindowFunctions {
   onUpdateTimewindow: (startTimeMs: number, endTimeMs: number, interval?: number) => void;
@@ -90,21 +90,30 @@ export interface IWidgetUtils {
   getEntityDetailsPageURL: (id: string, entityType: EntityType) => string;
 }
 
+export interface PlaceMapItemActionData {
+  action: WidgetAction;
+  additionalParams?: any;
+  afterPlaceItemCallback: ($event: Event, descriptor: WidgetAction, entityId?: EntityId, entityName?: string,
+                           additionalParams?: any, entityLabel?: string) => void;
+}
+
 export interface WidgetActionsApi {
   actionDescriptorsBySourceId: {[sourceId: string]: Array<WidgetActionDescriptor>};
   getActionDescriptors: (actionSourceId: string) => Array<WidgetActionDescriptor>;
-  handleWidgetAction: ($event: Event, descriptor: WidgetActionDescriptor,
+  handleWidgetAction: ($event: Event, descriptor: WidgetAction,
                        entityId?: EntityId, entityName?: string, additionalParams?: any, entityLabel?: string) => void;
+  onWidgetAction: ($event: Event, action: WidgetAction) => void;
   elementClick: ($event: Event) => void;
   cardClick: ($event: Event) => void;
   click: ($event: Event) => void;
   getActiveEntityInfo: () => SubscriptionEntityInfo;
   openDashboardStateInSeparateDialog: (targetDashboardStateId: string, params?: StateParams, dialogTitle?: string,
-                                       hideDashboardToolbar?: boolean, dialogWidth?: number, dialogHeight?: number) => void;
+                                       hideDashboardToolbar?: boolean, dialogWidth?: number, dialogHeight?: number) => MatDialogRef<any>;
   openDashboardStateInPopover: ($event: Event, targetDashboardStateId: string, params?: StateParams,
                                 hideDashboardToolbar?: boolean, preferredPlacement?: PopoverPlacement,
                                 hideOnClickOutside?: boolean, popoverWidth?: string,
                                 popoverHeight?: string, popoverStyle?: { [klass: string]: any }) => void;
+  placeMapItem: (action: PlaceMapItemActionData) => void;
 }
 
 export interface AliasInfo {
@@ -135,6 +144,7 @@ export interface IAliasController {
   resolveAlarmSource(alarmSource: Datasource): Observable<Datasource>;
   getEntityAliases(): EntityAliases;
   getFilters(): Filters;
+  getUserFilters(): Filters;
   getFilterInfo(filterId: string): FilterInfo;
   getKeyFilters(filterId: string): Array<KeyFilter>;
   updateCurrentAliasEntity(aliasId: string, currentEntity: EntityInfo): void;

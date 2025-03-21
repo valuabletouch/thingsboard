@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package org.thingsboard.server.controller;
 
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -147,7 +149,7 @@ public class NotificationTemplateController extends BaseController {
                                                                    @RequestParam(required = false) String sortProperty,
                                                                    @Parameter(description = SORT_ORDER_DESCRIPTION)
                                                                    @RequestParam(required = false) String sortOrder,
-                                                                   @Parameter(description = "Comma-separated list of notification types to filter the templates")
+                                                                   @Parameter(description = "Comma-separated list of notification types to filter the templates", array = @ArraySchema(schema = @Schema(type = "string")))
                                                                    @RequestParam(required = false) NotificationType[] notificationTypes,
                                                                    @AuthenticationPrincipal SecurityUser user) throws ThingsboardException {
         // PE: generic permission

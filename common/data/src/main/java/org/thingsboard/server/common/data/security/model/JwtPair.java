@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,19 @@
  */
 package org.thingsboard.server.common.data.security.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.server.common.data.security.Authority;
 
+import java.io.Serializable;
+
 @Schema(description = "JWT Pair")
 @Data
 @NoArgsConstructor
-public class JwtPair {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class JwtPair implements Serializable {
 
     @Schema(description = "The JWT Access Token. Used to perform API calls.", example = "AAB254FF67D..")
     private String token;

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ public abstract class DebugEventFilter implements EventFilter {
 
     @Schema(description = "String value representing the server name, identifier or ip address where the platform is running", example = "ip-172-31-24-152")
     protected String server;
-    @Schema(description = "Boolean value to filter the errors", allowableValues = "false, true")
+    @Schema(description = "Boolean value to filter the errors", allowableValues = {"false", "true"})
     protected boolean isError;
     @Schema(description = "The case insensitive 'contains' filter based on error message", example = "not present in the DB")
     protected String errorStr;

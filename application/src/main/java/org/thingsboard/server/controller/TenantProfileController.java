@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 package org.thingsboard.server.controller;
 
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -117,8 +119,8 @@ public class TenantProfileController extends BaseController {
                     "Let's review the example of tenant profile data below: " +
                     "\n\n" + MARKDOWN_CODE_BLOCK_START +
                     "{\n" +
-                    "  \"name\": \"Default\",\n" +
-                    "  \"description\": \"Default tenant profile\",\n" +
+                    "  \"name\": \"Your name\",\n" +
+                    "  \"description\": \"Your description\",\n" +
                     "  \"isolatedTbRuleEngine\": false,\n" +
                     "  \"profileData\": {\n" +
                     "    \"configuration\": {\n" +
@@ -138,12 +140,19 @@ public class TenantProfileController extends BaseController {
                     "      \"transportDeviceMsgRateLimit\": \"20:1,600:60\",\n" +
                     "      \"transportDeviceTelemetryMsgRateLimit\": \"20:1,600:60\",\n" +
                     "      \"transportDeviceTelemetryDataPointsRateLimit\": \"20:1,600:60\",\n" +
+                    "      \"transportGatewayMsgRateLimit\": \"20:1,600:60\",\n" +
+                    "      \"transportGatewayTelemetryMsgRateLimit\": \"20:1,600:60\",\n" +
+                    "      \"transportGatewayTelemetryDataPointsRateLimit\": \"20:1,600:60\",\n" +
+                    "      \"transportGatewayDeviceMsgRateLimit\": \"20:1,600:60\",\n" +
+                    "      \"transportGatewayDeviceTelemetryMsgRateLimit\": \"20:1,600:60\",\n" +
+                    "      \"transportGatewayDeviceTelemetryDataPointsRateLimit\": \"20:1,600:60\",\n" +
                     "      \"maxTransportMessages\": 10000000,\n" +
                     "      \"maxTransportDataPoints\": 10000000,\n" +
                     "      \"maxREExecutions\": 4000000,\n" +
                     "      \"maxJSExecutions\": 5000000,\n" +
                     "      \"maxDPStorageDays\": 0,\n" +
                     "      \"maxRuleNodeExecutionsPerMessage\": 50,\n" +
+                    "      \"maxDebugModeDurationMinutes\": 15,\n" +
                     "      \"maxEmails\": 0,\n" +
                     "      \"maxSms\": 0,\n" +
                     "      \"maxCreatedAlarms\": 1000,\n" +
@@ -152,10 +161,15 @@ public class TenantProfileController extends BaseController {
                     "      \"rpcTtlDays\": 0,\n" +
                     "      \"queueStatsTtlDays\": 0,\n" +
                     "      \"ruleEngineExceptionsTtlDays\": 0,\n" +
-                    "      \"warnThreshold\": 0\n" +
+                    "      \"warnThreshold\": 0,\n" +
+                    "      \"maxCalculatedFieldsPerEntity\": 5,\n" +
+                    "      \"maxArgumentsPerCF\": 10,\n" +
+                    "      \"maxDataPointsPerRollingArg\": 1000,\n" +
+                    "      \"maxStateSizeInKBytes\": 32,\n" +
+                    "      \"maxSingleValueArgumentSizeInKBytes\": 2" +
                     "    }\n" +
                     "  },\n" +
-                    "  \"default\": true\n" +
+                    "  \"default\": false\n" +
                     "}" +
                     MARKDOWN_CODE_BLOCK_END +
                     "Remove 'id', from the request body example (below) to create new Tenant Profile entity." +
@@ -164,7 +178,7 @@ public class TenantProfileController extends BaseController {
     @RequestMapping(value = "/tenantProfile", method = RequestMethod.POST)
     @ResponseBody
     public TenantProfile saveTenantProfile(@Parameter(description = "A JSON value representing the tenant profile.")
-                                           @RequestBody TenantProfile tenantProfile) throws ThingsboardException {
+                                           @Valid @RequestBody TenantProfile tenantProfile) throws ThingsboardException {
         TenantProfile oldProfile;
         if (tenantProfile.getId() == null) {
             accessControlService.checkPermission(getCurrentUser(), Resource.TENANT_PROFILE, Operation.CREATE);
@@ -245,7 +259,8 @@ public class TenantProfileController extends BaseController {
 
     @GetMapping(value = "/tenantProfiles", params = {"ids"})
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    public List<TenantProfile> getTenantProfilesByIds(@RequestParam("ids") UUID[] ids) {
+    public List<TenantProfile> getTenantProfilesByIds(@Parameter(description = "Comma-separated list of tenant profile ids", array = @ArraySchema(schema = @Schema(type = "string")))
+                                                      @RequestParam("ids") UUID[] ids) {
         return tenantProfileService.findTenantProfilesByIds(TenantId.SYS_TENANT_ID, ids);
     }
 

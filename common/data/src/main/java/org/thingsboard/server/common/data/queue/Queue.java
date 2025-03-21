@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,13 @@ public class Queue extends BaseDataWithAdditionalInfo<QueueId> implements HasNam
         return Optional.ofNullable(getAdditionalInfo())
                 .map(info -> info.get("customProperties"))
                 .filter(JsonNode::isTextual).map(JsonNode::asText).orElse(null);
+    }
+
+    @JsonIgnore
+    public boolean isDuplicateMsgToAllPartitions() {
+        return Optional.ofNullable(getAdditionalInfo())
+                .map(info -> info.get("duplicateMsgToAllPartitions"))
+                .filter(JsonNode::isBoolean).map(JsonNode::asBoolean).orElse(false);
     }
 
 }

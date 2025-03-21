@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,7 +240,7 @@ public class DeviceProvisionServiceImpl implements DeviceProvisionService {
         return deviceCredentialsService.updateDeviceCredentials(tenantId, deviceCredentials);
     }
 
-    private ListenableFuture<List<String>> saveProvisionStateAttribute(Device device) {
+    private ListenableFuture<List<Long>> saveProvisionStateAttribute(Device device) {
         return attributesService.save(device.getTenantId(), device.getId(), AttributeScope.SERVER_SCOPE,
                 Collections.singletonList(new BaseAttributeKvEntry(new StringDataEntry(DEVICE_PROVISION_STATE, PROVISIONED_STATE),
                         System.currentTimeMillis())));
@@ -253,7 +253,13 @@ public class DeviceProvisionServiceImpl implements DeviceProvisionService {
     private void pushProvisionEventToRuleEngine(ProvisionRequest request, Device device, TbMsgType type) {
         try {
             JsonNode entityNode = JacksonUtil.valueToTree(request);
-            TbMsg msg = TbMsg.newMsg(type, device.getId(), device.getCustomerId(), createTbMsgMetaData(device), JacksonUtil.toString(entityNode));
+            TbMsg msg = TbMsg.newMsg()
+                    .type(type)
+                    .originator(device.getId())
+                    .customerId(device.getCustomerId())
+                    .copyMetaData(createTbMsgMetaData(device))
+                    .data(JacksonUtil.toString(entityNode))
+                    .build();
             sendToRuleEngine(device.getTenantId(), msg, null);
         } catch (IllegalArgumentException e) {
             log.warn("[{}] Failed to push device action to rule engine: {}", device.getId(), type, e);
@@ -263,7 +269,13 @@ public class DeviceProvisionServiceImpl implements DeviceProvisionService {
     private void pushDeviceCreatedEventToRuleEngine(Device device) {
         try {
             ObjectNode entityNode = JacksonUtil.OBJECT_MAPPER.valueToTree(device);
-            TbMsg msg = TbMsg.newMsg(TbMsgType.ENTITY_CREATED, device.getId(), device.getCustomerId(), createTbMsgMetaData(device), JacksonUtil.OBJECT_MAPPER.writeValueAsString(entityNode));
+            TbMsg msg = TbMsg.newMsg()
+                    .type(TbMsgType.ENTITY_CREATED)
+                    .originator(device.getId())
+                    .customerId(device.getCustomerId())
+                    .copyMetaData(createTbMsgMetaData(device))
+                    .data(JacksonUtil.OBJECT_MAPPER.writeValueAsString(entityNode))
+                    .build();
             sendToRuleEngine(device.getTenantId(), msg, null);
         } catch (JsonProcessingException | IllegalArgumentException e) {
             log.warn("[{}] Failed to push device action to rule engine: {}", device.getId(), TbMsgType.ENTITY_CREATED.name(), e);

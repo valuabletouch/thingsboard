@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,15 @@ package org.thingsboard.server.dao.sql.queue;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.server.common.data.EntityType;
+import org.thingsboard.server.common.data.edqs.fields.QueueStatsFields;
+import org.thingsboard.server.common.data.id.QueueStatsId;
 import org.thingsboard.server.common.data.id.TenantId;
+import org.thingsboard.server.common.data.page.PageData;
+import org.thingsboard.server.common.data.page.PageLink;
 import org.thingsboard.server.common.data.queue.QueueStats;
 import org.thingsboard.server.dao.DaoUtil;
 import org.thingsboard.server.dao.model.sql.QueueStatsEntity;
@@ -30,6 +35,8 @@ import org.thingsboard.server.dao.util.SqlDao;
 
 import java.util.List;
 import java.util.UUID;
+
+import static org.thingsboard.server.dao.DaoUtil.toUUIDs;
 
 @Slf4j
 @Component
@@ -55,13 +62,23 @@ public class JpaQueueStatsDao extends JpaAbstractDao<QueueStatsEntity, QueueStat
     }
 
     @Override
-    public List<QueueStats> findByTenantId(TenantId tenantId) {
-        return DaoUtil.convertDataList(queueStatsRepository.findByTenantId(tenantId.getId()));
+    public PageData<QueueStats> findAllByTenantId(TenantId tenantId, PageLink pageLink) {
+        return DaoUtil.toPageData(queueStatsRepository.findByTenantId(tenantId.getId(), pageLink.getTextSearch(), DaoUtil.toPageable(pageLink)));
     }
 
     @Override
     public void deleteByTenantId(TenantId tenantId) {
         queueStatsRepository.deleteByTenantId(tenantId.getId());
+    }
+
+    @Override
+    public List<QueueStats> findByIds(TenantId tenantId, List<QueueStatsId> queueStatsIds) {
+        return DaoUtil.convertDataList(queueStatsRepository.findByTenantIdAndIdIn(tenantId.getId(), toUUIDs(queueStatsIds)));
+    }
+
+    @Override
+    public List<QueueStatsFields> findNextBatch(UUID id, int batchSize) {
+        return queueStatsRepository.findNextBatch(id, Limit.of(batchSize));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.hamcrest.Matcher;
 import org.hibernate.exception.ConstraintViolationException;
@@ -37,22 +38,27 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.http.MockHttpOutputMessage;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
@@ -74,6 +80,7 @@ import org.thingsboard.server.common.data.DeviceProfileType;
 import org.thingsboard.server.common.data.DeviceTransportType;
 import org.thingsboard.server.common.data.SaveDeviceWithCredentialsRequest;
 import org.thingsboard.server.common.data.StringUtils;
+import org.thingsboard.server.common.data.TbResourceInfo;
 import org.thingsboard.server.common.data.Tenant;
 import org.thingsboard.server.common.data.TenantProfile;
 import org.thingsboard.server.common.data.User;
@@ -99,6 +106,26 @@ import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.id.TenantProfileId;
 import org.thingsboard.server.common.data.id.UUIDBased;
 import org.thingsboard.server.common.data.id.UserId;
+import org.thingsboard.server.common.data.notification.Notification;
+import org.thingsboard.server.common.data.notification.NotificationDeliveryMethod;
+import org.thingsboard.server.common.data.notification.NotificationType;
+import org.thingsboard.server.common.data.notification.targets.NotificationTarget;
+import org.thingsboard.server.common.data.notification.targets.platform.PlatformUsersNotificationTargetConfig;
+import org.thingsboard.server.common.data.notification.targets.platform.UserListFilter;
+import org.thingsboard.server.common.data.notification.targets.platform.UsersFilter;
+import org.thingsboard.server.common.data.notification.template.DeliveryMethodNotificationTemplate;
+import org.thingsboard.server.common.data.notification.template.EmailDeliveryMethodNotificationTemplate;
+import org.thingsboard.server.common.data.notification.template.HasSubject;
+import org.thingsboard.server.common.data.notification.template.MobileAppDeliveryMethodNotificationTemplate;
+import org.thingsboard.server.common.data.notification.template.NotificationTemplate;
+import org.thingsboard.server.common.data.notification.template.NotificationTemplateConfig;
+import org.thingsboard.server.common.data.notification.template.SmsDeliveryMethodNotificationTemplate;
+import org.thingsboard.server.common.data.notification.template.WebDeliveryMethodNotificationTemplate;
+import org.thingsboard.server.common.data.oauth2.MapperType;
+import org.thingsboard.server.common.data.oauth2.OAuth2Client;
+import org.thingsboard.server.common.data.oauth2.OAuth2CustomMapperConfig;
+import org.thingsboard.server.common.data.oauth2.OAuth2MapperConfig;
+import org.thingsboard.server.common.data.oauth2.PlatformType;
 import org.thingsboard.server.common.data.page.PageData;
 import org.thingsboard.server.common.data.page.PageLink;
 import org.thingsboard.server.common.data.page.TimePageLink;
@@ -111,26 +138,26 @@ import org.thingsboard.server.common.data.tenant.profile.TenantProfileData;
 import org.thingsboard.server.common.msg.session.FeatureType;
 import org.thingsboard.server.config.ThingsboardSecurityConfiguration;
 import org.thingsboard.server.dao.Dao;
+import org.thingsboard.server.dao.DaoUtil;
 import org.thingsboard.server.dao.attributes.AttributesService;
 import org.thingsboard.server.dao.device.ClaimDevicesService;
 import org.thingsboard.server.dao.tenant.TenantProfileService;
 import org.thingsboard.server.dao.timeseries.TimeseriesService;
 import org.thingsboard.server.queue.memory.InMemoryStorage;
+import org.thingsboard.server.service.cf.CfRocksDb;
 import org.thingsboard.server.service.entitiy.tenant.profile.TbTenantProfileService;
 import org.thingsboard.server.service.security.auth.jwt.RefreshTokenRequest;
 import org.thingsboard.server.service.security.auth.rest.LoginRequest;
 import org.thingsboard.server.service.security.model.token.JwtTokenFactory;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -140,6 +167,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
@@ -212,6 +240,7 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
     protected UserId differentCustomerUserId;
 
     protected UserId differentTenantCustomerUserId;
+    protected UserId currentUserId;
 
     @SuppressWarnings("rawtypes")
     private HttpMessageConverter mappingJackson2HttpMessageConverter;
@@ -248,6 +277,9 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
 
     @Autowired
     protected InMemoryStorage storage;
+
+    @MockBean
+    protected CfRocksDb cfRocksDb;
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -334,7 +366,7 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
                 currentActivateToken = activationLink.split("=")[1];
                 return null;
             }
-        }).when(mailService).sendActivationEmail(anyString(), anyString());
+        }).when(mailService).sendActivationEmail(anyString(), anyLong(), anyString());
 
         Mockito.doAnswer(new Answer<Void>() {
             public Void answer(InvocationOnMock invocation) {
@@ -343,7 +375,7 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
                 currentResetPasswordToken = passwordResetLink.split("=")[1];
                 return null;
             }
-        }).when(mailService).sendResetPasswordEmailAsync(anyString(), anyString());
+        }).when(mailService).sendResetPasswordEmailAsync(anyString(), anyLong(), anyString());
     }
 
     @After
@@ -375,7 +407,7 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        Awaitility.await("all tasks processed").atMost(60, TimeUnit.SECONDS).during(300, TimeUnit.MILLISECONDS)
+        Awaitility.await("all tasks processed").atMost(90, TimeUnit.SECONDS).during(300, TimeUnit.MILLISECONDS)
                 .until(() -> storage.getLag("tb_housekeeper") == 0);
     }
 
@@ -525,7 +557,7 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         JsonNode activateRequest = getActivateRequest(password);
         ResultActions resultActions = doPost("/api/noauth/activate", activateRequest);
         resultActions.andExpect(status().isOk());
-        return savedUser;
+        return doGet("/api/user/" + savedUser.getId(), User.class);
     }
 
     private JsonNode getActivateRequest(String password) throws Exception {
@@ -567,6 +599,8 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         Claims claims = jwsClaims.getPayload();
         String subject = claims.getSubject();
         Assert.assertEquals(username, subject);
+        String userId = claims.get("userId", String.class);
+        this.currentUserId = UserId.fromString(userId);
     }
 
     protected void resetTokens() throws Exception {
@@ -631,6 +665,11 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         deviceData.setConfiguration(new DefaultDeviceConfiguration());
         device.setDeviceData(deviceData);
         return doPost("/api/device?accessToken=" + accessToken, device, Device.class);
+    }
+
+    protected Device assignDeviceToCustomer(DeviceId deviceId, CustomerId customerId) {
+        String deviceIdStr = String.valueOf(deviceId.getId());
+        return doPost("/api/customer/" + customerId.getId() + "/device/" + deviceIdStr, Device.class);
     }
 
     protected MqttDeviceProfileTransportConfiguration createMqttDeviceProfileTransportConfiguration(TransportPayloadTypeConfiguration transportPayloadTypeConfiguration, boolean sendAckOnValidationException) {
@@ -803,7 +842,11 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         return readResponse(doPost(urlTemplate, content, params).andExpect(resultMatcher), responseType);
     }
 
-    protected <T> T doPostAsync(String urlTemplate, T content, Class<T> responseClass, ResultMatcher resultMatcher, String... params) throws Exception {
+    protected <T, R> R doPostAsyncWithTypedResponse(String urlTemplate, T content, TypeReference<R> responseType, ResultMatcher resultMatcher, String... params) throws Exception {
+        return readResponse(doPostAsync(urlTemplate, content, DEFAULT_TIMEOUT, params).andExpect(resultMatcher), responseType);
+    }
+
+    protected <T, R> R doPostAsync(String urlTemplate, T content, Class<R> responseClass, ResultMatcher resultMatcher, String... params) throws Exception {
         return readResponse(doPostAsync(urlTemplate, content, DEFAULT_TIMEOUT, params).andExpect(resultMatcher), responseClass);
     }
 
@@ -1011,33 +1054,6 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         throw new AssertionError("Unexpected status " + mvcResult.getResponse().getStatus());
     }
 
-    protected static <T> T getFieldValue(Object target, String fieldName) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return (T) field.get(target);
-    }
-
-    protected static void setStaticFieldValue(Class<?> targetCls, String fieldName, Object value) throws Exception {
-        Field field = targetCls.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(null, value);
-    }
-
-    protected static void setStaticFinalFieldValue(Class<?> targetCls, String fieldName, Object value) throws Exception {
-        Field field = targetCls.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        // Get the VarHandle for the 'modifiers' field in the Field class
-        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(Field.class, MethodHandles.lookup());
-        VarHandle modifiersHandle = lookup.findVarHandle(Field.class, "modifiers", int.class);
-
-        // Remove the final modifier from the field
-        int currentModifiers = field.getModifiers();
-        modifiersHandle.set(field, currentModifiers & ~Modifier.FINAL);
-
-        // Set the new value
-        field.set(null, value);
-    }
-
     protected int getDeviceActorSubscriptionCount(DeviceId deviceId, FeatureType featureType) {
         DeviceActorMessageProcessor processor = getDeviceActorProcessor(deviceId);
         Map<UUID, SessionInfo> subscriptions = (Map<UUID, SessionInfo>) ReflectionTestUtils.getField(processor, getMapName(featureType));
@@ -1107,6 +1123,134 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
         TenantProfile tenantProfile = JacksonUtil.clone(oldTenantProfile);
         updater.accept(tenantProfile);
         tbTenantProfileService.save(TenantId.SYS_TENANT_ID, tenantProfile, oldTenantProfile);
+    }
+
+    protected OAuth2Client createOauth2Client(TenantId tenantId, String title) {
+        return createOauth2Client(tenantId, title, null);
+    }
+
+    protected OAuth2Client createOauth2Client(TenantId tenantId, String title, List<PlatformType> platforms) {
+        OAuth2Client oAuth2Client = new OAuth2Client();
+        oAuth2Client.setTenantId(tenantId);
+        oAuth2Client.setTitle(title);
+        oAuth2Client.setClientId(UUID.randomUUID().toString());
+        oAuth2Client.setClientSecret(UUID.randomUUID().toString());
+        oAuth2Client.setAuthorizationUri(UUID.randomUUID().toString());
+        oAuth2Client.setAccessTokenUri(UUID.randomUUID().toString());
+        oAuth2Client.setScope(Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+        oAuth2Client.setPlatforms(platforms == null ? Collections.emptyList() : platforms);
+        oAuth2Client.setUserInfoUri(UUID.randomUUID().toString());
+        oAuth2Client.setUserNameAttributeName(UUID.randomUUID().toString());
+        oAuth2Client.setJwkSetUri(UUID.randomUUID().toString());
+        oAuth2Client.setClientAuthenticationMethod(UUID.randomUUID().toString());
+        oAuth2Client.setLoginButtonLabel(UUID.randomUUID().toString());
+        oAuth2Client.setLoginButtonIcon(UUID.randomUUID().toString());
+        oAuth2Client.setAdditionalInfo(JacksonUtil.newObjectNode().put(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+        oAuth2Client.setMapperConfig(
+                OAuth2MapperConfig.builder()
+                        .allowUserCreation(true)
+                        .activateUser(true)
+                        .type(MapperType.CUSTOM)
+                        .custom(
+                                OAuth2CustomMapperConfig.builder()
+                                        .url(UUID.randomUUID().toString())
+                                        .build()
+                        )
+                        .build());
+        return oAuth2Client;
+    }
+
+    protected <R> TbResourceInfo uploadImage(HttpMethod httpMethod, String url, String filename, String mediaType, byte[] content) throws Exception {
+        return this.uploadImage(httpMethod, url, null, filename, mediaType, content);
+    }
+
+    protected <R> TbResourceInfo uploadImage(HttpMethod httpMethod, String url, String subType, String filename, String mediaType, byte[] content) throws Exception {
+        return uploadResource(httpMethod, url, filename, mediaType, content, StringUtils.isNotEmpty(subType) ?
+                List.of(new MockPart("imageSubType", subType.getBytes(StandardCharsets.UTF_8))) : null);
+    }
+
+    protected <R> TbResourceInfo uploadResource(HttpMethod httpMethod, String url, String filename, String mediaType, byte[] content, List<MockPart> otherParts) throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", filename, mediaType, content);
+        var request = MockMvcRequestBuilders.multipart(httpMethod, url).file(file);
+        if (otherParts != null && !otherParts.isEmpty()) {
+            for (MockPart otherPart : otherParts) {
+                request.part(otherPart);
+            }
+        }
+        setJwtToken(request);
+        return readResponse(mockMvc.perform(request).andExpect(status().isOk()), TbResourceInfo.class);
+    }
+
+    protected NotificationTarget createNotificationTarget(UserId... usersIds) {
+        UserListFilter filter = new UserListFilter();
+        filter.setUsersIds(DaoUtil.toUUIDs(List.of(usersIds)));
+        return createNotificationTarget(filter);
+    }
+
+    protected NotificationTarget createNotificationTarget(UsersFilter usersFilter) {
+        NotificationTarget notificationTarget = new NotificationTarget();
+        notificationTarget.setName(usersFilter.toString() + RandomStringUtils.randomNumeric(5));
+        PlatformUsersNotificationTargetConfig targetConfig = new PlatformUsersNotificationTargetConfig();
+        targetConfig.setUsersFilter(usersFilter);
+        notificationTarget.setConfiguration(targetConfig);
+        return saveNotificationTarget(notificationTarget);
+    }
+
+    protected NotificationTarget saveNotificationTarget(NotificationTarget notificationTarget) {
+        return doPost("/api/notification/target", notificationTarget, NotificationTarget.class);
+    }
+
+    protected NotificationTemplate createNotificationTemplate(NotificationType notificationType, String subject,
+                                                              String text, NotificationDeliveryMethod... deliveryMethods) {
+        NotificationTemplate notificationTemplate = new NotificationTemplate();
+        notificationTemplate.setTenantId(tenantId);
+        notificationTemplate.setName("Notification template: " + text);
+        notificationTemplate.setNotificationType(notificationType);
+        NotificationTemplateConfig config = new NotificationTemplateConfig();
+        config.setDeliveryMethodsTemplates(new HashMap<>());
+        for (NotificationDeliveryMethod deliveryMethod : deliveryMethods) {
+            DeliveryMethodNotificationTemplate deliveryMethodNotificationTemplate;
+            switch (deliveryMethod) {
+                case WEB: {
+                    deliveryMethodNotificationTemplate = new WebDeliveryMethodNotificationTemplate();
+                    break;
+                }
+                case EMAIL: {
+                    deliveryMethodNotificationTemplate = new EmailDeliveryMethodNotificationTemplate();
+                    break;
+                }
+                case SMS: {
+                    deliveryMethodNotificationTemplate = new SmsDeliveryMethodNotificationTemplate();
+                    break;
+                }
+                case MOBILE_APP:
+                    deliveryMethodNotificationTemplate = new MobileAppDeliveryMethodNotificationTemplate();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported delivery method " + deliveryMethod);
+            }
+            deliveryMethodNotificationTemplate.setEnabled(true);
+            deliveryMethodNotificationTemplate.setBody(text);
+            if (deliveryMethodNotificationTemplate instanceof HasSubject) {
+                ((HasSubject) deliveryMethodNotificationTemplate).setSubject(subject);
+            }
+            config.getDeliveryMethodsTemplates().put(deliveryMethod, deliveryMethodNotificationTemplate);
+        }
+        notificationTemplate.setConfiguration(config);
+        return saveNotificationTemplate(notificationTemplate);
+    }
+
+    protected NotificationTemplate saveNotificationTemplate(NotificationTemplate notificationTemplate) {
+        return doPost("/api/notification/template", notificationTemplate, NotificationTemplate.class);
+    }
+
+    protected List<Notification> getMyNotifications(boolean unreadOnly, int limit) throws Exception {
+        return getMyNotifications(NotificationDeliveryMethod.WEB, unreadOnly, limit);
+    }
+
+    protected List<Notification> getMyNotifications(NotificationDeliveryMethod deliveryMethod, boolean unreadOnly, int limit) throws Exception {
+        return doGetTypedWithPageLink("/api/notifications?unreadOnly={unreadOnly}&deliveryMethod={deliveryMethod}&", new TypeReference<PageData<Notification>>() {},
+                new PageLink(limit, 0), unreadOnly, deliveryMethod).getData();
     }
 
 }

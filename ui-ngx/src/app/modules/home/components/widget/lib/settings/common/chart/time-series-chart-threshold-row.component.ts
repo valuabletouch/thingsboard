@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 import {
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   EventEmitter,
   forwardRef,
   Input,
@@ -36,20 +37,23 @@ import {
 } from '@angular/forms';
 import {
   TimeSeriesChartThreshold,
-  TimeSeriesChartThresholdType,
-  TimeSeriesChartYAxisId,
-  timeSeriesThresholdTypes,
-  timeSeriesThresholdTypeTranslations
+  TimeSeriesChartYAxisId
 } from '@home/components/widget/lib/chart/time-series-chart.models';
 import {
   TimeSeriesChartThresholdsPanelComponent
 } from '@home/components/widget/lib/settings/common/chart/time-series-chart-thresholds-panel.component';
 import { IAliasController } from '@core/api/widget-api.models';
 import { DataKey, Datasource, DatasourceType, WidgetConfig } from '@shared/models/widget.models';
-import { DataKeysCallbacks } from '@home/components/widget/config/data-keys.component.models';
+import { DataKeysCallbacks } from '@home/components/widget/lib/settings/common/key/data-keys.component.models';
 import { DataKeyType } from '@shared/models/telemetry/telemetry.models';
 import { deepClone } from '@core/utils';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import {
+  ValueSourceTypes,
+  ValueSourceType,
+  ValueSourceTypeTranslation
+} from '@shared/models/widget-settings.models';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'tb-time-series-chart-threshold-row',
@@ -70,11 +74,11 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
 
   DatasourceType = DatasourceType;
 
-  TimeSeriesChartThresholdType = TimeSeriesChartThresholdType;
+  TimeSeriesChartThresholdType = ValueSourceType;
 
-  timeSeriesThresholdTypes = timeSeriesThresholdTypes;
+  timeSeriesThresholdTypes = ValueSourceTypes;
 
-  timeSeriesThresholdTypeTranslations = timeSeriesThresholdTypeTranslations;
+  timeSeriesThresholdTypeTranslations = ValueSourceTypeTranslation;
 
   get aliasController(): IAliasController {
     return this.thresholdsPanel.aliasController;
@@ -119,7 +123,8 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
 
   constructor(private fb: UntypedFormBuilder,
               private thresholdsPanel: TimeSeriesChartThresholdsPanelComponent,
-              private cd: ChangeDetectorRef) {
+              private cd: ChangeDetectorRef,
+              private destroyRef: DestroyRef) {
   }
 
   ngOnInit() {
@@ -135,16 +140,24 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
     this.latestKeyFormControl = this.fb.control(null, [Validators.required]);
     this.entityKeyFormControl = this.fb.control(null, [Validators.required]);
     this.thresholdSettingsFormControl = this.fb.control(null);
-    this.thresholdFormGroup.valueChanges.subscribe(
+    this.thresholdFormGroup.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(
       () => this.updateModel()
     );
-    this.latestKeyFormControl.valueChanges.subscribe(
+    this.latestKeyFormControl.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(
       () => this.updateModel()
     );
-    this.entityKeyFormControl.valueChanges.subscribe(
+    this.entityKeyFormControl.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(
       () => this.updateModel()
     );
-    this.thresholdSettingsFormControl.valueChanges.subscribe((thresholdSettings: Partial<TimeSeriesChartThreshold>) => {
+    this.thresholdSettingsFormControl.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((thresholdSettings: Partial<TimeSeriesChartThreshold>) => {
       this.modelValue = {...this.modelValue, ...thresholdSettings};
       this.thresholdFormGroup.patchValue(
         {
@@ -156,7 +169,9 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
         {emitEvent: false});
       this.propagateChange(this.modelValue);
     });
-    this.thresholdFormGroup.get('type').valueChanges.subscribe(() => {
+    this.thresholdFormGroup.get('type').valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.updateValidators();
     });
   }
@@ -209,12 +224,12 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
         decimals: value.decimals,
       }, {emitEvent: false}
     );
-    if (value.type === TimeSeriesChartThresholdType.latestKey) {
+    if (value.type === ValueSourceType.latestKey) {
       this.latestKeyFormControl.patchValue({
         type: value.latestKeyType,
         name: value.latestKey
       }, {emitEvent: false});
-    } else if (value.type === TimeSeriesChartThresholdType.entity) {
+    } else if (value.type === ValueSourceType.entity) {
       this.entityKeyFormControl.patchValue({
         type: value.entityKeyType,
         name: value.entityKey
@@ -227,18 +242,18 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
   }
 
   private updateValidators() {
-    const type: TimeSeriesChartThresholdType = this.thresholdFormGroup.get('type').value;
-    if (type === TimeSeriesChartThresholdType.constant) {
+    const type: ValueSourceType = this.thresholdFormGroup.get('type').value;
+    if (type === ValueSourceType.constant) {
       this.thresholdFormGroup.get('value').enable({emitEvent: false});
       this.thresholdFormGroup.get('entityAlias').disable({emitEvent: false});
       this.latestKeyFormControl.disable({emitEvent: false});
       this.entityKeyFormControl.disable({emitEvent: false});
-    } else if (type === TimeSeriesChartThresholdType.latestKey) {
+    } else if (type === ValueSourceType.latestKey) {
       this.thresholdFormGroup.get('value').disable({emitEvent: false});
       this.thresholdFormGroup.get('entityAlias').disable({emitEvent: false});
       this.latestKeyFormControl.enable({emitEvent: false});
       this.entityKeyFormControl.disable({emitEvent: false});
-    } else if (type === TimeSeriesChartThresholdType.entity) {
+    } else if (type === ValueSourceType.entity) {
       this.thresholdFormGroup.get('value').disable({emitEvent: false});
       this.thresholdFormGroup.get('entityAlias').enable({emitEvent: false});
       this.latestKeyFormControl.disable({emitEvent: false});
@@ -255,11 +270,11 @@ export class TimeSeriesChartThresholdRowComponent implements ControlValueAccesso
     this.modelValue.lineColor = value.lineColor;
     this.modelValue.units = value.units;
     this.modelValue.decimals = value.decimals;
-    if (value.type === TimeSeriesChartThresholdType.latestKey) {
+    if (value.type === ValueSourceType.latestKey) {
       const latestKey: DataKey = this.latestKeyFormControl.value;
       this.modelValue.latestKey = latestKey?.name;
       this.modelValue.latestKeyType = (latestKey?.type as any);
-    } else if (value.type === TimeSeriesChartThresholdType.entity) {
+    } else if (value.type === ValueSourceType.entity) {
       const entityKey: DataKey = this.entityKeyFormControl.value;
       this.modelValue.entityKey = entityKey?.name;
       this.modelValue.entityKeyType = (entityKey?.type as any);
