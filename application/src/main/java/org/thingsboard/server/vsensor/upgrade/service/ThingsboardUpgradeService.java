@@ -55,10 +55,7 @@ public class ThingsboardUpgradeService {
     private EntityDatabaseSchemaService entityDatabaseSchemaService;
 
     @Autowired
-    private DatabaseUpgradeService databaseEntitiesUpgradeService;
-
-    @Autowired(required = false)
-    private DatabaseTsUpgradeService databaseTsUpgradeService;
+    private DatabaseUpgradeService databaseUpgradeService;
 
     @Autowired
     private ApplicationContext context;
@@ -82,7 +79,7 @@ public class ThingsboardUpgradeService {
                 throw new ThingsboardUpgradeException("Value of " + INSTALL_UPGRADE_ENV_NAME + " is not set to true", e);
             }
 
-            upgradeFromVersion = databaseEntitiesUpgradeService.getCurrentSchemeVersion();
+            upgradeFromVersion = databaseUpgradeService.getCurrentSchemeVersion();
 
             List<String> versions = Lists.newArrayList("3.2.0", "3.2.1", "3.2.2", "3.3.2", "3.3.3", "3.3.4", "3.4.0",
                     "3.4.1", "3.4.4", "3.5.0", "3.5.1", "3.6.0", "3.6.1", "3.6.2", "3.6.3", "3.6.4"); // Oldest to
@@ -101,98 +98,83 @@ public class ThingsboardUpgradeService {
             log.info("Starting ThingsBoard Upgrade from version {} to version {}", upgradeFromVersion,
                     upgradeToVersion);
 
-            cacheCleanupService.clearCache(upgradeFromVersion);
+            cacheCleanupService.clearCache();
 
             for (int i = index; i < versions.size(); i++) {
                 String version = versions.get(i);
                 switch (version) {
                     case "3.2.0":
                         log.info("Upgrading ThingsBoard from version 3.2.0 to 3.2.1 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.2.0");
+                        databaseUpgradeService.upgradeDatabase("3.2.0");
                         break;
                     case "3.2.1":
                         log.info("Upgrading ThingsBoard from version 3.2.1 to 3.2.2 ...");
-                        if (databaseTsUpgradeService != null) {
-                            databaseTsUpgradeService.upgradeDatabase("3.2.1");
-                        }
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.2.1");
+                        databaseUpgradeService.upgradeDatabase("3.2.1");
                         break;
                     case "3.2.2":
                         log.info("Upgrading ThingsBoard from version 3.2.2 to 3.3.0 ...");
-                        if (databaseTsUpgradeService != null) {
-                            databaseTsUpgradeService.upgradeDatabase("3.2.2");
-                        }
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.2.2");
+                        databaseUpgradeService.upgradeDatabase("3.2.2");
                         systemDataLoaderService.createOAuth2Templates();
                         break;
                     case "3.3.2":
                         log.info("Upgrading ThingsBoard from version 3.3.2 to 3.3.3 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.3.2");
-                        dataUpdateService.updateData("3.3.2");
+                        databaseUpgradeService.upgradeDatabase("3.3.2");
                         break;
                     case "3.3.3":
                         log.info("Upgrading ThingsBoard from version 3.3.3 to 3.3.4 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.3.3");
+                        databaseUpgradeService.upgradeDatabase("3.3.3");
                         break;
                     case "3.3.4":
                         log.info("Upgrading ThingsBoard from version 3.3.4 to 3.4.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.3.4");
-                        dataUpdateService.updateData("3.3.4");
+                        databaseUpgradeService.upgradeDatabase("3.3.4");
                         break;
                     case "3.4.0":
                         log.info("Upgrading ThingsBoard from version 3.4.0 to 3.4.1 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.4.0");
-                        dataUpdateService.updateData("3.4.0");
+                        databaseUpgradeService.upgradeDatabase("3.4.0");
                         break;
                     case "3.4.1":
                         log.info("Upgrading ThingsBoard from version 3.4.1 to 3.4.4 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.4.1");
-                        dataUpdateService.updateData("3.4.1");
+                        databaseUpgradeService.upgradeDatabase("3.4.1");
                         break;
                     case "3.4.4":
                         log.info("Upgrading ThingsBoard from version 3.4.4 to 3.5.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.4.4");
+                        databaseUpgradeService.upgradeDatabase("3.4.4");
                         break;
                     case "3.5.0":
                         log.info("Upgrading ThingsBoard from version 3.5.0 to 3.5.1 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.5.0");
+                        databaseUpgradeService.upgradeDatabase("3.5.0");
                         break;
                     case "3.5.1":
                         log.info("Upgrading ThingsBoard from version 3.5.1 to 3.6.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.5.1");
-                        dataUpdateService.updateData("3.5.1");
+                        databaseUpgradeService.upgradeDatabase("3.5.1");
                         systemDataLoaderService.updateDefaultNotificationConfigs(true);
                         break;
                     case "3.6.0":
                         log.info("Upgrading ThingsBoard from version 3.6.0 to 3.6.1 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.6.0");
-                        dataUpdateService.updateData("3.6.0");
+                        databaseUpgradeService.upgradeDatabase("3.6.0");
                         break;
                     case "3.6.1":
                         log.info("Upgrading ThingsBoard from version 3.6.1 to 3.6.2 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.6.1");
+                        databaseUpgradeService.upgradeDatabase("3.6.1");
                         if (!getEnv("SKIP_IMAGES_MIGRATION", false)) {
-                            installScripts.setUpdateImages(true);
+                            installScripts.loadSystemImagesAndResources();
                         } else {
                             log.info("Skipping images migration. Run the upgrade with fromVersion as '3.6.2-images' to migrate");
                         }
                         break;
                     case "3.6.2":
                         log.info("Upgrading ThingsBoard from version 3.6.2 to 3.6.3 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.6.2");
+                        databaseUpgradeService.upgradeDatabase("3.6.2");
                         systemDataLoaderService.updateDefaultNotificationConfigs(true);
                         break;
                     case "3.6.3":
                         log.info("Upgrading ThingsBoard from version 3.6.3 to 3.6.4 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.6.3");
+                        databaseUpgradeService.upgradeDatabase("3.6.3");
                         break;
                     case "3.6.4":
                         log.info("Upgrading ThingsBoard from version 3.6.4 to 3.7.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("3.6.4");
-                        dataUpdateService.updateData("3.6.4");
-                        entityDatabaseSchemaService.createCustomerTitleUniqueConstraintIfNotExists();
+                        databaseUpgradeService.upgradeDatabase("3.6.4");
                         systemDataLoaderService.updateDefaultNotificationConfigs(false);
-                        systemDataLoaderService.updateJwtSettings();
                         //TODO DON'T FORGET to update switch statement in the CacheCleanupService if you need to clear the cache
                         break;
                     default:
@@ -207,10 +189,7 @@ public class ThingsboardUpgradeService {
             dataUpdateService.upgradeRuleNodes();
             systemDataLoaderService.loadSystemWidgets();
             installScripts.loadSystemLwm2mResources();
-            installScripts.loadSystemImages();
-            if (installScripts.isUpdateImages()) {
-                installScripts.updateImages();
-            }
+            installScripts.loadSystemImagesAndResources();
             log.info("Upgrade finished successfully!");
 
         } catch (Exception e) {
