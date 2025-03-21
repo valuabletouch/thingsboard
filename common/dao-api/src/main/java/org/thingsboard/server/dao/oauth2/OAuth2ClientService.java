@@ -26,13 +26,14 @@ import org.thingsboard.server.common.data.page.PageLink;
 import org.thingsboard.server.dao.entity.EntityDaoService;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface OAuth2ClientService extends EntityDaoService {
 
     List<OAuth2ClientLoginInfo> findOAuth2ClientLoginInfosByDomainName(String domainName);
 
     List<OAuth2ClientLoginInfo> findOAuth2ClientLoginInfosByMobilePkgNameAndPlatformType(String pkgName, PlatformType platformType);
+
+    List<OAuth2Client> findAllOAuth2Clients();
 
     List<OAuth2Client> findOAuth2ClientsByTenantId(TenantId tenantId);
 

@@ -28,6 +28,8 @@ import java.util.UUID;
 
 public interface OAuth2ClientDao extends Dao<OAuth2Client> {
 
+    List<OAuth2Client> findAll();
+
     PageData<OAuth2Client> findByTenantId(UUID tenantId, PageLink pageLink);
 
     List<OAuth2Client> findEnabledByDomainName(String domainName);
