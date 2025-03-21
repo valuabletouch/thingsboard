@@ -75,28 +75,27 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>install node and yarn</id>
+                        <id>install node and npm</id>
                         <goals>
-                            <goal>install-node-and-yarn</goal>
+                            <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v20.18.0</nodeVersion>
-                            <yarnVersion>v1.22.22</yarnVersion>
+                            <nodeVersion>v22.14.0</nodeVersion>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>yarn install</id>
+                        <id>npm install</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --non-interactive --network-concurrency 4 --network-timeout 100000 --mutex network</arguments>
+                            <arguments>install</arguments>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>yarn pkg</id>
+                        <id>npm pkg</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>npm</goal>
                         </goals>
                         <phase>compile</phase>
                         <configuration>
@@ -164,7 +163,6 @@
                                     <directory>${basedir}</directory>
                                     <includes>
                                         <include>package.json</include>
-                                        <include>yarn.lock</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -217,10 +215,10 @@
     </build>
     <profiles>
         <profile>
-            <id>yarn-start</id>
+            <id>npm-start</id>
             <activation>
                 <property>
-                    <name>yarn-start</name>
+                    <name>npm-start</name>
                 </property>
             </activation>
             <build>
@@ -234,9 +232,9 @@
                         </configuration>
                         <executions>
                             <execution>
-                                <id>yarn start</id>
+                                <id>npm start</id>
                                 <goals>
-                                    <goal>yarn</goal>
+                                    <goal>npm</goal>
                                 </goals>
 
                                 <configuration>
