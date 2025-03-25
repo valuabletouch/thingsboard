@@ -33,6 +33,9 @@ import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';
 import { ActionSettingsChangeLanguage } from '@core/settings/settings.actions';
 import { SETTINGS_KEY } from '@core/settings/settings.effects';
 import { initCustomJQueryEvents } from '@shared/models/jquery-event.models';
+import { ActionSetIframe } from '@core/iframe/iframe.actions';
+import { UtilsService } from '@core/services/utils.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'tb-root',
@@ -46,7 +49,9 @@ export class AppComponent implements OnInit {
               private translate: TranslateService,
               private matIconRegistry: MatIconRegistry,
               private domSanitizer: DomSanitizer,
-              private authService: AuthService) {
+              private authService: AuthService,
+              private utils: UtilsService,
+              private router: Router) {
 
     console.log(`ThingsBoard Version: ${env.tbVersion}`);
 
@@ -75,6 +80,28 @@ export class AppComponent implements OnInit {
 
     this.setupTranslate();
     this.setupAuth();
+
+    if (this.utils.getQueryParam('iframe') === '1') {
+      this.store.dispatch(new ActionSetIframe(true));
+    }
+
+    let route = this.utils.getQueryParam('route');
+
+    if (route) {
+      while (route.startsWith('/')) {
+        route = route.substring(1);
+      }
+
+      while (route.endsWith('/')) {
+        route = route.substring(0, route.length - 2);
+      }
+
+      const url = this.router.parseUrl(route);
+
+      if (url) {
+        this.router.navigateByUrl(url, { replaceUrl: true });
+      }
+    }
 
     initCustomJQueryEvents();
   }

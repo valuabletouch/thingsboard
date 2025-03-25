@@ -87,6 +87,12 @@ public class OAuth2ClientServiceImpl extends AbstractEntityService implements OA
     }
 
     @Override
+    public List<OAuth2Client> findAllOAuth2Clients() {
+        log.trace("Executing findAllOAuth2Clients");
+        return oauth2ClientDao.findByTenantId(TenantId.SYS_TENANT_ID, new PageLink(Integer.MAX_VALUE)).getData();
+    }
+
+    @Override
     public List<OAuth2Client> findOAuth2ClientsByTenantId(TenantId tenantId) {
         log.trace("Executing findOAuth2ClientsByTenantId [{}]", tenantId);
         return oauth2ClientDao.findByTenantId(tenantId.getId(), new PageLink(Integer.MAX_VALUE)).getData();

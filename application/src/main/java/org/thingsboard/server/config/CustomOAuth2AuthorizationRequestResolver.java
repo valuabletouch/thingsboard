@@ -39,6 +39,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.thingsboard.server.common.data.StringUtils;
 import org.thingsboard.server.common.data.id.OAuth2ClientId;
 import org.thingsboard.server.common.data.oauth2.PlatformType;
+import org.thingsboard.server.dao.oauth2.HybridClientRegistrationRepository;
 import org.thingsboard.server.dao.oauth2.OAuth2Configuration;
 import org.thingsboard.server.dao.oauth2.OAuth2ClientService;
 import org.thingsboard.server.queue.util.TbCoreComponent;
@@ -62,6 +63,9 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
     private static final String DEFAULT_LOGIN_PROCESSING_URI = "/login/oauth2/code/";
     private static final String REGISTRATION_ID_URI_VARIABLE_NAME = "registrationId";
     private static final char PATH_DELIMITER = '/';
+
+    private final AntPathRequestMatcher authorizationRequestWithoutRegistrationIdMatcher =
+            new AntPathRequestMatcher(DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
 
     private final AntPathRequestMatcher authorizationRequestMatcher = new AntPathRequestMatcher(
             DEFAULT_AUTHORIZATION_REQUEST_BASE_URI + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
@@ -124,11 +128,22 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
     }
 
     private OAuth2AuthorizationRequest resolve(HttpServletRequest request, String oauth2ClientId, String redirectUriAction, String appPackage, String platform, String appToken) {
+        ClientRegistration clientRegistration = null;
         if (oauth2ClientId == null) {
-            return null;
+            if (authorizationRequestWithoutRegistrationIdMatcher.matches(request) &&
+                    this.clientRegistrationRepository instanceof HybridClientRegistrationRepository) {
+                HybridClientRegistrationRepository repository =
+                        (HybridClientRegistrationRepository) this.clientRegistrationRepository;
+                clientRegistration = repository.getFirst();
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            clientRegistration = this.clientRegistrationRepository.findByRegistrationId(oauth2ClientId);
         }
 
-        ClientRegistration clientRegistration = this.clientRegistrationRepository.findByRegistrationId(oauth2ClientId);
         if (clientRegistration == null) {
             throw new IllegalArgumentException("Invalid Client Registration with Id: " + oauth2ClientId);
         }
@@ -178,6 +193,17 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
         }
 
         String redirectUriStr = expandRedirectUri(request, clientRegistration, redirectUriAction);
+
+        String queryString = request.getQueryString();
+
+        if (!StringUtils.isEmpty(queryString)) {
+            if (redirectUriStr.contains("?")) {
+                redirectUriStr += "&" + queryString;
+            }
+            else {
+                redirectUriStr += "?" + queryString;
+            }
+        }
 
         return builder
                 .clientId(clientRegistration.getClientId())

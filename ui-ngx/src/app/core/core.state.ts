@@ -33,12 +33,16 @@ import { NotificationState } from '@app/core/notification/notification.models';
 import { notificationReducer } from '@app/core/notification/notification.reducer';
 import { NotificationEffects } from '@app/core/notification/notification.effects';
 import { AuthEffects } from '@core/auth/auth.effects';
+import { AuthEffects } from '@core/auth/auth.effects';
+import { IframeState } from './iframe/iframe.models';
+import { iframeReducer } from './iframe/iframe.reducer';
 
 export const reducers: ActionReducerMap<AppState> = {
   load: loadReducer,
   auth: authReducer,
   settings: settingsReducer,
-  notification: notificationReducer
+  notification: notificationReducer,
+  iframe: iframeReducer
 };
 
 export const metaReducers: MetaReducer<AppState>[] = [
@@ -60,4 +64,5 @@ export interface AppState {
   auth: AuthState;
   settings: SettingsState;
   notification: NotificationState;
+  iframe: IframeState;
 }

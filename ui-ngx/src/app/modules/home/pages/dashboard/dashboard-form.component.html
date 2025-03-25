@@ -22,7 +22,7 @@
           [class.!hidden]="isEdit">
     {{'dashboard.open-dashboard' | translate }}
   </button>
-  <button mat-raised-button color="primary"
+  <button *ngIf="!iframe" mat-raised-button color="primary"
           [disabled]="(isLoading$ | async)"
           (click)="onEntityAction($event, 'export')"
           [class.!hidden]="isEdit || dashboardScope !== 'tenant'">

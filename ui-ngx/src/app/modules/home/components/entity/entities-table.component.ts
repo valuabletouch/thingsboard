@@ -21,6 +21,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  Inject,
   Input, NgZone,
   OnChanges,
   OnDestroy,
@@ -67,6 +68,7 @@ import { hidePageSizePixelValue } from '@shared/models/constants';
 import { EntitiesTableAction, IEntitiesTableComponent } from '@home/models/entity/entity-table-component.models';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { FormBuilder } from '@angular/forms';
+import { WINDOW } from '@core/services/window.service';
 
 @Component({
   selector: 'tb-entities-table',
@@ -109,6 +111,8 @@ export class EntitiesTableComponent extends PageComponent implements IEntitiesTa
   timewindow: Timewindow;
   dataSource: EntitiesDataSource<BaseData<HasId>>;
 
+  iframe: boolean = null;
+
   cellActionType = CellActionDescriptorType;
 
   isDetailsOpen = false;
@@ -131,7 +135,8 @@ export class EntitiesTableComponent extends PageComponent implements IEntitiesTa
   private widgetResize$: ResizeObserver;
   private destroy$ = new Subject<void>();
 
-  constructor(protected store: Store<AppState>,
+  constructor(@Inject(WINDOW) private window: Window,
+              protected store: Store<AppState>,
               public route: ActivatedRoute,
               public translate: TranslateService,
               public dialog: MatDialog,
@@ -155,6 +160,9 @@ export class EntitiesTableComponent extends PageComponent implements IEntitiesTa
           this.init(data.entitiesTableConfig);
       });
     }
+    this.store.select('iframe').subscribe(state => {
+      this.iframe = state.value;
+    });
     this.widgetResize$ = new ResizeObserver(() => {
       this.zone.run(() => {
         const showHidePageSize = this.elementRef.nativeElement.offsetWidth < hidePageSizePixelValue;
@@ -748,5 +756,14 @@ export class EntitiesTableComponent extends PageComponent implements IEntitiesTa
 
   detectChanges() {
     this.cd.markForCheck();
+  }
+
+  closeIframe($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    if (this.window.parent) {
+      this.window.parent.postMessage('close-iframe', '*');
+    }
   }
 }

@@ -118,6 +118,12 @@
                     matTooltipPosition="above">
               <mat-icon>search</mat-icon>
             </button>
+            <button *ngIf="iframe"
+                    mat-icon-button (click)="closeIframe($event)"
+                    matTooltip="{{ 'action.close' | translate }}"
+                    matTooltipPosition="above">
+              <mat-icon>close</mat-icon>
+            </button>
           </div>
         </mat-toolbar>
         <mat-toolbar class="mat-mdc-table-toolbar" [class.!hidden]="!textSearchMode || !dataSource.selection.isEmpty()">

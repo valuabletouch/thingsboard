@@ -177,6 +177,9 @@ public class BaseTimeseriesService implements TimeseriesService {
         int inserts = saveLatest ? INSERTS_PER_ENTRY : INSERTS_PER_ENTRY_WITHOUT_LATEST;
         List<ListenableFuture<Integer>> futures = new ArrayList<>(tsKvEntries.size() * inserts);
         for (TsKvEntry tsKvEntry : tsKvEntries) {
+            if (tsKvEntry.getKey().equals("$is_already_saved") && tsKvEntry.getValue().toString().equals("1")) {
+                return Futures.immediateFuture(0);
+            }
             if (saveLatest) {
                 saveAndRegisterFutures(tenantId, futures, entityId, tsKvEntry, ttl);
             } else {

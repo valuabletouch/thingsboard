@@ -1,0 +1,202 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "ThingsboardHttpTransportApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.http.ThingsboardHttpTransportApplication",
+            "projectName": "http"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardInstallApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.ThingsboardInstallApplication",
+            "projectName": "org.thingsboard-application",
+            "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardServerApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.ThingsboardServerApplication",
+            "projectName": "org.thingsboard-application",
+            "shortenCommandLine": "jarmanifest",
+            "vmArgs": [
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                // "-Xlog:gc*",
+                "-XX:+PrintGCDateStamps",
+                "-XX:+PrintHeapAtGC",
+                "-XX:+PrintTenuringDistribution",
+                "-XX:+PrintGCApplicationStoppedTime",
+                "-XX:+UseGCLogFileRotation",
+                "-XX:NumberOfGCLogFiles=10",
+                "-XX:GCLogFileSize=10M",
+                "-XX:-UseBiasedLocking",
+                "-XX:+UseTLAB",
+                "-XX:+ResizeTLAB",
+                "-XX:+PerfDisableSharedMem",
+                "-XX:+UseCondCardMark",
+                "-XX:CMSWaitDuration=10000",
+                "-XX:+UseParNewGC",
+                "-XX:+UseConcMarkSweepGC",
+                "-XX:+CMSParallelRemarkEnabled",
+                "-XX:+CMSParallelInitialMarkEnabled",
+                "-XX:+CMSEdenChunksRecordAlways",
+                "-XX:CMSInitiatingOccupancyFraction=75",
+                "-XX:+UseCMSInitiatingOccupancyOnly",
+                "-XX:+ExitOnOutOfMemoryError",
+                "-Dspring.jpa.hibernate.ddl-auto=none"
+            ],
+            "args": [
+                "org.springframework.boot.loader.launch.PropertiesLauncher"
+            ],
+            "envFile": "${workspaceFolder}/.vscode/ThingsboardServerApplication/.env"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardUpgradeApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.vsensor.upgrade.ThingsboardUpgradeApplication",
+            "projectName": "org.thingsboard-application",
+            "shortenCommandLine": "jarmanifest",
+            "vmArgs": [
+                "-Dinstall.load_demo=true",
+                "-Dinstall.upgrade=false",
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                // "-Xlog:gc*",
+                "-XX:+PrintGCDateStamps",
+                "-XX:+PrintHeapAtGC",
+                "-XX:+PrintTenuringDistribution",
+                "-XX:+PrintGCApplicationStoppedTime",
+                "-XX:+UseGCLogFileRotation",
+                "-XX:NumberOfGCLogFiles=10",
+                "-XX:GCLogFileSize=10M",
+                "-XX:-UseBiasedLocking",
+                "-XX:+UseTLAB",
+                "-XX:+ResizeTLAB",
+                "-XX:+PerfDisableSharedMem",
+                "-XX:+UseCondCardMark",
+                "-XX:CMSWaitDuration=10000",
+                "-XX:+UseParNewGC",
+                "-XX:+UseConcMarkSweepGC",
+                "-XX:+CMSParallelRemarkEnabled",
+                "-XX:+CMSParallelInitialMarkEnabled",
+                "-XX:+CMSEdenChunksRecordAlways",
+                "-XX:CMSInitiatingOccupancyFraction=75",
+                "-XX:+UseCMSInitiatingOccupancyOnly",
+                "-XX:+ExitOnOutOfMemoryError",
+                "-Dspring.jpa.hibernate.ddl-auto=none",
+            ],
+            "args": [
+                "--spring.profiles.active=upgrade",
+                "org.springframework.boot.loader.launch.PropertiesLauncher"
+            ],
+            "envFile": "${workspaceFolder}/.vscode/ThingsboardUpdateApplication/.env"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardMonitoringApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.monitoring.ThingsboardMonitoringApplication",
+            "projectName": "org.thingsboard-monitoring"
+        },
+        {
+            "type": "java",
+            "name": "MqttSslClient",
+            "request": "launch",
+            "mainClass": "org.thingsboard.client.tools.MqttSslClient",
+            "projectName": "org.thingsboard-tools"
+        },
+        {
+            "type": "java",
+            "name": "MigratorTool",
+            "request": "launch",
+            "mainClass": "org.thingsboard.client.tools.migrator.MigratorTool",
+            "projectName": "org.thingsboard-tools"
+        },
+        {
+            "type": "java",
+            "name": "NoSecClient",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.coap.client.NoSecClient",
+            "projectName": "org.thingsboard.common.transport-coap"
+        },
+        {
+            "type": "java",
+            "name": "NoSecObserveClient",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.coap.client.NoSecObserveClient",
+            "projectName": "org.thingsboard.common.transport-coap"
+        },
+        {
+            "type": "java",
+            "name": "SecureClientNoAuth",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.coap.client.SecureClientNoAuth",
+            "projectName": "org.thingsboard.common.transport-coap"
+        },
+        {
+            "type": "java",
+            "name": "SecureClientX509",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.coap.client.SecureClientX509",
+            "projectName": "org.thingsboard.common.transport-coap"
+        },
+        {
+            "type": "java",
+            "name": "SnmpTestV2",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.snmp.SnmpTestV2",
+            "projectName": "org.thingsboard.common.transport-snmp"
+        },
+        {
+            "type": "java",
+            "name": "SnmpTestV3",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.transport.snmp.SnmpTestV3",
+            "projectName": "org.thingsboard.common.transport-snmp"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardVersionControlExecutorApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.vc.ThingsboardVersionControlExecutorApplication",
+            "projectName": "org.thingsboard.msa-vc-executor"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardCoapTransportApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.coap.ThingsboardCoapTransportApplication",
+            "projectName": "org.thingsboard.transport-coap"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardLwm2mTransportApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.lwm2m.ThingsboardLwm2mTransportApplication",
+            "projectName": "org.thingsboard.transport-lwm2m"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardMqttTransportApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.mqtt.ThingsboardMqttTransportApplication",
+            "projectName": "org.thingsboard.transport-mqtt"
+        },
+        {
+            "type": "java",
+            "name": "ThingsboardSnmpTransportApplication",
+            "request": "launch",
+            "mainClass": "org.thingsboard.server.snmp.ThingsboardSnmpTransportApplication",
+            "projectName": "org.thingsboard.transport-snmp"
+        }
+    ]
+}

@@ -78,13 +78,19 @@
                aria-label="dashboard_logo" class="dashboard_logo"/>
         </div>
         <div class="tb-dashboard-action-panel">
+          <button *ngIf="iframe" mat-icon-button
+                  matTooltip="{{'action.close' | translate}}"
+                  matTooltipPosition="below"
+                  (click)="closeIframe($event)">
+            <mat-icon>close</mat-icon>
+          </button>
           <button [class.!hidden]="!showCloseToolbar()" mat-icon-button class="close-action"
                   matTooltip="{{ 'dashboard.close-toolbar' | translate }}"
                   matTooltipPosition="below"
                   (click)="closeToolbar()">
             <mat-icon>arrow_forward</mat-icon>
           </button>
-          <tb-user-menu *ngIf="!isPublicUser() && forceFullscreen" class="lt-md:!hidden" displayUserInfo="true">
+          <tb-user-menu *ngIf="!iframe && !isPublicUser() && forceFullscreen" class="lt-md:!hidden" displayUserInfo="true">
           </tb-user-menu>
           <button [class.!hidden]="!showRightLayoutSwitch()" mat-icon-button
                   matTooltip="{{ (isRightLayoutOpened ? 'dashboard.hide-details' : 'dashboard.show-details') | translate }}"
@@ -92,13 +98,13 @@
                   (click)="toggleLayouts()">
             <mat-icon>{{isRightLayoutOpened ? 'arrow_back' : 'menu'}}</mat-icon>
           </button>
-          <button [class.!hidden]="hideFullscreenButton()" class="xs:!hidden" mat-icon-button
+          <button *ngIf="!iframe" [class.!hidden]="hideFullscreenButton()" class="xs:!hidden" mat-icon-button
                   matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
                   matTooltipPosition="below"
                   (click)="isFullscreen = !isFullscreen">
             <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
           </button>
-          <button [class.!hidden]="!currentDashboardId || isMobileApp || !displayExport() || isEdit" mat-icon-button
+          <button *ngIf="!iframe" [class.!hidden]="!currentDashboardId || isMobileApp || !displayExport() || isEdit" mat-icon-button
                   matTooltip="{{'dashboard.export' | translate}}"
                   matTooltipPosition="below"
                   (click)="exportDashboard($event)">

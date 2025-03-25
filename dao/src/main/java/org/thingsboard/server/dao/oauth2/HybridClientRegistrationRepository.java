@@ -41,6 +41,16 @@ public class HybridClientRegistrationRepository implements ClientRegistrationRep
                 null : toSpringClientRegistration(oAuth2Client);
     }
 
+    public ClientRegistration getFirst() {
+        for (OAuth2Client item : oAuth2ClientService.findAllOAuth2Clients()) {
+            if (item != null) {
+                return toSpringClientRegistration(item);
+            }
+        }
+
+        return null;
+    }
+
     private ClientRegistration toSpringClientRegistration(OAuth2Client oAuth2Client){
         String registrationId = oAuth2Client.getUuidId().toString();
 

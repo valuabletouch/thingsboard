@@ -44,6 +44,8 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
 
   authState: AuthState = getCurrentAuthState(this.store);
 
+  iframe: boolean = null;
+
   forceFullscreen = this.authState.forceFullscreen;
 
   activeComponent: any;
@@ -96,6 +98,10 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
           }
         }
       );
+
+      this.store.select('iframe').subscribe(state => {
+        this.iframe = state.value;
+      });
   }
 
   ngOnDestroy() {

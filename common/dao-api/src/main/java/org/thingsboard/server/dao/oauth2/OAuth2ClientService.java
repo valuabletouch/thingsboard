@@ -34,6 +34,8 @@ public interface OAuth2ClientService extends EntityDaoService {
 
     List<OAuth2ClientLoginInfo> findOAuth2ClientLoginInfosByMobilePkgNameAndPlatformType(String pkgName, PlatformType platformType);
 
+    List<OAuth2Client> findAllOAuth2Clients();
+
     List<OAuth2Client> findOAuth2ClientsByTenantId(TenantId tenantId);
 
     OAuth2Client saveOAuth2Client(TenantId tenantId, OAuth2Client oAuth2Client);

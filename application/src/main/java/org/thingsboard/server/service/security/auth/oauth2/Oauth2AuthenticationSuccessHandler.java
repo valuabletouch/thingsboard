@@ -108,7 +108,28 @@ public class Oauth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             clearAuthenticationAttributes(request, response);
 
             JwtPair tokenPair = tokenFactory.createTokenPair(securityUser);
-            getRedirectStrategy().sendRedirect(request, response, getRedirectUrl(baseUrl, tokenPair));
+
+            String redirectUrl = getRedirectUrl(baseUrl, tokenPair);
+
+            String queryString = request.getQueryString();
+
+            if (!StringUtils.isEmpty(queryString)) {
+                ArrayList<String> queryStringItems = new ArrayList<String>();
+
+                for (String queryStringItem : queryString.split("&")) {
+                    if (queryStringItem.startsWith("code=") || queryStringItem.startsWith("state=")) {
+                        continue;
+                    }
+
+                    queryStringItems.add(queryStringItem);
+                }
+
+                if (!queryStringItems.isEmpty()) {
+                    redirectUrl += "&" + String.join("&", queryStringItems);
+                }
+            }
+
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
             systemSecurityService.logLoginAction(securityUser, new RestAuthenticationDetails(request), ActionType.LOGIN, oauth2Client.getName(), null);
         } catch (Exception e) {
             log.debug("Error occurred during processing authentication success result. " +

@@ -14,6 +14,16 @@
 # limitations under the License.
 #
 
+# Thingsboard upgrade parameters
+upgrade:
+  # Enable/disable ThingsBoard upgrade
+  upgrade: "${UPGRADE_UPGRADE:false}"
+# ThingsBoard installation parameters
+install:
+  # Enable/disable ThingsBoard installation
+  upgrade: "${INSTALL_UPGRADE:false}"
+  # ThingsBoard installation directory
+  data_dir: "${INSTALL_DATA_DIRECTORY:}"
 # Server common parameters
 server:
   # Server bind-address
@@ -425,6 +435,8 @@ sql:
     max_level: "${SQL_RELATIONS_MAX_LEVEL:50}" # This value has to be reasonably small to prevent infinite recursion as early as possible
     pool_size: "${SQL_RELATIONS_POOL_SIZE:4}" # This value has to be reasonably small to prevent the relation query from blocking all other DB calls
     query_timeout: "${SQL_RELATIONS_QUERY_TIMEOUT_SEC:20}" # This value has to be reasonably small to prevent the relation query from blocking all other DB calls
+  vsensor:
+      enabled: "${SQL_VSENSOR_ENABLED:true}" # Enable/disable vsensor database
 
 # Actor system parameters
 actors:
@@ -777,10 +789,17 @@ spring.jpa.properties.hibernate.dialect: "${SPRING_JPA_DIALECT:org.thingsboard.s
 
 # SQL DAO Configuration parameters
 spring:
+  autoconfigure:
+      exclude: "${SPRING_AUTOCONFIGURE_EXCLUDE:org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration}" # Exclude MongoDB auto-configuration
   data:
     jpa:
       repositories:
         enabled: "true" # Enable/Disable the Spring Data JPA repositories support
+    mongodb:
+      readingtype:
+        uri: "${READING_TYPE_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}" # MongoDB URI for reading type
+      transformation:
+        uri: "${TRANSFORMATION_MONGODB_URI:mongodb://root:secret@127.0.0.1:27017/thingsboard}" # MongoDB URI for transformation
   jpa:
     properties:
       jakarta.persistence.query.timeout: "${JAVAX_PERSISTENCE_QUERY_TIMEOUT:30000}" # General timeout for JDBC queries
@@ -824,6 +843,15 @@ spring:
         maximumPoolSize: "${SPRING_EVENTS_DATASOURCE_MAXIMUM_POOL_SIZE:4}"
         # Enable MBean to diagnose pools state via JMX for events datasource
         registerMbeans: "${SPRING_EVENTS_DATASOURCE_HIKARI_REGISTER_MBEANS:false}"
+    readings:
+      # Database driver for Spring JPA - org.postgresql.Driver
+      driverClassName: "${SPRING_READINGS_DRIVER_CLASS_NAME:org.postgresql.Driver}"
+      # Database connection URL
+      url: "${SPRING_DATASOURCE_READINGS_URL:jdbc:postgresql://localhost:5432/readings}"
+      # Database user name
+      username: "${SPRING_DATASOURCE_READINGS_USERNAME:postgres}"
+      # Database user password
+      password: "${SPRING_DATASOURCE_READINGS_PASSWORD:postgres}"
 
 # Audit log parameters
 audit-log:
@@ -1740,6 +1768,11 @@ queue:
       version-control: "${TB_QUEUE_RABBIT_MQ_VC_QUEUE_PROPERTIES:x-max-length-bytes:1048576000;x-message-ttl:604800000}"
       # RabbitMQ properties for Edge queues
       edge: "${TB_QUEUE_RABBIT_MQ_EDGE_QUEUE_PROPERTIES:x-max-length-bytes:1048576000;x-message-ttl:604800000}"
+    vsensor:
+      exchange_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_EXCHANGE_NAME:exchange}" # Exchange name for VSensor
+      routing_key: "${TB_QUEUE_RABBIT_MQ_VSENSOR_ROUTING_KEY:routing_key}" # Routing key for VSensor
+      queue_name: "${TB_QUEUE_RABBIT_MQ_VSENSOR_QUEUE_NAME:queue}" # Queue name for VSensor
+      queue_properties: "${TB_QUEUE_RABBIT_MQ_VSENSOR_QUEUE_PROPERTIES:x-message-ttl:60000}" # Queue properties for VSensor
   partitions:
     hash_function_name: "${TB_QUEUE_PARTITIONS_HASH_FUNCTION_NAME:murmur3_128}" # murmur3_32, murmur3_128 or sha256
   transport_api:
@@ -1947,3 +1980,13 @@ mobileApp:
   googlePlayLink: "${TB_MOBILE_APP_GOOGLE_PLAY_LINK:https://play.google.com/store/apps/details?id=org.thingsboard.demo.app}"
   # Link to App Store for Thingsboard Live mobile application
   appStoreLink: "${TB_MOBILE_APP_APP_STORE_LINK:https://apps.apple.com/us/app/thingsboard-live/id1594355695}"
+
+# Transport API parameters
+transformation:
+  system:
+    thingsboard: "${TRANSFORMATION_SYSTEM_THINGSBOARD:thingsboard}" # System name
+    readingtype: "${TRANSFORMATION_SYSTEM_READING_TYPE:definition}" # Reading type
+  entity:
+    tenant: "${TRANSFORMATION_ENTITY_TENANT:tenant}" # Entity type
+    device: "${TRANSFORMATION_ENTITY_DEVICE:device}" # Entity type
+    datasource: "${TRANSFORMATION_ENTITY_DATA_SOURCE:datasource}" # Entity type
