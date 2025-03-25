@@ -45,6 +45,26 @@
         <pkg.mainClass>org.thingsboard.server.ThingsboardServerApplication</pkg.mainClass>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>test-dependencies</id>
+            <activation>
+                <property>
+                    <name>maven.test.skip</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.thingsboard</groupId>
+                    <artifactId>dao</artifactId>
+                    <type>test-jar</type>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>io.netty</groupId>
@@ -123,12 +143,6 @@
         <dependency>
             <groupId>org.thingsboard.common</groupId>
             <artifactId>edge-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.thingsboard</groupId>
-            <artifactId>dao</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.takari.junit</groupId>
