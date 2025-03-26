@@ -19,6 +19,7 @@
 package org.thingsboard.server.dao.vsensor.mongo.repository.readingtype;
 
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -122,7 +123,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     public void evictExpired() {
         List<AbstractMap.SimpleEntry<String, LocalDateTime>> expiredEntries = new ArrayList<>();
 
-        for (Pair<String, LocalDateTime> pair : cacheExpireList) {
+        for (AbstractMap.SimpleEntry<String, LocalDateTime> pair : cacheExpireList) {
             if (pair.getValue().isBefore(LocalDateTime.now())) {
                 expiredEntries.add(pair);
             }

@@ -19,6 +19,7 @@
 package org.thingsboard.server.dao.vsensor.mongo.repository.transformation;
 
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
