@@ -24,8 +24,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.javatuples.Pair;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -43,7 +41,7 @@ public class TransformationServiceImpl implements TransformationService {
     private static final long CACHE_TTL = 24 * 60 * 60l;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000l;
 
-    private static List<Pair<String, LocalDateTime>> cacheExpireList = new CopyOnWriteArrayList<>();
+    private static List<AbstractMap.SimpleEntry<String, LocalDateTime>> cacheExpireList = new CopyOnWriteArrayList<>();
 
     @Autowired
     private TransformationRepository repository;
@@ -86,7 +84,7 @@ public class TransformationServiceImpl implements TransformationService {
 
         String key = toSystemKey + ":" + toEntityKey + ":" + toKey + ":" + fromSystemKey + ":" + fromEntityKey;
 
-        cacheExpireList.add(new Pair<>(key, LocalDateTime.now().plusSeconds(CACHE_TTL)));
+        cacheExpireList.add(new AbstractMap.SimpleEntry<>(key, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         return uuid;
     }
@@ -129,16 +127,16 @@ public class TransformationServiceImpl implements TransformationService {
 
         String key = fromSystemKey + ":" + fromEntityKey + ":" + fromKey + ":" + toSystemKey + ":" + toEntityKey;
 
-        cacheExpireList.add(new Pair<>(key, LocalDateTime.now().plusSeconds(CACHE_TTL)));
+        cacheExpireList.add(new AbstractMap.SimpleEntry<>(key, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         return uuid;
     }
 
     @Scheduled(fixedRate = CACHE_EVICT_PERIOD)
     public void evictExpired() {
-        for (Pair<String, LocalDateTime> pair : cacheExpireList) {
-            if (pair.getValue1().isBefore(LocalDateTime.now())) {
-                cacheManager.getCache(CACHE_NAME).evict(pair.getValue0());
+        for (AbstractMap.SimpleEntry<String, LocalDateTime> pair : cacheExpireList) {
+            if (pair.getValue().isBefore(LocalDateTime.now())) {
+                cacheManager.getCache(CACHE_NAME).evict(pair.getKey());
 
                 cacheExpireList.remove(pair);
             }

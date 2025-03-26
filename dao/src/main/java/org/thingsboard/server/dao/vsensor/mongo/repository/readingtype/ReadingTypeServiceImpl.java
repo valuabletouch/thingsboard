@@ -25,8 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.javatuples.Pair;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -45,7 +43,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     private static final long CACHE_TTL = 15 * 60;
     private static final long CACHE_EVICT_PERIOD = 60 * 1000L;
 
-    private static final List<Pair<String, LocalDateTime>> cacheExpireList = new CopyOnWriteArrayList<>();
+    private static final List<AbstractMap.SimpleEntry<String, LocalDateTime>> cacheExpireList = new CopyOnWriteArrayList<>();
 
     @Autowired
     private CacheManager cacheManager;
@@ -55,7 +53,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
     @Cacheable(value = CACHE_NAME, key = "#id")
     public Optional<ReadingType> findById(String id) {
-        cacheExpireList.add(new Pair<>(id, LocalDateTime.now().plusSeconds(CACHE_TTL)));
+        cacheExpireList.add(new AbstractMap.SimpleEntry<>(id, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         Optional<ReadingTypeDocument> result = repository.findById(id);
 
@@ -69,7 +67,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
     @Cacheable(value = CACHE_NAME, key = "#code")
     public Optional<ReadingType> findByCode(String code) {
-        cacheExpireList.add(new Pair<>(code, LocalDateTime.now().plusSeconds(CACHE_TTL)));
+        cacheExpireList.add(new AbstractMap.SimpleEntry<>(code, LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         Optional<ReadingTypeDocument> result = repository.findByCode(code);
 
@@ -85,7 +83,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     }
 
     public Optional<List<ReadingType>> findByCodeIn(List<String> codes) {
-        cacheExpireList.add(new Pair<>(codes.toString(), LocalDateTime.now().plusSeconds(CACHE_TTL)));
+        cacheExpireList.add(new AbstractMap.SimpleEntry<>(codes.toString(), LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         Optional<List<ReadingTypeDocument>> result = repository.findAllByCodeIn(codes);
 
@@ -103,7 +101,7 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
     }
 
     public Optional<List<ReadingType>> findByIdIn(List<String> ids) {
-        cacheExpireList.add(new Pair<>(ids.toString(), LocalDateTime.now().plusSeconds(CACHE_TTL)));
+        cacheExpireList.add(new AbstractMap.SimpleEntry<>(ids.toString(), LocalDateTime.now().plusSeconds(CACHE_TTL)));
 
         Optional<List<ReadingTypeDocument>> result = repository.findAllByIdIn(ids);
 
@@ -122,16 +120,16 @@ public class ReadingTypeServiceImpl implements ReadingTypeService {
 
     @Scheduled(fixedRate = CACHE_EVICT_PERIOD)
     public void evictExpired() {
-        List<Pair<String, LocalDateTime>> expiredEntries = new ArrayList<>();
+        List<AbstractMap.SimpleEntry<String, LocalDateTime>> expiredEntries = new ArrayList<>();
 
         for (Pair<String, LocalDateTime> pair : cacheExpireList) {
-            if (pair.getValue1().isBefore(LocalDateTime.now())) {
+            if (pair.getValue().isBefore(LocalDateTime.now())) {
                 expiredEntries.add(pair);
             }
         }
 
-        for (Pair<String, LocalDateTime> pair : expiredEntries) {
-            Objects.requireNonNull(cacheManager.getCache(CACHE_NAME)).evict(pair.getValue0());
+        for (AbstractMap.SimpleEntry<String, LocalDateTime> pair : expiredEntries) {
+            Objects.requireNonNull(cacheManager.getCache(CACHE_NAME)).evict(pair.getKey());
             cacheExpireList.remove(pair);
         }
     }
