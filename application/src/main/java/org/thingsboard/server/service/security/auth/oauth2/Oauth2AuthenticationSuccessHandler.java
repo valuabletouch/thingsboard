@@ -45,6 +45,7 @@ import org.thingsboard.server.service.security.system.SystemSecurityService;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 
