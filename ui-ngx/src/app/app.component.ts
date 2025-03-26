@@ -53,7 +53,7 @@ export class AppComponent implements OnInit {
               private utils: UtilsService,
               private router: Router) {
 
-    console.log(`ThingsBoard Version: ${env.tbVersion}`);
+    console.log(`V-Sensor Version: ${env.tbVersion}`);
 
     this.matIconRegistry.addSvgIconResolver((name, namespace) => {
       if (namespace === 'mdi') {
