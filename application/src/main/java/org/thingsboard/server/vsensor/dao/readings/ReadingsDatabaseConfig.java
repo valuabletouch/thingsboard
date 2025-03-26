@@ -41,14 +41,14 @@ import javax.sql.DataSource;
 @EntityScan(basePackages = { "org.thingsboard.server.dao.vsensor.models" })
 public class ReadingsDatabaseConfig {
 
-    @Bean(name = "dataSourceProperties")
+    @Bean(name = "readingsDataSourceProperties")
     @ConfigurationProperties(prefix = "spring.datasource.readings")
     public DataSourceProperties dataSourceProperties() {
         return new DataSourceProperties();
     }
 
     @Bean(name = "readingsDataSource")
-    public DataSource dataSource(@Qualifier("dataSourceProperties") DataSourceProperties properties) {
+    public DataSource dataSource(@Qualifier("readingsDataSourceProperties") DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
     }
 
@@ -62,7 +62,7 @@ public class ReadingsDatabaseConfig {
                 .build();
     }
 
-    @Bean(name = "transactionManager")
+    @Bean(name = "readingsTransactionManager")
     public PlatformTransactionManager transactionManager(
             @Qualifier("readingsEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
